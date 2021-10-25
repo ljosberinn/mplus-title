@@ -1,6 +1,6 @@
 import "../styles/globals.css";
-import { NextComponentType, NextPageContext } from "next";
-import { NextRouter } from "next/dist/client/router";
+import type { NextComponentType, NextPageContext } from "next";
+import type { NextRouter } from "next/dist/client/router";
 import Head from "next/head";
 
 export type AppRenderProps = {

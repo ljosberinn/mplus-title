@@ -1,5 +1,7 @@
-import { GetStaticProps } from "next";
+/* eslint-disable no-await-in-loop */
+/* eslint-disable no-console */
 import { load } from "cheerio";
+import type { GetStaticProps, PageConfig } from "next";
 import { Fragment } from "react";
 
 type Region = "eu" | "us" | "tw" | "kr";
@@ -24,10 +26,10 @@ type IndexProps = {
   };
 };
 
-export default function Index({ data, meta }: IndexProps) {
+export default function Index({ data, meta }: IndexProps): JSX.Element {
   return (
     <main className="max-w-2xl m-auto">
-      <h1 className="text-semibold text-2xl text-center pt-8 pb-4">
+      <h1 className="pt-8 pb-4 text-2xl text-center text-semibold">
         Mythic+ Estimated Title Cutoff
       </h1>
       <table className="w-full">
@@ -53,7 +55,7 @@ export default function Index({ data, meta }: IndexProps) {
           {Object.entries(data).map(([region, factionData]) => {
             return (
               <Fragment key={region}>
-                <tr className="hover:bg-gray-600 text-blue-500">
+                <tr className="text-blue-500 hover:bg-gray-600">
                   <td className="text-center">{region}</td>
                   <td className="text-center">alliance</td>
                   <td className="text-center">
@@ -65,7 +67,7 @@ export default function Index({ data, meta }: IndexProps) {
                     {factionData.alliance.rio.score})
                   </td>
                 </tr>
-                <tr className="hover:bg-gray-600 text-red-500">
+                <tr className="text-red-500 hover:bg-gray-600">
                   <td className="text-center">{region}</td>
                   <td className="text-center">horde</td>
                   <td className="text-center">
@@ -84,7 +86,7 @@ export default function Index({ data, meta }: IndexProps) {
 
         <tfoot>
           <tr>
-            <td colSpan={4} className="text-center pt-4">
+            <td colSpan={4} className="pt-4 text-center">
               last generated at{" "}
               {new Date(meta.generatedAt).toLocaleString("en-US")} <br /> next
               update around{" "}
@@ -124,12 +126,13 @@ export default function Index({ data, meta }: IndexProps) {
   );
 }
 
-export const config = {
+export const config: PageConfig = {
   unstable_runtimeJS: false,
 };
 
 export const getStaticProps: GetStaticProps<IndexProps> = async () => {
   if (!String.prototype.replaceAll) {
+    // eslint-disable-next-line no-extend-native, func-names
     String.prototype.replaceAll = function (str, newStr) {
       // If a regex pattern
       if (
@@ -141,7 +144,7 @@ export const getStaticProps: GetStaticProps<IndexProps> = async () => {
 
       // If a string
       // @ts-expect-error required polyfill
-      return this.replace(new RegExp(str, "g"), newStr);
+      return this.replace(new RegExp(str, "gu"), newStr);
     };
   }
 
