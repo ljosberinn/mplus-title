@@ -4,7 +4,13 @@ import { Fragment } from "react";
 
 type Region = "eu" | "us" | "tw" | "kr";
 type Faction = "alliance" | "horde";
-type FactionData = Record<Faction, Cutoff>;
+type FactionData = Record<
+  Faction,
+  {
+    rio: Cutoff;
+    custom: Cutoff;
+  }
+>;
 type Cutoff = {
   rank: number;
   score: number;
@@ -20,7 +26,7 @@ type IndexProps = {
 
 export default function Index({ data, meta }: IndexProps) {
   return (
-    <>
+    <main className="max-w-2xl m-auto">
       <h1 className="text-semibold text-2xl text-center pt-8 pb-4">
         Mythic+ Estimated Title Cutoff
       </h1>
@@ -29,7 +35,9 @@ export default function Index({ data, meta }: IndexProps) {
           if any rank/score is 0, an error occured during loading. wait for the
           next update.
           <br />
-          all numbers are estimations based on raider.io.
+          numbers in brackets are based on the raider.io api. these seem to lag
+          behind my manual calculation, but I've included them for transparency
+          reasons.
         </caption>
 
         <thead>
@@ -48,14 +56,26 @@ export default function Index({ data, meta }: IndexProps) {
                 <tr className="hover:bg-gray-600 text-blue-500">
                   <td className="text-center">{region}</td>
                   <td className="text-center">alliance</td>
-                  <td className="text-center">{factionData.alliance.rank}</td>
-                  <td className="text-center">{factionData.alliance.score}</td>
+                  <td className="text-center">
+                    {factionData.alliance.custom.rank} (
+                    {factionData.alliance.rio.rank})
+                  </td>
+                  <td className="text-center">
+                    {factionData.alliance.custom.score} (
+                    {factionData.alliance.rio.score})
+                  </td>
                 </tr>
                 <tr className="hover:bg-gray-600 text-red-500">
                   <td className="text-center">{region}</td>
                   <td className="text-center">horde</td>
-                  <td className="text-center">{factionData.horde.rank}</td>
-                  <td className="text-center">{factionData.horde.score}</td>
+                  <td className="text-center">
+                    {factionData.horde.custom.rank} (
+                    {factionData.horde.rio.rank})
+                  </td>
+                  <td className="text-center">
+                    {factionData.horde.custom.score} (
+                    {factionData.horde.rio.score})
+                  </td>
                 </tr>
               </Fragment>
             );
@@ -100,7 +120,7 @@ export default function Index({ data, meta }: IndexProps) {
           </tr>
         </tfoot>
       </table>
-    </>
+    </main>
   );
 }
 
@@ -129,7 +149,7 @@ export const getStaticProps: GetStaticProps<IndexProps> = async () => {
   const factions: Faction[] = ["alliance", "horde"];
 
   const now = Date.now();
-  const revalidate = 12 * 60 * 60;
+  const revalidate = 1 * 60 * 60;
 
   const props: IndexProps = {
     meta: {
@@ -139,42 +159,90 @@ export const getStaticProps: GetStaticProps<IndexProps> = async () => {
     data: {
       eu: {
         alliance: {
-          rank: 0,
-          score: 0,
+          rio: {
+            rank: 0,
+            score: 0,
+          },
+          custom: {
+            rank: 0,
+            score: 0,
+          },
         },
         horde: {
-          rank: 0,
-          score: 0,
+          rio: {
+            rank: 0,
+            score: 0,
+          },
+          custom: {
+            rank: 0,
+            score: 0,
+          },
         },
       },
       kr: {
         alliance: {
-          rank: 0,
-          score: 0,
+          rio: {
+            rank: 0,
+            score: 0,
+          },
+          custom: {
+            rank: 0,
+            score: 0,
+          },
         },
         horde: {
-          rank: 0,
-          score: 0,
+          rio: {
+            rank: 0,
+            score: 0,
+          },
+          custom: {
+            rank: 0,
+            score: 0,
+          },
         },
       },
       tw: {
         alliance: {
-          rank: 0,
-          score: 0,
+          rio: {
+            rank: 0,
+            score: 0,
+          },
+          custom: {
+            rank: 0,
+            score: 0,
+          },
         },
         horde: {
-          rank: 0,
-          score: 0,
+          rio: {
+            rank: 0,
+            score: 0,
+          },
+          custom: {
+            rank: 0,
+            score: 0,
+          },
         },
       },
       us: {
         alliance: {
-          rank: 0,
-          score: 0,
+          rio: {
+            rank: 0,
+            score: 0,
+          },
+          custom: {
+            rank: 0,
+            score: 0,
+          },
         },
         horde: {
-          rank: 0,
-          score: 0,
+          rio: {
+            rank: 0,
+            score: 0,
+          },
+          custom: {
+            rank: 0,
+            score: 0,
+          },
         },
       },
     },
@@ -186,11 +254,24 @@ export const getStaticProps: GetStaticProps<IndexProps> = async () => {
     return `${rioBaseUrl}/mythic-plus-character-faction-rankings/season-sl-2/${region}/all/all/${faction}/${page}`;
   };
 
+  const createEndpointUrl = (region: Region) => {
+    return `https://raider.io/api/v1/mythic-plus/season-cutoffs?season=season-sl-2&region=${region}`;
+  };
+
   for (const region of regions) {
     for (const faction of factions) {
       const key = `${region}-${faction}`;
 
       console.time(key);
+
+      const url = createEndpointUrl(region);
+      const response = await fetch(url);
+      const json: CutoffApiResponse = await response.json();
+
+      props.data[region][faction].rio.rank =
+        json.cutoffs.p999[faction].quantilePopulationCount;
+      props.data[region][faction].rio.score =
+        json.cutoffs.p999[faction].quantileMinValue;
 
       const firstPageUrl = createPageUrl(region, faction);
 
@@ -219,7 +300,7 @@ export const getStaticProps: GetStaticProps<IndexProps> = async () => {
         );
         const lastEligibleRank = Math.floor(totalRankedCharacters * 0.001);
 
-        props.data[region][faction].rank = lastEligibleRank;
+        props.data[region][faction].custom.rank = lastEligibleRank;
 
         const scorePage =
           lastEligibleRank <= 20 ? 0 : Math.floor(lastEligibleRank / 20);
@@ -243,7 +324,7 @@ export const getStaticProps: GetStaticProps<IndexProps> = async () => {
             .text()
         );
 
-        props.data[region][faction].score = score;
+        props.data[region][faction].custom.score = score;
       } catch (error) {
         console.error(error);
       }
@@ -255,5 +336,41 @@ export const getStaticProps: GetStaticProps<IndexProps> = async () => {
   return {
     props,
     revalidate,
+  };
+};
+
+type QuantileDataset = {
+  quantile: number;
+  quantileMinValue: number;
+  quantilePopulationCount: number;
+  quantilePopulationFraction: number;
+  totalPopulationCount: number;
+};
+
+type QuantileData = {
+  horde: QuantileDataset;
+  hordeColor: string;
+  allianceColor: string;
+  alliance: QuantileDataset;
+};
+
+type CutoffApiResponse = {
+  cutoffs: {
+    region: {
+      name: string;
+      slug: string;
+      short_name: string;
+    };
+    p999: QuantileData;
+    p990: QuantileData;
+    p900: QuantileData;
+    p750: QuantileData;
+    p600: QuantileData;
+    keystoneMaster: QuantileData;
+    keystoneConqueror: QuantileData;
+  };
+  uid: {
+    season: string;
+    region: string;
   };
 };
