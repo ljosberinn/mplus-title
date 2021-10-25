@@ -45,13 +45,13 @@ export default function Index({ data, meta }: IndexProps) {
           {Object.entries(data).map(([region, factionData]) => {
             return (
               <Fragment key={region}>
-                <tr className="hover:bg-gray-600 text-red-500">
+                <tr className="hover:bg-gray-600 text-blue-500">
                   <td className="text-center">{region}</td>
                   <td className="text-center">alliance</td>
                   <td className="text-center">{factionData.alliance.rank}</td>
                   <td className="text-center">{factionData.alliance.score}</td>
                 </tr>
-                <tr className="hover:bg-gray-600 text-blue-500">
+                <tr className="hover:bg-gray-600 text-red-500">
                   <td className="text-center">{region}</td>
                   <td className="text-center">horde</td>
                   <td className="text-center">{factionData.horde.rank}</td>
