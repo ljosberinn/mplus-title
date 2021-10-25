@@ -108,7 +108,23 @@ export const config = {
   unstable_runtimeJS: false,
 };
 
-export const getStaticProps: GetStaticProps<IndexProps> = async (ctx) => {
+export const getStaticProps: GetStaticProps<IndexProps> = async () => {
+  if (!String.prototype.replaceAll) {
+    String.prototype.replaceAll = function (str, newStr) {
+      // If a regex pattern
+      if (
+        Object.prototype.toString.call(str).toLowerCase() === "[object regexp]"
+      ) {
+        // @ts-expect-error required polyfill
+        return this.replace(str, newStr);
+      }
+
+      // If a string
+      // @ts-expect-error required polyfill
+      return this.replace(new RegExp(str, "g"), newStr);
+    };
+  }
+
   const regions: Region[] = ["us", "eu", "kr", "tw"];
   const factions: Faction[] = ["alliance", "horde"];
 
