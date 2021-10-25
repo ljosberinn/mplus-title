@@ -99,6 +99,7 @@ export default function Index({ data, meta }: IndexProps): JSX.Element {
                 href="https://github.com/ljosberinn/mplus-title"
                 rel="noopener noreferrer"
                 className="underline"
+                target="_blank"
               >
                 repo
               </a>{" "}
@@ -107,6 +108,7 @@ export default function Index({ data, meta }: IndexProps): JSX.Element {
                 href="https://twitter.com/gerrit_alex"
                 rel="noopener noreferrer"
                 className="underline"
+                target="_blank"
               >
                 twitter
               </a>{" "}
@@ -115,6 +117,7 @@ export default function Index({ data, meta }: IndexProps): JSX.Element {
                 href="https://raider.io/characters/eu/blackmoore/Xepheris"
                 rel="noopener noreferrer"
                 className="underline"
+                target="_blank"
               >
                 rio
               </a>
