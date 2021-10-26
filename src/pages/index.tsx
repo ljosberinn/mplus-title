@@ -1,4 +1,3 @@
-/* eslint-disable no-await-in-loop */
 /* eslint-disable no-console */
 import { load } from "cheerio";
 import type { GetStaticProps, PageConfig } from "next";
@@ -133,6 +132,16 @@ export const config: PageConfig = {
   unstable_runtimeJS: false,
 };
 
+const rioBaseUrl = "https://raider.io";
+
+const createPageUrl = (region: Region, faction: Faction, page = 0) => {
+  return `${rioBaseUrl}/mythic-plus-character-faction-rankings/season-sl-2/${region}/all/all/${faction}/${page}`;
+};
+
+const createEndpointUrl = (region: Region) => {
+  return `${rioBaseUrl}/api/v1/mythic-plus/season-cutoffs?season=season-sl-2&region=${region}`;
+};
+
 export const getStaticProps: GetStaticProps<IndexProps> = async () => {
   if (!String.prototype.replaceAll) {
     // eslint-disable-next-line no-extend-native, func-names
@@ -254,90 +263,84 @@ export const getStaticProps: GetStaticProps<IndexProps> = async () => {
     },
   };
 
-  const rioBaseUrl = "https://raider.io";
+  await Promise.all(
+    regions
+      .flatMap((region) => {
+        return factions.flatMap((faction) => ({ region, faction }));
+      })
+      .map(async ({ region, faction }) => {
+        const key = `${region}-${faction}`;
 
-  const createPageUrl = (region: Region, faction: Faction, page = 0) => {
-    return `${rioBaseUrl}/mythic-plus-character-faction-rankings/season-sl-2/${region}/all/all/${faction}/${page}`;
-  };
+        console.time(key);
 
-  const createEndpointUrl = (region: Region) => {
-    return `https://raider.io/api/v1/mythic-plus/season-cutoffs?season=season-sl-2&region=${region}`;
-  };
+        const url = createEndpointUrl(region);
+        const response = await fetch(url);
+        const json: CutoffApiResponse = await response.json();
 
-  for (const region of regions) {
-    for (const faction of factions) {
-      const key = `${region}-${faction}`;
+        props.data[region][faction].rio.rank =
+          json.cutoffs.p999[faction].quantilePopulationCount;
+        props.data[region][faction].rio.score =
+          json.cutoffs.p999[faction].quantileMinValue;
 
-      console.time(key);
+        const firstPageUrl = createPageUrl(region, faction);
 
-      const url = createEndpointUrl(region);
-      const response = await fetch(url);
-      const json: CutoffApiResponse = await response.json();
+        try {
+          const firstPageResponse = await fetch(firstPageUrl);
+          const firstPageText = await firstPageResponse.text();
 
-      props.data[region][faction].rio.rank =
-        json.cutoffs.p999[faction].quantilePopulationCount;
-      props.data[region][faction].rio.score =
-        json.cutoffs.p999[faction].quantileMinValue;
+          const $firstPage = load(firstPageText);
+          const lastPageUrl = $firstPage(".rio-pagination--button")
+            .last()
+            .attr("href");
 
-      const firstPageUrl = createPageUrl(region, faction);
+          if (!lastPageUrl) {
+            return;
+          }
 
-      try {
-        const firstPageResponse = await fetch(firstPageUrl);
-        const firstPageText = await firstPageResponse.text();
+          const lastPageResponse = await fetch(`${rioBaseUrl}${lastPageUrl}`);
+          const lastPageText = await lastPageResponse.text();
 
-        const $firstPage = load(firstPageText);
-        const lastPageUrl = $firstPage(".rio-pagination--button")
-          .last()
-          .attr("href");
+          const $lastPage = load(lastPageText);
+          const cellSelector =
+            ".mythic-plus-rankings--row:last-of-type .rank-text-normal";
 
-        if (!lastPageUrl) {
-          continue;
+          const totalRankedCharacters = Number.parseInt(
+            $lastPage(cellSelector).text().replaceAll(",", "")
+          );
+          const lastEligibleRank = Math.floor(totalRankedCharacters * 0.001);
+
+          props.data[region][faction].custom.rank = lastEligibleRank;
+
+          const scorePage =
+            lastEligibleRank <= 20 ? 0 : Math.floor(lastEligibleRank / 20);
+          const scorePageUrl = createPageUrl(region, faction, scorePage);
+
+          const scorePageResponse = await fetch(scorePageUrl);
+          const scorePageText = await scorePageResponse.text();
+
+          const $scorePage = load(scorePageText);
+
+          const score = Number.parseFloat(
+            $scorePage(".mythic-plus-rankings--row .rank-text-normal")
+              .filter((_, element) => {
+                return (
+                  $scorePage(element).text().replaceAll(",", "") ===
+                  `${lastEligibleRank}`
+                );
+              })
+              .parents(".mythic-plus-rankings--row")
+              .find("b")
+              .text()
+          );
+
+          props.data[region][faction].custom.score = score;
+        } catch (error) {
+          console.error(error);
         }
 
-        const lastPageResponse = await fetch(`${rioBaseUrl}${lastPageUrl}`);
-        const lastPageText = await lastPageResponse.text();
-
-        const $lastPage = load(lastPageText);
-        const cellSelector =
-          ".mythic-plus-rankings--row:last-of-type .rank-text-normal";
-
-        const totalRankedCharacters = Number.parseInt(
-          $lastPage(cellSelector).text().replaceAll(",", "")
-        );
-        const lastEligibleRank = Math.floor(totalRankedCharacters * 0.001);
-
-        props.data[region][faction].custom.rank = lastEligibleRank;
-
-        const scorePage =
-          lastEligibleRank <= 20 ? 0 : Math.floor(lastEligibleRank / 20);
-        const scorePageUrl = createPageUrl(region, faction, scorePage);
-
-        const scorePageResponse = await fetch(scorePageUrl);
-        const scorePageText = await scorePageResponse.text();
-
-        const $scorePage = load(scorePageText);
-
-        const score = Number.parseFloat(
-          $scorePage(".mythic-plus-rankings--row .rank-text-normal")
-            .filter((_, element) => {
-              return (
-                $scorePage(element).text().replaceAll(",", "") ===
-                `${lastEligibleRank}`
-              );
-            })
-            .parents(".mythic-plus-rankings--row")
-            .find("b")
-            .text()
-        );
-
-        props.data[region][faction].custom.score = score;
-      } catch (error) {
-        console.error(error);
-      }
-
-      console.timeEnd(key);
-    }
-  }
+        console.timeEnd(key);
+      })
+  );
 
   return {
     props,

@@ -22,6 +22,7 @@ module.exports = {
       },
     ];
   },
+  swcMinify: true,
 };
 
 // https://securityheaders.com
