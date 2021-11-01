@@ -3,7 +3,6 @@ import { Regions, Factions } from "@prisma/client";
 import { load } from "cheerio";
 import type { NextApiRequest, NextApiResponse } from "next";
 
-import type { IndexProps } from "..";
 import { revalidate } from "../../lib/getStaticProps";
 import { prisma } from "../../prisma";
 
@@ -19,7 +18,6 @@ type Cutoff = {
   score: number;
 };
 
-const regions: Regions[] = ["us", "eu", "kr", "tw"];
 const factions: Factions[] = ["alliance", "horde"];
 const rioBaseUrl = "https://raider.io";
 
@@ -65,66 +63,6 @@ const createPageUrl = (region: Regions, faction: Factions, page = 0) => {
 
 const createEndpointUrl = (region: Regions) => {
   return `${rioBaseUrl}/api/v1/mythic-plus/season-cutoffs?season=season-sl-2&region=${region}`;
-};
-
-const isFaction = (faction: string): faction is Factions =>
-  faction === "horde" || faction === "alliance";
-const isRegion = (region: string): region is Regions =>
-  region === "eu" || region === "tw" || region === "us" || region === "kr";
-
-const hasStaleData = async () => {
-  const now = Date.now();
-
-  const latestPreviousEntry = await prisma.history.findFirst({
-    where: {
-      timestamp: {
-        lt: Math.round(now / 1000),
-      },
-    },
-    select: {
-      timestamp: true,
-    },
-  });
-
-  if (latestPreviousEntry) {
-    const ms = latestPreviousEntry.timestamp * 1000;
-    const threshold = revalidate * 1000;
-
-    return ms <= now - threshold;
-  }
-
-  return true;
-};
-
-const persistData = async (data: IndexProps["data"]) => {
-  const timestamp = Math.round(Date.now() / 1000);
-
-  const upsertableData = Object.entries(data)
-    .flatMap(([region, data]) => {
-      return Object.entries(data).flatMap(([faction, dataset]) => {
-        if (!isFaction(faction) || !isRegion(region)) {
-          return null;
-        }
-
-        return {
-          faction,
-          region,
-          timestamp,
-          rioScore: dataset.rio.score,
-          rioRank: dataset.rio.rank,
-          customScore: dataset.custom.score,
-          customRank: dataset.custom.rank,
-        };
-      });
-    })
-    .filter(
-      (dataset): dataset is Prisma.HistoryCreateManyInput => dataset !== null
-    );
-
-  await prisma.history.createMany({
-    data: upsertableData,
-    skipDuplicates: true,
-  });
 };
 
 export const dataTemplate = {
@@ -260,97 +198,193 @@ export default async function handler(
     }
   }
 
-  const dataIsStale = await hasStaleData();
+  console.time("getMostOutdatedRegion");
+  const mostOutdatedRegion = await getMostOutdatedRegion();
+  console.timeEnd("getMostOutdatedRegion");
 
-  if (!dataIsStale) {
-    res.status(400).end();
+  if (!mostOutdatedRegion) {
+    res.status(422).end();
     return;
   }
 
-  await Promise.all(
-    regions
-      .flatMap((region) => {
-        return factions.flatMap((faction) => ({ region, faction }));
-      })
-      .map(async ({ region, faction }) => {
-        const key = `${region}-${faction}`;
+  console.time("parseRegionData");
+  const regionData = await parseRegionData(mostOutdatedRegion);
+  console.timeEnd("parseRegionData");
 
-        console.time(key);
+  console.time("persistRegionData");
+  await persistRegionData(regionData);
+  console.timeEnd("persistRegionData");
 
-        const url = createEndpointUrl(region);
-        const response = await fetch(url);
-        const json: CutoffApiResponse = await response.json();
+  res.json({ status: "ok", mostOutdatedRegion });
+}
 
-        dataTemplate[region][faction].rio.rank =
-          json.cutoffs.p999[faction].quantilePopulationCount;
-        dataTemplate[region][faction].rio.score =
-          json.cutoffs.p999[faction].quantileMinValue;
+const getMostOutdatedRegion = async () => {
+  const threshold = Math.round(Date.now() / 1000 - revalidate);
 
-        const firstPageUrl = createPageUrl(region, faction);
+  const mostRecentData = await prisma.history.findMany({
+    where: {
+      timestamp: {
+        gte: threshold,
+      },
+    },
+    orderBy: {
+      timestamp: "desc",
+    },
+    select: {
+      region: true,
+      timestamp: true,
+    },
+  });
 
-        try {
-          const firstPageResponse = await fetch(firstPageUrl);
-          const firstPageText = await firstPageResponse.text();
-
-          const $firstPage = load(firstPageText);
-          const lastPageUrl = $firstPage(".rio-pagination--button")
-            .last()
-            .attr("href");
-
-          if (!lastPageUrl) {
-            return;
-          }
-
-          const lastPageResponse = await fetch(`${rioBaseUrl}${lastPageUrl}`);
-          const lastPageText = await lastPageResponse.text();
-
-          const $lastPage = load(lastPageText);
-          const cellSelector =
-            ".mythic-plus-rankings--row:last-of-type .rank-text-normal";
-
-          const totalRankedCharacters = Number.parseInt(
-            $lastPage(cellSelector).text().replaceAll(",", "")
-          );
-          const lastEligibleRank = Math.floor(totalRankedCharacters * 0.001);
-
-          dataTemplate[region][faction].custom.rank = lastEligibleRank;
-
-          const scorePage =
-            lastEligibleRank <= 20 ? 0 : Math.floor(lastEligibleRank / 20);
-          const scorePageUrl = createPageUrl(region, faction, scorePage);
-
-          const scorePageResponse = await fetch(scorePageUrl);
-          const scorePageText = await scorePageResponse.text();
-
-          const $scorePage = load(scorePageText);
-
-          const score = Number.parseFloat(
-            $scorePage(".mythic-plus-rankings--row .rank-text-normal")
-              .filter((_, element) => {
-                return (
-                  $scorePage(element).text().replaceAll(",", "") ===
-                  `${lastEligibleRank}`
-                );
-              })
-              .parents(".mythic-plus-rankings--row")
-              .find("b")
-              .text()
-          );
-
-          dataTemplate[region][faction].custom.score = Number.isNaN(score)
-            ? 0
-            : score;
-        } catch (error) {
-          console.error(error);
-        }
-
-        console.timeEnd(key);
-      })
+  const mostRecentlyUpdatedRegions = new Set(
+    mostRecentData.map((dataset) => dataset.region)
   );
 
-  console.time("persisting");
-  await persistData(dataTemplate);
-  console.timeEnd("persisting");
+  const datasets = await prisma.history.findMany({
+    where: {
+      timestamp: {
+        lte: threshold,
+      },
+    },
+    orderBy: {
+      timestamp: "desc",
+    },
+    select: {
+      region: true,
+      timestamp: true,
+    },
+  });
 
-  res.json({ status: "ok" });
-}
+  const mostOutdated = datasets.reduce((acc, dataset) => {
+    if (mostRecentlyUpdatedRegions.has(dataset.region)) {
+      return acc;
+    }
+
+    return acc.timestamp < dataset.timestamp ? acc : dataset;
+  }, datasets[0]);
+
+  if (mostRecentlyUpdatedRegions.has(mostOutdated.region)) {
+    return null;
+  }
+
+  return mostOutdated.region;
+};
+
+const parseRegionData = async (
+  region: Regions
+): Promise<Prisma.HistoryCreateManyInput[]> => {
+  const now = Math.round(Date.now() / 1000);
+
+  const url = createEndpointUrl(region);
+  const response = await fetch(url);
+  const json: CutoffApiResponse = await response.json();
+
+  const parsedData = await Promise.all(
+    factions.map(async (faction) => {
+      try {
+        const firstPageUrl = createPageUrl(region, faction);
+        const firstPageResponse = await fetch(firstPageUrl);
+        const firstPageText = await firstPageResponse.text();
+
+        const $firstPage = load(firstPageText);
+        const lastPageUrl = $firstPage(".rio-pagination--button")
+          .last()
+          .attr("href");
+
+        if (!lastPageUrl) {
+          return {
+            faction,
+            score: 0,
+            rank: 0,
+          };
+        }
+
+        const lastPageResponse = await fetch(`${rioBaseUrl}${lastPageUrl}`);
+        const lastPageText = await lastPageResponse.text();
+
+        const $lastPage = load(lastPageText);
+        const cellSelector =
+          ".mythic-plus-rankings--row:last-of-type .rank-text-normal";
+
+        const totalRankedCharacters = Number.parseInt(
+          $lastPage(cellSelector).text().replaceAll(",", "")
+        );
+        const lastEligibleRank = Math.floor(totalRankedCharacters * 0.001);
+
+        const scorePage =
+          lastEligibleRank <= 20 ? 0 : Math.floor(lastEligibleRank / 20);
+        const scorePageUrl = createPageUrl(region, faction, scorePage);
+
+        const scorePageResponse = await fetch(scorePageUrl);
+        const scorePageText = await scorePageResponse.text();
+
+        const $scorePage = load(scorePageText);
+
+        const maybeScore = Number.parseFloat(
+          $scorePage(".mythic-plus-rankings--row .rank-text-normal")
+            .filter((_, element) => {
+              return (
+                $scorePage(element).text().replaceAll(",", "") ===
+                `${lastEligibleRank}`
+              );
+            })
+            .parents(".mythic-plus-rankings--row")
+            .find("b")
+            .text()
+        );
+
+        const score = Number.isNaN(maybeScore) ? 0 : maybeScore;
+
+        return {
+          faction,
+          score,
+          rank: lastEligibleRank,
+        };
+      } catch (error) {
+        console.error(error);
+
+        return {
+          faction,
+          score: 0,
+          rank: 0,
+        };
+      }
+    })
+  );
+
+  const parsedHordeData = parsedData.find(
+    (dataset) => dataset.faction === "horde"
+  );
+  const parsedAllianceData = parsedData.find(
+    (dataset) => dataset.faction === "alliance"
+  );
+
+  if (!parsedHordeData || !parsedAllianceData) {
+    return [];
+  }
+
+  return [
+    {
+      region,
+      faction: "horde",
+      customRank: parsedHordeData.rank,
+      customScore: parsedHordeData.score,
+      rioRank: json.cutoffs.p999.horde.quantilePopulationCount,
+      rioScore: json.cutoffs.p999.horde.quantileMinValue,
+      timestamp: now,
+    },
+    {
+      region,
+      faction: "alliance",
+      customRank: parsedAllianceData.rank,
+      customScore: parsedAllianceData.score,
+      rioRank: json.cutoffs.p999.alliance.quantilePopulationCount,
+      rioScore: json.cutoffs.p999.alliance.quantileMinValue,
+      timestamp: now,
+    },
+  ];
+};
+
+const persistRegionData = async (data: Prisma.HistoryCreateManyInput[]) => {
+  await prisma.history.createMany({ data, skipDuplicates: true });
+};
