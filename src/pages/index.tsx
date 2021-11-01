@@ -2,7 +2,7 @@ import type { Regions } from "@prisma/client";
 import type { PageConfig } from "next";
 import { Fragment } from "react";
 
-import type { FactionData } from "../lib/getStaticProps";
+import type { FactionData } from "./api/cron";
 
 export type IndexProps = {
   data: Record<Regions, FactionData>;
@@ -10,7 +10,6 @@ export type IndexProps = {
     generatedAt: number;
     nextUpdateAt: number;
   };
-  history: [];
 };
 
 export default function Index({ data, meta }: IndexProps): JSX.Element {
