@@ -10,16 +10,17 @@ export const getStaticProps: GetStaticProps<IndexProps> = async () => {
   const now = Date.now();
   const history = await loadHistory(now);
 
-  const latestTimestamp = history.reduce(
-    (acc, dataset) => (dataset.timestamp > acc ? dataset.timestamp : acc),
-    0
-  );
+  const map: Record<string, number> = {};
 
-  const latestData = history.filter(
-    (dataset) => dataset.timestamp === latestTimestamp
-  );
+  const data = history.reduce((acc, dataset) => {
+    const key = `${dataset.region}-${dataset.faction}`;
 
-  const data = latestData.reduce((acc, dataset) => {
+    if (key in map && map[key] >= dataset.timestamp) {
+      return acc;
+    }
+
+    map[key] = dataset.timestamp;
+
     acc[dataset.region][dataset.faction] = {
       custom: {
         rank: dataset.customRank,
