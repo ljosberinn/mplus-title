@@ -234,7 +234,9 @@ export const getStaticProps: GetStaticProps<IndexProps> = async () => {
       })
   );
 
-  await persistData(props);
+  if (process.env.NODE_ENV !== "production") {
+    await persistData(props);
+  }
 
   //   const history = await loadHistory(now);
 
