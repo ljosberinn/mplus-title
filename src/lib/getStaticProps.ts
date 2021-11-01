@@ -298,7 +298,7 @@ const persistData = async ({ data, meta }: IndexProps) => {
   });
 
   const mayPersist =
-    (latestPreviousEntry?.timestamp ?? 0) <=
+    (latestPreviousEntry?.timestamp ?? 0) * 1000 <=
     meta.generatedAt - revalidate * 1000;
 
   if (mayPersist) {
