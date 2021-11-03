@@ -313,7 +313,13 @@ const parseRegionData = async (
 
         const scorePage =
           lastEligibleRank <= 20 ? 0 : Math.floor(lastEligibleRank / 20);
-        const scorePageUrl = createPageUrl(region, faction, scorePage);
+        const scorePageUrl = createPageUrl(
+          region,
+          faction,
+          // if rank is divisible by 20, e.g. 80, it would result in page 4
+          // but its still on page 3
+          lastEligibleRank % 20 === 0 ? scorePage - 1 : scorePage
+        );
 
         const scorePageResponse = await fetch(scorePageUrl);
         const scorePageText = await scorePageResponse.text();
@@ -386,5 +392,5 @@ const parseRegionData = async (
 };
 
 const persistRegionData = async (data: Prisma.HistoryCreateManyInput[]) => {
-  await prisma.history.createMany({ data, skipDuplicates: true });
+  // await prisma.history.createMany({ data, skipDuplicates: true });
 };
