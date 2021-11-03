@@ -318,7 +318,9 @@ const parseRegionData = async (
           faction,
           // if rank is divisible by 20, e.g. 80, it would result in page 4
           // but its still on page 3
-          lastEligibleRank % 20 === 0 ? scorePage - 1 : scorePage
+          lastEligibleRank % 20 === 0 && lastEligibleRank > 20
+            ? scorePage - 1
+            : scorePage
         );
 
         const scorePageResponse = await fetch(scorePageUrl);
