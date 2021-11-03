@@ -392,5 +392,5 @@ const parseRegionData = async (
 };
 
 const persistRegionData = async (data: Prisma.HistoryCreateManyInput[]) => {
-  // await prisma.history.createMany({ data, skipDuplicates: true });
+  await prisma.history.createMany({ data, skipDuplicates: true });
 };
