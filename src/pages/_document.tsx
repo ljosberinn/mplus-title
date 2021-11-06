@@ -15,7 +15,7 @@ export default function CustomDocument(/* props: DocumentProps*/): JSX.Element {
         />
         <meta
           property="image:alt"
-          content="Mythic+ Estimated Title Cutoff mascot Froggy"
+          content="Mythic+ Estimated Title Cutoff"
         />
 
         <meta property="og:url" content="https://mplus-title.vercel.app/" />
