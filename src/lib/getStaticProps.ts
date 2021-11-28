@@ -37,7 +37,7 @@ export const getStaticProps: GetStaticProps<IndexProps> = async () => {
 
   return {
     props: {
-      // history,
+      history,
       data,
       meta: {
         nextUpdateAt: now + revalidate * 1000,

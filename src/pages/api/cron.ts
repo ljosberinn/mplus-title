@@ -13,7 +13,7 @@ export type FactionData = Record<
     custom: Cutoff;
   }
 >;
-type Cutoff = {
+export type Cutoff = {
   rank: number;
   score: number;
 };

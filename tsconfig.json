@@ -17,7 +17,7 @@
     "skipLibCheck": true,
     "strict": true,
     "allowSyntheticDefaultImports": true,
-    "types": ["react/next", "react-dom/next"],
+    "types": ["react/experimental", "react-dom/experimental"],
     "incremental": true
   },
   "include": ["**/*.ts", "**/*.tsx"],
