@@ -203,7 +203,7 @@ export default async function handler(
   console.timeEnd("getMostOutdatedRegion");
 
   if (!mostOutdatedRegion) {
-    res.status(422).end();
+    res.status(204).end();
     return;
   }
 
