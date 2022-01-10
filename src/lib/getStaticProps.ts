@@ -53,7 +53,7 @@ const loadHistory = async (now: number) => {
     where: {
       timestamp: {
         // go back a month
-        gte: Math.round(now / 1000 - 3 * 28 * 24 * 60 * 60),
+        gte: Math.round(now / 1000 - 2 * 28 * 24 * 60 * 60),
       },
     },
     orderBy: {
