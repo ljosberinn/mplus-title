@@ -82,7 +82,6 @@ const loadHistory = async (now: number) => {
   const datasets = await prisma.history.findMany({
     where: {
       timestamp: {
-        // go back 2 months
         gte: Math.round(now / 1000 - 1.5 * 28 * 24 * 60 * 60),
       },
     },
