@@ -41,7 +41,6 @@ export default function CustomDocument(/* props: DocumentProps*/): JSX.Element {
           name="twitter:image:alt"
           content="Mythic+ Estimated Title Cutoff"
         />
-        <title>Mythic+ Estimated Title Cutoff</title>
       </Head>
       <body className="text-gray-200 bg-gray-900">
         <Main />

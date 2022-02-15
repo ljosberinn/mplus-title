@@ -11,6 +11,7 @@ export type FactionData = Record<
   {
     rio: Cutoff;
     custom: Cutoff;
+    confirmedCutoff: number | null
   }
 >;
 export type Cutoff = {
@@ -76,6 +77,7 @@ export const dataTemplate = {
         rank: 0,
         score: 0,
       },
+      confirmedCutoff: null
     },
     [Factions.horde]: {
       rio: {
@@ -86,6 +88,7 @@ export const dataTemplate = {
         rank: 0,
         score: 0,
       },
+      confirmedCutoff: null
     },
   },
   [Regions.kr]: {
@@ -98,6 +101,7 @@ export const dataTemplate = {
         rank: 0,
         score: 0,
       },
+      confirmedCutoff: null
     },
     [Factions.horde]: {
       rio: {
@@ -108,6 +112,7 @@ export const dataTemplate = {
         rank: 0,
         score: 0,
       },
+      confirmedCutoff: null
     },
   },
   [Regions.tw]: {
@@ -120,6 +125,7 @@ export const dataTemplate = {
         rank: 0,
         score: 0,
       },
+      confirmedCutoff: null
     },
     [Factions.horde]: {
       rio: {
@@ -130,6 +136,7 @@ export const dataTemplate = {
         rank: 0,
         score: 0,
       },
+      confirmedCutoff: null
     },
   },
   [Regions.us]: {
@@ -142,6 +149,7 @@ export const dataTemplate = {
         rank: 0,
         score: 0,
       },
+      confirmedCutoff: null
     },
     [Factions.horde]: {
       rio: {
@@ -152,6 +160,7 @@ export const dataTemplate = {
         rank: 0,
         score: 0,
       },
+      confirmedCutoff: null
     },
   },
 };

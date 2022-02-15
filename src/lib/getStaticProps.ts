@@ -1,3 +1,4 @@
+import type { Regions } from "@prisma/client";
 import type { GetStaticProps } from "next";
 
 import type { IndexProps } from "../pages";
@@ -6,13 +7,35 @@ import { prisma } from "../prisma";
 
 export const revalidate = 1 * 60 * 60;
 
+const season2Cutoffs: Record<
+  Regions,
+  { horde: number | null; alliance: number | null }
+> = {
+  eu: {
+    horde: 2862,
+    alliance: 2779,
+  },
+  us: {
+    horde: 2839,
+    alliance: 2766,
+  },
+  kr: {
+    alliance: null,
+    horde: null,
+  },
+  tw: {
+    alliance: null,
+    horde: null,
+  },
+};
+
 export const getStaticProps: GetStaticProps<IndexProps> = async () => {
   const now = Date.now();
   const history = await loadHistory(now);
 
   const map: Record<string, number> = {};
 
-  const data = history.reduce((acc, dataset) => {
+  const data = history.reduce<IndexProps["data"]>((acc, dataset) => {
     const key = `${dataset.region}-${dataset.faction}`;
 
     if (key in map && map[key] >= dataset.timestamp) {
@@ -20,6 +43,12 @@ export const getStaticProps: GetStaticProps<IndexProps> = async () => {
     }
 
     map[key] = dataset.timestamp;
+
+    const confirmedCutoff =
+      dataset.region in season2Cutoffs &&
+      dataset.faction in season2Cutoffs[dataset.region]
+        ? season2Cutoffs[dataset.region][dataset.faction]
+        : null;
 
     acc[dataset.region][dataset.faction] = {
       custom: {
@@ -30,6 +59,7 @@ export const getStaticProps: GetStaticProps<IndexProps> = async () => {
         rank: dataset.rioRank,
         score: dataset.rioScore,
       },
+      confirmedCutoff,
     };
 
     return acc;
@@ -52,8 +82,8 @@ const loadHistory = async (now: number) => {
   const datasets = await prisma.history.findMany({
     where: {
       timestamp: {
-        // go back a month
-        gte: Math.round(now / 1000 - 2 * 28 * 24 * 60 * 60),
+        // go back 2 months
+        gte: Math.round(now / 1000 - 1.5 * 28 * 24 * 60 * 60),
       },
     },
     orderBy: {
