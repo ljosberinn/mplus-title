@@ -12,12 +12,12 @@ const season2Cutoffs: Record<
   { horde: number | null; alliance: number | null }
 > = {
   eu: {
-    horde: 2862,
-    alliance: 2779,
+    horde: null,
+    alliance: null,
   },
   us: {
-    horde: 2839,
-    alliance: 2766,
+    horde: null,
+    alliance: null,
   },
   kr: {
     alliance: null,
