@@ -41,7 +41,6 @@ type RowProps = {
   custom: Cutoff;
   rio: Cutoff;
   history: IndexProps["history"];
-  confirmedCutoff: number | null;
 };
 
 function Row({
@@ -50,7 +49,6 @@ function Row({
   custom,
   rio,
   history,
-  confirmedCutoff,
 }: RowProps) {
   return (
     <>
@@ -75,7 +73,6 @@ function Row({
             <Graph
               history={history}
               faction={faction}
-              confirmedCutoff={confirmedCutoff}
             />
           </details>
         </td>
@@ -87,7 +84,6 @@ function Row({
 type GraphProps = {
   history: RowProps["history"];
   faction: Factions;
-  confirmedCutoff: number | null;
 };
 
 const calculateOverallMinMax = (
@@ -209,7 +205,7 @@ const axisStyle = {
 
 const scale: VictoryChartProps["scale"] = { x: "time" };
 
-function Graph({ history, faction, confirmedCutoff }: GraphProps) {
+function Graph({ history, faction }: GraphProps) {
   const scoreThresholds = calculateOverallMinMax(history, "score");
   const rankThresholds = calculateOverallMinMax(history, "rank");
 
@@ -274,7 +270,7 @@ function Graph({ history, faction, confirmedCutoff }: GraphProps) {
 
           <VictoryAxis label="Day" style={axisStyle} />
 
-          {confirmedCutoff && (
+          {/* {confirmedCutoff && (
             <VictoryAxis
               label={`Confirmed cutoff @ ${confirmedCutoff}`}
               axisValue={confirmedCutoff}
@@ -293,7 +289,7 @@ function Graph({ history, faction, confirmedCutoff }: GraphProps) {
                 }
               }}
             />
-          )}
+          )} */}
 
           <VictoryAxis
             dependentAxis
@@ -357,7 +353,6 @@ export default function Index({
                           dataset.region === region
                       )
                       .reverse()}
-                    confirmedCutoff={factionData.alliance.confirmedCutoff}
                   />
                   <Row
                     faction="horde"
@@ -371,7 +366,6 @@ export default function Index({
                           dataset.region === region
                       )
                       .reverse()}
-                    confirmedCutoff={factionData.horde.confirmedCutoff}
                   />
                 </Fragment>
               );

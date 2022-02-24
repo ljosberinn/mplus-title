@@ -11,7 +11,6 @@ export type FactionData = Record<
   {
     rio: Cutoff;
     custom: Cutoff;
-    confirmedCutoff: number | null
   }
 >;
 export type Cutoff = {
@@ -58,12 +57,20 @@ type CutoffApiResponse = {
   };
 };
 
+const season3Start = new Date("2022-03-01T15:00:00.000Z").getTime();
+
+const determineSeason = () => {
+  return Date.now() >= season3Start ? 3 : 2;
+};
+
+const season = determineSeason();
+
 const createPageUrl = (region: Regions, faction: Factions, page = 0) => {
-  return `${rioBaseUrl}/mythic-plus-character-faction-rankings/season-sl-2/${region}/all/all/${faction}/${page}`;
+  return `${rioBaseUrl}/mythic-plus-character-faction-rankings/season-sl-${season}/${region}/all/all/${faction}/${page}`;
 };
 
 const createEndpointUrl = (region: Regions) => {
-  return `${rioBaseUrl}/api/v1/mythic-plus/season-cutoffs?season=season-sl-2&region=${region}`;
+  return `${rioBaseUrl}/api/v1/mythic-plus/season-cutoffs?season=season-sl-${season}&region=${region}`;
 };
 
 export const dataTemplate = {
@@ -77,7 +84,7 @@ export const dataTemplate = {
         rank: 0,
         score: 0,
       },
-      confirmedCutoff: null
+      confirmedCutoff: null,
     },
     [Factions.horde]: {
       rio: {
@@ -88,7 +95,7 @@ export const dataTemplate = {
         rank: 0,
         score: 0,
       },
-      confirmedCutoff: null
+      confirmedCutoff: null,
     },
   },
   [Regions.kr]: {
@@ -101,7 +108,7 @@ export const dataTemplate = {
         rank: 0,
         score: 0,
       },
-      confirmedCutoff: null
+      confirmedCutoff: null,
     },
     [Factions.horde]: {
       rio: {
@@ -112,7 +119,7 @@ export const dataTemplate = {
         rank: 0,
         score: 0,
       },
-      confirmedCutoff: null
+      confirmedCutoff: null,
     },
   },
   [Regions.tw]: {
@@ -125,7 +132,7 @@ export const dataTemplate = {
         rank: 0,
         score: 0,
       },
-      confirmedCutoff: null
+      confirmedCutoff: null,
     },
     [Factions.horde]: {
       rio: {
@@ -136,7 +143,7 @@ export const dataTemplate = {
         rank: 0,
         score: 0,
       },
-      confirmedCutoff: null
+      confirmedCutoff: null,
     },
   },
   [Regions.us]: {
@@ -149,7 +156,7 @@ export const dataTemplate = {
         rank: 0,
         score: 0,
       },
-      confirmedCutoff: null
+      confirmedCutoff: null,
     },
     [Factions.horde]: {
       rio: {
@@ -160,7 +167,7 @@ export const dataTemplate = {
         rank: 0,
         score: 0,
       },
-      confirmedCutoff: null
+      confirmedCutoff: null,
     },
   },
 };
