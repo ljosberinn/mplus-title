@@ -57,19 +57,26 @@ type CutoffApiResponse = {
   };
 };
 
-const season3Start = new Date("2022-03-01T15:00:00.000Z").getTime();
-
-const determineSeason = () => {
-  return Date.now() >= season3Start ? 3 : 2;
+const season3StartDates: Record<Regions, number> = {
+  us: 1_646_146_800_000,
+  eu: 1_646_190_000_000,
+  kr: 1_646_258_400_000,
+  tw: 1_646_258_400_000,
 };
 
-const season = determineSeason();
+const determineSeason = (region: Regions) => {
+  const timestamp = season3StartDates[region];
+
+  return Date.now() >= timestamp ? 3 : 2;
+};
 
 const createPageUrl = (region: Regions, faction: Factions, page = 0) => {
+  const season = determineSeason(region);
   return `${rioBaseUrl}/mythic-plus-character-faction-rankings/season-sl-${season}/${region}/all/all/${faction}/${page}`;
 };
 
 const createEndpointUrl = (region: Regions) => {
+  const season = determineSeason(region);
   return `${rioBaseUrl}/api/v1/mythic-plus/season-cutoffs?season=season-sl-${season}&region=${region}`;
 };
 

@@ -6,7 +6,6 @@ import { prisma } from "../prisma";
 
 export const revalidate = 1 * 60 * 60;
 
-
 export const getStaticProps: GetStaticProps<IndexProps> = async () => {
   const now = Date.now();
   const history = await loadHistory(now);
@@ -20,7 +19,7 @@ export const getStaticProps: GetStaticProps<IndexProps> = async () => {
       return acc;
     }
 
-    map[key] = dataset.timestamp;   
+    map[key] = dataset.timestamp;
 
     acc[dataset.region][dataset.faction] = {
       custom: {
