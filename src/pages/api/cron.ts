@@ -400,8 +400,8 @@ const parseRegionData = async (
       faction: "horde",
       customRank: parsedHordeData.rank,
       customScore: parsedHordeData.score,
-      rioRank: json.cutoffs.p999.horde.quantilePopulationCount,
-      rioScore: json.cutoffs.p999.horde.quantileMinValue,
+      rioRank: json.cutoffs?.p999?.horde?.quantilePopulationCount ?? 0,
+      rioScore: json.cutoffs?.p999?.horde?.quantileMinValue ?? 0,
       timestamp: now,
     },
     {
@@ -409,8 +409,8 @@ const parseRegionData = async (
       faction: "alliance",
       customRank: parsedAllianceData.rank,
       customScore: parsedAllianceData.score,
-      rioRank: json.cutoffs.p999.alliance.quantilePopulationCount,
-      rioScore: json.cutoffs.p999.alliance.quantileMinValue,
+      rioRank: json.cutoffs?.p999?.alliance?.quantilePopulationCount ?? 0,
+      rioScore: json.cutoffs?.p999?.alliance?.quantileMinValue ?? 0,
       timestamp: now,
     },
   ];
