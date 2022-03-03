@@ -1,7 +1,7 @@
 import type { GetStaticProps } from "next";
 
 import type { IndexProps } from "../pages";
-import { dataTemplate } from "../pages/api/cron";
+import { dataTemplate, weeksSinceSeasonStart } from "../pages/api/cron";
 import { prisma } from "../prisma";
 
 export const revalidate = 1 * 60 * 60;
@@ -49,10 +49,12 @@ export const getStaticProps: GetStaticProps<IndexProps> = async () => {
 };
 
 const loadHistory = async (now: number) => {
+  const cutoff = weeksSinceSeasonStart * 7 * 24 * 60 * 60;
+
   const datasets = await prisma.history.findMany({
     where: {
       timestamp: {
-        gte: Math.round(now / 1000 - 7 * 24 * 60 * 60),
+        gte: Math.round(now / 1000 - cutoff),
       },
     },
     orderBy: {

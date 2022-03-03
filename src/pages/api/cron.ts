@@ -70,6 +70,20 @@ const determineSeason = (region: Regions) => {
   return Date.now() >= timestamp ? 3 : 2;
 };
 
+export const weeksSinceSeasonStart = (() => {
+  const diff = (Date.now() - season3StartDates.us) / 1000 / 60 / 60 / 24 / 7;
+
+  if (diff < 1) {
+    return 1;
+  }
+
+  if (diff >= 4) {
+    return 4;
+  }
+
+  return Math.round(diff);
+})();
+
 const createPageUrl = (region: Regions, faction: Factions, page = 0) => {
   const season = determineSeason(region);
   return `${rioBaseUrl}/mythic-plus-character-faction-rankings/season-sl-${season}/${region}/all/all/${faction}/${page}`;
