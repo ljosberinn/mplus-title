@@ -402,7 +402,7 @@ export default function Index({
                 </a>{" "}
                 |{" "}
                 <a
-                  href="https://raider.io/characters/eu/blackmoore/Xepheris"
+                  href="https://raider.io/characters/eu/twisting-nether/Xepheris"
                   rel="noopener noreferrer"
                   className="underline"
                   target="_blank"
