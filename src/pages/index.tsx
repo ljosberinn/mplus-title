@@ -14,6 +14,7 @@ import {
   VictoryLabel,
   VictoryLine,
   VictoryScatter,
+  VictoryTooltip,
 } from "victory";
 
 import type { Cutoff, FactionData } from "./api/cron";
@@ -43,13 +44,7 @@ type RowProps = {
   history: IndexProps["history"];
 };
 
-function Row({
-  faction,
-  region,
-  custom,
-  rio,
-  history,
-}: RowProps) {
+function Row({ faction, region, custom, rio, history }: RowProps) {
   return (
     <>
       <tr
@@ -70,10 +65,7 @@ function Row({
         <td className="text-center" colSpan={4}>
           <details>
             <summary className="cursor-pointer">history</summary>
-            <Graph
-              history={history}
-              faction={faction}
-            />
+            <Graph history={history} faction={faction} />
           </details>
         </td>
       </tr>
@@ -146,7 +138,7 @@ const calculateChunksByDay = (
 
     return dataset.customRank === compareSet.customRank;
   };
-  // eslint-disable-next-line unicorn/prefer-object-from-entries
+
   const chunksByDay = data.reduce<Record<string, typeof data>>(
     (acc, dataset) => {
       if (dataset.customScore === 0) {
@@ -205,6 +197,29 @@ const axisStyle = {
 
 const scale: VictoryChartProps["scale"] = { x: "time" };
 
+const extrapolate = (
+  first: GraphProps["history"][number],
+  last: GraphProps["history"][number]
+) => {
+  const timePassed = last.timestamp - first.timestamp;
+  const daysPassed = timePassed / 60 / 60 / 24;
+  const twoWeeksInDays = 14;
+  const factor = twoWeeksInDays / daysPassed;
+
+  const scoreIncrease = Math.round(
+    last.customScore + (last.customScore - first.customScore) * factor
+  );
+  const rankIncrease = Math.round(
+    last.customRank + (last.customRank - first.customRank) * factor
+  );
+
+  return {
+    rank: rankIncrease,
+    score: scoreIncrease,
+    endTimestamp: last.timestamp * 1000 + twoWeeksInDays * 24 * 60 * 60 * 1000,
+  };
+};
+
 function Graph({ history, faction }: GraphProps) {
   const scoreThresholds = calculateOverallMinMax(history, "score");
   const rankThresholds = calculateOverallMinMax(history, "rank");
@@ -227,6 +242,27 @@ function Graph({ history, faction }: GraphProps) {
     },
   };
 
+  const { rank, score, endTimestamp } = extrapolate(
+    history[0],
+    history[history.length - 1]
+  );
+
+  const extendedRankData = [
+    ...rankData,
+    {
+      x: endTimestamp,
+      y: rank,
+    },
+  ];
+
+  const extendedScoreData = [
+    ...scoreData,
+    {
+      x: endTimestamp,
+      y: score,
+    },
+  ];
+
   return (
     <>
       {rankThresholds ? (
@@ -236,12 +272,21 @@ function Graph({ history, faction }: GraphProps) {
             y: rankThresholds.min - 5,
           }}
           maxDomain={{
-            y: rankThresholds.max + 5,
+            y: rank + 5,
           }}
           scale={scale}
         >
-          <VictoryScatter data={rankData} style={scatterStyle} />
-          <VictoryLine data={rankData} style={lineStyle} />
+          <VictoryScatter
+            data={extendedRankData}
+            style={scatterStyle}
+            labels={({ datum }) =>
+              `${new Date(datum.x).toLocaleDateString("en-US")} @ ${datum.y}`
+            }
+            labelComponent={
+              <VictoryTooltip cornerRadius={0} flyoutPadding={6} />
+            }
+          />
+          <VictoryLine data={extendedRankData} style={lineStyle} />
 
           <VictoryAxis label="Day" style={axisStyle} />
 
@@ -260,13 +305,22 @@ function Graph({ history, faction }: GraphProps) {
             y: scoreThresholds.min - 0.0025 * scoreThresholds.min,
           }}
           maxDomain={{
-            y: scoreThresholds.max + 0.0025 * scoreThresholds.max,
+            y: score + 0.0025 * score,
           }}
           theme={chartStyle}
           scale={scale}
         >
-          <VictoryScatter data={scoreData} style={scatterStyle} />
-          <VictoryLine data={scoreData} style={lineStyle} />
+          <VictoryScatter
+            data={extendedScoreData}
+            style={scatterStyle}
+            labels={({ datum }) =>
+              `${new Date(datum.x).toLocaleDateString("en-US")} @ ${datum.y}`
+            }
+            labelComponent={
+              <VictoryTooltip cornerRadius={0} flyoutPadding={6} />
+            }
+          />
+          <VictoryLine data={extendedScoreData} style={lineStyle} />
 
           <VictoryAxis label="Day" style={axisStyle} />
 
@@ -326,6 +380,17 @@ export default function Index({
             numbers in brackets are based on the raider.io api. these seem to
             lag behind my manual calculation, but I've included them for
             transparency reasons.
+            <br />
+            <br />
+            next two weeks are extrapolated based on all other currently visible
+            data
+            <br />
+            <br />
+            click{" "}
+            <a className="underline" href="/js">
+              HERE
+            </a>{" "}
+            for a page with hoverable tooltips (which loads a bit slower)
           </caption>
 
           <thead>
