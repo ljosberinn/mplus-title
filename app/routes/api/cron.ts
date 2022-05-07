@@ -86,7 +86,7 @@ if (!String.prototype.replaceAll) {
   };
 }
 
-export const loader: LoaderFunction = async ({ request, params }) => {
+export const loader: LoaderFunction = async ({ request }) => {
   if (request.method !== "GET") {
     return json([], 404);
   }
@@ -98,7 +98,7 @@ export const loader: LoaderFunction = async ({ request, params }) => {
       return json({ error: "secret missing" }, 500);
     }
 
-    const maybeSecret = params.secret;
+    const maybeSecret = new URL(request.url).searchParams.get("secret");
 
     if (!maybeSecret || secret !== maybeSecret) {
       return json({ error: "secret missing" }, 403);
