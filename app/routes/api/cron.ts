@@ -86,48 +86,55 @@ if (!String.prototype.replaceAll) {
   };
 }
 
-export const loader: LoaderFunction = async ({ request }) => {
-  if (request.method !== "GET") {
+export const action: LoaderFunction = async ({ request }) => {
+  if (request.method !== "POST") {
     return json([], 404);
   }
 
-  if (process.env.NODE_ENV === "production") {
-    const secret = process.env.SECRET;
+  try {
+    const body = await request.text();
+    const json = JSON.parse(body);
 
-    if (!secret) {
-      return json({ error: "secret missing" }, 500);
+    if (process.env.NODE_ENV === "production") {
+      const secret = process.env.SECRET;
+
+      if (!secret) {
+        return json({ error: "secret missing" }, 500);
+      }
+
+      const maybeSecret = json.secret;
+
+      if (!maybeSecret || secret !== maybeSecret) {
+        return json({ error: "secret missing" }, 403);
+      }
     }
 
-    const maybeSecret = new URL(request.url).searchParams.get("secret");
+    console.time("getMostOutdatedRegion");
+    const mostOutdatedRegion = await getMostOutdatedRegion();
+    console.timeEnd("getMostOutdatedRegion");
 
-    if (!maybeSecret || secret !== maybeSecret) {
-      return json({ error: "secret missing" }, 403);
+    if (!mostOutdatedRegion) {
+      return json([], 204);
     }
+
+    console.time("parseRegionData");
+    const regionData = await parseRegionData(mostOutdatedRegion);
+    console.timeEnd("parseRegionData");
+
+    console.log(regionData);
+
+    if (process.env.NODE_ENV === "production") {
+      console.time("persistRegionData");
+      await persistRegionData(regionData);
+      console.timeEnd("persistRegionData");
+    } else {
+      console.info("skipping persistence");
+    }
+
+    return json({ mostOutdatedRegion });
+  } catch {
+    return json([], 404);
   }
-
-  console.time("getMostOutdatedRegion");
-  const mostOutdatedRegion = await getMostOutdatedRegion();
-  console.timeEnd("getMostOutdatedRegion");
-
-  if (!mostOutdatedRegion) {
-    return json([], 204);
-  }
-
-  console.time("parseRegionData");
-  const regionData = await parseRegionData(mostOutdatedRegion);
-  console.timeEnd("parseRegionData");
-
-  console.log(regionData);
-
-  if (process.env.NODE_ENV === "production") {
-    console.time("persistRegionData");
-    await persistRegionData(regionData);
-    console.timeEnd("persistRegionData");
-  } else {
-    console.info("skipping persistence");
-  }
-
-  return json({ mostOutdatedRegion });
 };
 
 const getMostOutdatedRegion = async () => {
