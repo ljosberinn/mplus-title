@@ -71,6 +71,7 @@ export default function App(): JSX.Element {
           <ScrollRestoration />
           <Scripts />
           <LiveReload />
+          <Footer />
         </main>
       </body>
     </html>
@@ -89,8 +90,8 @@ function Nav() {
   const params = useParams();
 
   return (
-    <nav className="flex justify-between w-full">
-      <ul className="flex space-x-1">
+    <nav className="flex flex-col justify-between w-full md:flex-row md:px-4">
+      <ul className="flex px-4 pt-4 space-x-2 md:pt-0 md:px-0">
         {Object.keys(seasonStartDates).map((season) => {
           const seasonName = season === latestSeason ? "latest" : season;
           const path = [seasonName, params.region, params.faction]
@@ -108,7 +109,7 @@ function Nav() {
       </ul>
 
       {params.season ? (
-        <ul className="flex space-x-2">
+        <ul className="flex px-4 pt-4 space-x-2 md:pt-0 md:px-0">
           {params.region ? (
             <li>
               <Link className={linkClassName} to={`${params.season}`}>
@@ -130,5 +131,46 @@ function Nav() {
         </ul>
       ) : null}
     </nav>
+  );
+}
+
+function Footer() {
+  return (
+    <footer>
+      <nav>
+        <ul className="flex justify-center space-x-2">
+          <li>
+            <a
+              href="https://github.com/ljosberinn/mplus-title"
+              rel="noopener noreferrer"
+              className="underline"
+              target="_blank"
+            >
+              repo
+            </a>
+          </li>
+          <li>
+            <a
+              href="https://twitter.com/gerrit_alex"
+              rel="noopener noreferrer"
+              className="underline"
+              target="_blank"
+            >
+              twitter
+            </a>
+          </li>
+          <li>
+            <a
+              href="https://raider.io/characters/eu/twisting-nether/Xepheris"
+              rel="noopener noreferrer"
+              className="underline"
+              target="_blank"
+            >
+              rio
+            </a>
+          </li>
+        </ul>
+      </nav>
+    </footer>
   );
 }

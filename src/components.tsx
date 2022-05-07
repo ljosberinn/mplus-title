@@ -68,8 +68,12 @@ export function Graph({ data, title }: GraphProps): JSX.Element {
   const options: Options = {
     title: {
       text: title,
+      style: {
+        color: "#fff",
+      },
     },
     chart: {
+      backgroundColor: "#111827",
       zoomType: "x",
       resetZoomButton: {
         position: {
@@ -86,9 +90,29 @@ export function Graph({ data, title }: GraphProps): JSX.Element {
     credits: {
       enabled: false,
     },
+    legend: {
+      itemStyle: {
+        color: "#c2c7d0",
+        fontSize: "15px",
+      },
+      itemHoverStyle: {
+        color: "#fff",
+      },
+    },
     xAxis: {
       title: {
         text: "Day",
+        style: {
+          color: "#fff",
+          lineColor: "#333",
+          tickColor: "#333",
+        },
+      },
+      labels: {
+        style: {
+          color: "#fff",
+          fontWeight: "normal",
+        },
       },
       type: "datetime",
       plotLines: data.seasonEnding
@@ -107,6 +131,15 @@ export function Graph({ data, title }: GraphProps): JSX.Element {
     yAxis: {
       title: {
         text: "Rank",
+        style: {
+          color: "#fff",
+        },
+      },
+      labels: {
+        style: {
+          color: "#fff",
+          fontWeight: "normal",
+        },
       },
       plotLines: data.confirmedCutoff
         ? [
@@ -128,26 +161,8 @@ export function Graph({ data, title }: GraphProps): JSX.Element {
         },
         marker: {
           lineColor: "#333",
-        },
-      },
-      series: {
-        turboThreshold: 0,
-        marker: {
           enabled: false,
         },
-      },
-      spline: {
-        marker: {
-          lineColor: "#333",
-        },
-      },
-      scatter: {
-        marker: {
-          lineColor: "#333",
-        },
-      },
-      candlestick: {
-        lineColor: "fff",
       },
     },
     series: [
