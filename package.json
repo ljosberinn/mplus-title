@@ -1,37 +1,50 @@
 {
   "name": "mplus-title",
-  "version": "0.1.0",
   "private": true,
+  "description": "",
+  "license": "",
+  "sideEffects": false,
   "scripts": {
-    "build": "next build",
-    "dev": "next dev",
-    "install:clean": "rm -rf node_modules && rm yarn.lock && yarn",
-    "lint": "eslint src",
-    "start": "next start",
+    "build": "npm run build:css && remix build",
+    "build:css": "tailwindcss -m -i ./styles/app.css -o app/styles/app.css",
+    "dev": "concurrently \"npm run dev:css\" \"remix dev\"",
+    "dev:css": "tailwindcss -w -i ./styles/app.css -o app/styles/app.css",
+    "postinstall": "yarn-deduplicate -l && sort-package-json",
     "prisma:generate": "prisma generate",
     "prisma:push": "prisma db push",
-    "postinstall": "yarn-deduplicate -l"
+    "remix:dev": "remix dev"
   },
   "dependencies": {
     "@prisma/client": "3.13.0",
+    "@remix-run/node": "1.4.3",
+    "@remix-run/react": "1.4.3",
+    "@remix-run/vercel": "1.4.3",
+    "@vercel/node": "1.15.0",
     "cheerio": "1.0.0-rc.10",
-    "next": "12.1.6",
-    "prisma": "3.13.0",
-    "react": "npm:react@18.1.0",
-    "react-dom": "npm:react-dom@18.1.0",
-    "tailwindcss": "3.0.24",
+    "highcharts": "10.1.0",
+    "highcharts-react-official": "3.1.0",
+    "react": "18.1.0",
+    "react-dom": "18.1.0",
     "victory": "36.3.2"
   },
   "devDependencies": {
-    "@types/node": "17.0.31",
-    "@types/react": "18.0.8",
+    "@remix-run/dev": "1.4.3",
+    "@remix-run/serve": "1.4.3",
+    "@types/react": "18.0.9",
     "@types/react-dom": "18.0.3",
     "@types/tailwindcss": "3.0.10",
     "autoprefixer": "10.4.7",
-    "eslint": "8.14.0",
+    "concurrently": "7.1.0",
+    "eslint": "8.15.0",
     "eslint-config-galex": "4.1.1",
     "postcss": "8.4.13",
+    "prisma": "3.13.0",
+    "sort-package-json": "1.57.0",
+    "tailwindcss": "3.0.24",
     "typescript": "4.6.4",
     "yarn-deduplicate": "5.0.0"
+  },
+  "engines": {
+    "node": ">=14"
   }
 }
