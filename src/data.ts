@@ -1,4 +1,4 @@
-import type { Prisma, History, Factions } from "@prisma/client";
+import type { Prisma, History, Factions, Regions } from "@prisma/client";
 
 import { confirmedCutoffs, seasonEndings, seasonStartDates } from "./meta";
 import { prisma } from "./prisma";
@@ -6,7 +6,7 @@ import { isValidRegion } from "./utils";
 
 export type Data = {
   history: Dataset[];
-  confirmedCutoff: null | Record<Factions, number>;
+  confirmedCutoff: Record<Regions, Record<Factions, number>>;
   seasonEnding: null | number;
 };
 
@@ -105,7 +105,7 @@ export const loaderMap = Object.entries(seasonStartDates).reduce<
 
     return {
       history: data,
-      confirmedCutoff: region ? confirmedCutoffs[seasonName][region] : null,
+      confirmedCutoff: confirmedCutoffs[seasonName],
       seasonEnding:
         region && seasonName in seasonEndings
           ? seasonEndings[seasonName][region]

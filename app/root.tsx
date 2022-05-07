@@ -90,7 +90,7 @@ function Nav() {
 
   return (
     <nav className="flex justify-between w-full">
-      <ul className="flex px-4 space-x-1">
+      <ul className="flex space-x-1">
         {Object.keys(seasonStartDates).map((season) => {
           const seasonName = season === latestSeason ? "latest" : season;
           const path = [seasonName, params.region, params.faction]

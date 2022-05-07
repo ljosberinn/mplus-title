@@ -1,3 +1,4 @@
+import type { Factions, Regions } from "@prisma/client";
 import { json } from "@remix-run/node";
 import type {
   HeadersFunction,
@@ -17,35 +18,36 @@ export const headers: HeadersFunction = () => {
   };
 };
 
+const findCutoff = (data: Data, faction: Factions, region?: Regions) => {
+  if (!region) {
+    return 0;
+  }
+
+  if (data.confirmedCutoff && data.confirmedCutoff[region][faction] > 0) {
+    return data.confirmedCutoff[region][faction];
+  }
+
+  return data.history.reduce((acc, dataset) => {
+    return dataset.faction === faction &&
+      dataset.region === region &&
+      dataset.customScore > acc
+      ? dataset.customScore
+      : acc;
+  }, 0);
+};
+
 export const meta: MetaFunction = ({ data, params }) => {
-  const region = params.region ?? "unknown";
+  const region =
+    params.region && isValidRegion(params.region) ? params.region : undefined;
   const season =
     params.season === "latest" ? latestSeason : params.season ?? "unknown";
 
-  const castedData = data as Data;
+  const hordeCutoff = findCutoff(data, "horde", region);
+  const allianceCutoff = findCutoff(data, "alliance", region);
 
-  const hordeCutoff: number =
-    castedData.confirmedCutoff && castedData.confirmedCutoff.horde > 0
-      ? castedData.confirmedCutoff.horde
-      : castedData.history.reduce((acc, dataset) => {
-          return dataset.faction === "horde" &&
-            dataset.region === region &&
-            dataset.customScore > acc
-            ? dataset.customScore
-            : acc;
-        }, 0);
-  const allianceCutoff: number =
-    castedData.confirmedCutoff && castedData.confirmedCutoff.alliance > 0
-      ? castedData.confirmedCutoff.alliance
-      : castedData.history.reduce((acc, dataset) => {
-          return dataset.faction === "alliance" &&
-            dataset.region === region &&
-            dataset.customScore > acc
-            ? dataset.customScore
-            : acc;
-        }, 0);
-
-  const description = `${season} cutoff for ${region} -- Alliance ${allianceCutoff} - Horde ${hordeCutoff}`;
+  const description = `${season} cutoff for ${
+    region ?? "unknown"
+  } -- Alliance ${allianceCutoff} - Horde ${hordeCutoff}`;
 
   return {
     charset: "utf-8",
@@ -98,7 +100,13 @@ export default function Region(): JSX.Element {
 
   return (
     <Graph
-      data={data}
+      data={{
+        ...data,
+        confirmedCutoff:
+          params.region && isValidRegion(params.region)
+            ? data.confirmedCutoff[params.region]
+            : null,
+      }}
       title={params.season === "latest" ? latestSeason : params.season}
     />
   );

@@ -9,7 +9,6 @@ import HighchartsReact from "highcharts-react-official";
 import { red, blue } from "tailwindcss/colors";
 
 import type { Data } from "./data";
-import { latestSeason } from "./meta";
 
 const factionColors: Record<Factions, string> = {
   alliance: blue["400"],
@@ -17,7 +16,9 @@ const factionColors: Record<Factions, string> = {
 };
 
 type GraphProps = {
-  data: Data;
+  data: Omit<Data, "confirmedCutoff"> & {
+    confirmedCutoff: Record<Factions, number>;
+  };
   title?: string;
 };
 

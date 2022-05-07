@@ -51,7 +51,7 @@ export default function Season(): JSX.Element {
         return (
           <Graph
             data={{
-              confirmedCutoff: null,
+              confirmedCutoff: data.confirmedCutoff[region],
               history: subset,
               seasonEnding: null,
             }}
