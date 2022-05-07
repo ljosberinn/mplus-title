@@ -121,8 +121,6 @@ export const action: LoaderFunction = async ({ request }) => {
     const regionData = await parseRegionData(mostOutdatedRegion);
     console.timeEnd("parseRegionData");
 
-    console.log(regionData);
-
     if (process.env.NODE_ENV === "production") {
       console.time("persistRegionData");
       await persistRegionData(regionData);
@@ -132,8 +130,9 @@ export const action: LoaderFunction = async ({ request }) => {
     }
 
     return json({ mostOutdatedRegion });
-  } catch {
-    return json([], 404);
+  } catch (error) {
+    console.error(error);
+    return json([], 500);
   }
 };
 
