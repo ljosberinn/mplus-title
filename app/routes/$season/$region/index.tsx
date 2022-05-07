@@ -97,15 +97,16 @@ export const loader: LoaderFunction = async ({ params }) => {
 export default function Region(): JSX.Element {
   const data = useLoaderData<Data>();
   const params = useParams();
+  const region =
+    params.region && isValidRegion(params.region) ? params.region : null;
 
   return (
     <Graph
       data={{
         ...data,
-        confirmedCutoff:
-          params.region && isValidRegion(params.region)
-            ? data.confirmedCutoff[params.region]
-            : null,
+        seasonEnding:
+          region && data.seasonEnding ? data.seasonEnding[region] : null,
+        confirmedCutoff: region ? data.confirmedCutoff[region] : null,
       }}
       title={params.season === "latest" ? latestSeason : params.season}
     />
