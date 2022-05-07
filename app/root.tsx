@@ -136,7 +136,7 @@ function Nav() {
 
 function Footer() {
   return (
-    <footer>
+    <footer className="mb-6">
       <nav>
         <ul className="flex justify-center space-x-2">
           <li>

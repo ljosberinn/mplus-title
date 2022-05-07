@@ -6,7 +6,7 @@ import type {
 } from "highcharts";
 import Highcharts from "highcharts";
 import HighchartsReact from "highcharts-react-official";
-import { red, blue } from "tailwindcss/colors";
+import { red, blue, gray } from "tailwindcss/colors";
 
 import type { Data } from "./data";
 
@@ -73,7 +73,8 @@ export function Graph({ data, title }: GraphProps): JSX.Element {
       },
     },
     chart: {
-      backgroundColor: "#111827",
+      backgroundColor: gray["700"],
+      borderRadius: 4,
       zoomType: "x",
       resetZoomButton: {
         position: {
@@ -225,7 +226,7 @@ export function Graph({ data, title }: GraphProps): JSX.Element {
   };
 
   return (
-    <div className="p-4">
+    <div className="p-4 ">
       <HighchartsReact highcharts={Highcharts} options={options} />
     </div>
   );
