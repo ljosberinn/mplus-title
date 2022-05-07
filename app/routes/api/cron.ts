@@ -93,7 +93,7 @@ export const action: LoaderFunction = async ({ request }) => {
 
   try {
     const body = await request.text();
-    const json = JSON.parse(body);
+    const payload = JSON.parse(body);
 
     if (process.env.NODE_ENV === "production") {
       const secret = process.env.SECRET;
@@ -102,7 +102,7 @@ export const action: LoaderFunction = async ({ request }) => {
         return json({ error: "secret missing" }, 500);
       }
 
-      const maybeSecret = json.secret;
+      const maybeSecret = payload.secret;
 
       if (!maybeSecret || secret !== maybeSecret) {
         return json({ error: "secret missing" }, 403);
