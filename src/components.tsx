@@ -16,8 +16,9 @@ const factionColors: Record<Factions, string> = {
 };
 
 type GraphProps = {
-  data: Omit<Data, "confirmedCutoff"> & {
+  data: Omit<Data, "confirmedCutoff" | "seasonEnding"> & {
     confirmedCutoff: Record<Factions, number>;
+    seasonEnding: number | null;
   };
   title?: string;
 };

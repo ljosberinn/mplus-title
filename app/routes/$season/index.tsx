@@ -53,7 +53,9 @@ export default function Season(): JSX.Element {
             data={{
               confirmedCutoff: data.confirmedCutoff[region],
               history: subset,
-              seasonEnding: null,
+              seasonEnding: data.seasonEnding
+                ? data.seasonEnding[region]
+                : null,
             }}
             title={region.toUpperCase()}
             key={region}

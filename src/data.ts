@@ -7,7 +7,7 @@ import { isValidRegion } from "./utils";
 export type Data = {
   history: Dataset[];
   confirmedCutoff: Record<Regions, Record<Factions, number>>;
-  seasonEnding: null | number;
+  seasonEnding: null | Record<Regions, number>;
 };
 
 type Loader = (params?: { region?: string; faction?: string }) => Promise<Data>;
@@ -107,9 +107,7 @@ export const loaderMap = Object.entries(seasonStartDates).reduce<
       history: data,
       confirmedCutoff: confirmedCutoffs[seasonName],
       seasonEnding:
-        region && seasonName in seasonEndings
-          ? seasonEndings[seasonName][region]
-          : null,
+        seasonName in seasonEndings ? seasonEndings[seasonName] : null,
     };
   };
 
