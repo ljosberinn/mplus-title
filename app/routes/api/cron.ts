@@ -114,6 +114,7 @@ export const action: LoaderFunction = async ({ request }) => {
     console.timeEnd("getMostOutdatedRegion");
 
     if (!mostOutdatedRegion) {
+      console.info("ending request early, nothing to update");
       return json([], 204);
     }
 
