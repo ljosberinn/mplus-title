@@ -122,6 +122,9 @@ export function Graph({ data, title }: GraphProps): JSX.Element {
               label: {
                 text: `Season End`,
                 rotation: 0,
+                style: {
+                  color: "#fff",
+                },
               },
               value: data.seasonEnding,
               dashStyle: "Dash",
