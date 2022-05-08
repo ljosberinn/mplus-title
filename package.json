@@ -5,9 +5,9 @@
   "license": "",
   "sideEffects": false,
   "scripts": {
-    "build": "npm run build:css && remix build",
+    "build": "yarn build:css && remix build",
     "build:css": "tailwindcss -m -i ./styles/app.css -o app/styles/app.css",
-    "dev": "concurrently \"npm run dev:css\" \"remix dev\"",
+    "dev": "concurrently \"yarn dev:css\" \"remix dev\"",
     "dev:css": "tailwindcss -w -i ./styles/app.css -o app/styles/app.css",
     "postinstall": "yarn-deduplicate -l && sort-package-json",
     "prisma:generate": "prisma generate",

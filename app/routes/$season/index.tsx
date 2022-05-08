@@ -51,11 +51,13 @@ export default function Season(): JSX.Element {
         return (
           <Graph
             data={{
+              seasonStart: data.seasonStart[region],
               confirmedCutoff: data.confirmedCutoff[region],
               history: subset,
               seasonEnding: data.seasonEnding
                 ? data.seasonEnding[region]
                 : null,
+              affixRotation: data.affixRotation,
             }}
             title={region.toUpperCase()}
             key={region}

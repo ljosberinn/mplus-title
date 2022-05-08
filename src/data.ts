@@ -1,6 +1,11 @@
 import type { Prisma, History, Factions, Regions } from "@prisma/client";
 
-import { confirmedCutoffs, seasonEndings, seasonStartDates } from "./meta";
+import {
+  affixRotations,
+  confirmedCutoffs,
+  seasonEndings,
+  seasonStartDates,
+} from "./meta";
 import { prisma } from "./prisma";
 import { isValidRegion } from "./utils";
 
@@ -8,6 +13,8 @@ export type Data = {
   history: Dataset[];
   confirmedCutoff: Record<Regions, Record<Factions, number>>;
   seasonEnding: null | Record<Regions, number>;
+  affixRotation: [number, number, number, number][] | null;
+  seasonStart: Record<Regions, number>;
 };
 
 type Loader = (params?: { region?: string; faction?: string }) => Promise<Data>;
@@ -101,13 +108,22 @@ export const loaderMap = Object.entries(seasonStartDates).reduce<
       datasets.map((dataset) => {
         return { ...dataset, timestamp: Number(dataset.timestamp) * 1000 };
       })
-    );
+    ).reverse();
 
     return {
-      history: data,
+      history: region
+        ? data
+        : // ensures in a region multiview, only data post season start of this region is forwarded
+          data.filter((dataset) => {
+            return (
+              dataset.timestamp >= seasonStartDates[seasonName][dataset.region]
+            );
+          }),
       confirmedCutoff: confirmedCutoffs[seasonName],
       seasonEnding:
         seasonName in seasonEndings ? seasonEndings[seasonName] : null,
+      affixRotation: affixRotations[seasonName] ?? null,
+      seasonStart: seasonStartDates[seasonName],
     };
   };
 
