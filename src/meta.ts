@@ -83,20 +83,17 @@ export const confirmedCutoffs: Record<
   },
 };
 
-export const affixRotations: Record<
-  string,
-  [number, number, number, number][]
-> = {
+export const affixRotations: Record<string, [number, number, number][]> = {
   "sl-season-3": [
-    [9, 7, 13, 130], // Tyrannical, Bolstering, Explosive
-    [10, 11, 124, 130], // Fortified, Bursting, Storming
-    [9, 6, 3, 130], // Tyrannical, Raging, Volcanic
-    [10, 122, 12, 130], // Fortified, Inspiring, Grievous
-    [9, 123, 4, 130], // Tyrannical, Spiteful, Necrotic
-    [10, 7, 14, 130], // Fortified, Bolstering, Quaking
-    [9, 8, 124, 130], // Tyrannical, Sanguine, Storming
-    [10, 6, 13, 130], // Fortified, Raging Explosive
-    [9, 11, 3, 130], // Tyrannical, Bursting, Volcanic
-    [10, 123, 4, 130], // Fortified, Spiteful, Necrotic
+    [9, 7, 13], // Tyrannical, Bolstering, Explosive
+    [10, 11, 124], // Fortified, Bursting, Storming
+    [9, 6, 3], // Tyrannical, Raging, Volcanic
+    [10, 122, 12], // Fortified, Inspiring, Grievous
+    [9, 123, 4], // Tyrannical, Spiteful, Necrotic
+    [10, 7, 14], // Fortified, Bolstering, Quaking
+    [9, 8, 124], // Tyrannical, Sanguine, Storming
+    [10, 6, 13], // Fortified, Raging Explosive
+    [9, 11, 3], // Tyrannical, Bursting, Volcanic
+    [10, 123, 4], // Fortified, Spiteful, Necrotic
   ],
 };

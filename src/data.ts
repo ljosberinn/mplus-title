@@ -13,7 +13,7 @@ export type Data = {
   history: Dataset[];
   confirmedCutoff: Record<Regions, Record<Factions, number>>;
   seasonEnding: null | Record<Regions, number>;
-  affixRotation: [number, number, number, number][] | null;
+  affixRotation: [number, number, number][] | null;
   seasonStart: Record<Regions, number>;
 };
 

@@ -8,6 +8,7 @@ import type {
 } from "highcharts";
 import Highcharts from "highcharts";
 import HighchartsReact from "highcharts-react-official";
+import { useEffect, useRef } from "react";
 import { red, blue, gray } from "tailwindcss/colors";
 
 import type { Data, Dataset } from "./data";
@@ -141,30 +142,32 @@ const convertExtrapoationToSeries = (
   };
 };
 
-const affixes: Record<number, { name: string; icon: string }> = {
-  2: { name: "Skittish", icon: "spell_magic_lesserinvisibilty" },
-  3: { name: "Volcanic", icon: "spell_shaman_lavasurge" },
-  4: { name: "Necrotic", icon: "spell_deathknight_necroticplague" },
-  6: { name: "Raging", icon: "ability_warrior_focusedrage" },
-  7: { name: "Bolstering", icon: "ability_warrior_battleshout" },
-  8: { name: "Sanguine", icon: "spell_shadow_bloodboil" },
-  9: { name: "Tyrannical", icon: "achievement_boss_archaedas" },
-  10: { name: "Fortified", icon: "ability_toughness" },
-  11: { name: "Bursting", icon: "ability_ironmaidens_whirlofblood" },
-  12: { name: "Grievous", icon: "ability_backstab" },
-  13: { name: "Explosive", icon: "spell_fire_felflamering_red" },
-  14: { name: "Quaking", icon: "spell_nature_earthquake" },
-  16: { name: "Infested", icon: "achievement_nazmir_boss_ghuun" },
-  117: { name: "Reaping", icon: "ability_racial_embraceoftheloa_bwonsomdi" },
-  119: { name: "Beguiling", icon: "spell_shadow_mindshear" },
-  20: { name: "Awakened", icon: "trade_archaeology_nerubian_obelisk" },
-  121: { name: "Prideful", icon: "spell_animarevendreth_buff" },
-  122: { name: "Inspiring", icon: "spell_holy_prayerofspirit" },
-  123: { name: "Spiteful", icon: "spell_holy_prayerofshadowprotection" },
-  124: { name: "Storming", icon: "spell_nature_cyclone" },
-  128: { name: "Tormented", icon: "spell_animamaw_orb" },
-  129: { name: "Infernal", icon: "inv_infernalbrimstone" },
-  130: { name: "Encrypted", icon: "spell_progenitor_orb" },
+const affixes: Record<number, { icon: string }> = {
+  2: { /* name: "Skittish",*/ icon: "spell_magic_lesserinvisibilty" },
+  3: { /* name: "Volcanic",*/ icon: "spell_shaman_lavasurge" },
+  4: { /* name: "Necrotic",*/ icon: "spell_deathknight_necroticplague" },
+  6: { /* name: "Raging",*/ icon: "ability_warrior_focusedrage" },
+  7: { /* name: "Bolstering",*/ icon: "ability_warrior_battleshout" },
+  8: { /* name: "Sanguine",*/ icon: "spell_shadow_bloodboil" },
+  9: { /* name: "Tyrannical",*/ icon: "achievement_boss_archaedas" },
+  10: { /* name: "Fortified",*/ icon: "ability_toughness" },
+  11: { /* name: "Bursting",*/ icon: "ability_ironmaidens_whirlofblood" },
+  12: { /* name: "Grievous",*/ icon: "ability_backstab" },
+  13: { /* name: "Explosive",*/ icon: "spell_fire_felflamering_red" },
+  14: { /* name: "Quaking",*/ icon: "spell_nature_earthquake" },
+  16: { /* name: "Infested",*/ icon: "achievement_nazmir_boss_ghuun" },
+  117: {
+    /* name: "Reaping",*/ icon: "ability_racial_embraceoftheloa_bwonsomdi",
+  },
+  119: { /* name: "Beguiling",*/ icon: "spell_shadow_mindshear" },
+  20: { /* name: "Awakened",*/ icon: "trade_archaeology_nerubian_obelisk" },
+  121: { /* name: "Prideful",*/ icon: "spell_animarevendreth_buff" },
+  122: { /* name: "Inspiring",*/ icon: "spell_holy_prayerofspirit" },
+  123: { /* name: "Spiteful",*/ icon: "spell_holy_prayerofshadowprotection" },
+  124: { /* name: "Storming",*/ icon: "spell_nature_cyclone" },
+  128: { /* name: "Tormented",*/ icon: "spell_animamaw_orb" },
+  129: { /* name: "Infernal",*/ icon: "inv_infernalbrimstone" },
+  130: { /* name: "Encrypted",*/ icon: "spell_progenitor_orb" },
 };
 const extrapolate = (
   data: Dataset[],
@@ -185,6 +188,41 @@ const extrapolate = (
   };
 };
 
+// fun in a bun.
+const findTimestampOfExtrapolation = (
+  extrapolated: SeriesLineOptions | null
+): number => {
+  if (!extrapolated || !Array.isArray(extrapolated.data)) {
+    return 0;
+  }
+
+  const maybeEnd = extrapolated.data[extrapolated.data.length - 1];
+
+  if (!Array.isArray(maybeEnd) || typeof maybeEnd[0] !== "number") {
+    return 0;
+  }
+
+  return maybeEnd[0];
+};
+
+const calculateExtremesToZoomTo = (
+  history: Dataset[],
+  extrapolated: SeriesLineOptions | null
+): [number, number] => {
+  const maybeEnd = findTimestampOfExtrapolation(extrapolated);
+
+  const end = maybeEnd > 0 ? maybeEnd : history[history.length - 1].timestamp;
+
+  // offset by 4 weeks since extrapolation is two into the future
+  const offset = (extrapolated ? 4 : 2) * 7 * 24 * 60 * 60 * 1000;
+
+  const backThen = [...history]
+    .reverse()
+    .find((dataset) => dataset.timestamp < end - offset);
+
+  return [backThen ? backThen.timestamp : 0, end];
+};
+
 export function Graph({ data, title }: GraphProps): JSX.Element {
   const sanitizedScore = data.history.filter(
     (dataset) => dataset.customScore > 0
@@ -203,6 +241,26 @@ export function Graph({ data, title }: GraphProps): JSX.Element {
     "customRank",
     data.seasonEnding
   );
+
+  const ref = useRef<HighchartsReact.RefObject | null>(null);
+
+  useEffect(() => {
+    if (!ref.current || data.seasonEnding) {
+      return;
+    }
+
+    const [start, end] = calculateExtremesToZoomTo(
+      data.history,
+      extrapolatedRank.horde
+    );
+
+    if (start === 0 || end === 0) {
+      return;
+    }
+
+    ref.current.chart.xAxis[0].setExtremes(start, end);
+    ref.current.chart.showResetZoom();
+  }, [data, extrapolatedRank]);
 
   const options: Options = {
     title: {
@@ -273,8 +331,7 @@ export function Graph({ data, title }: GraphProps): JSX.Element {
                 },
                 text: rotation
                   .map((affix) => {
-                    const { name, icon } = affixes[affix];
-                    return `<img width="18" height="18" style="transform: rotate(-90deg); opacity: 0.75;" alt="${name}" src="https://keystone-heroes.com/static/icons/${icon}.jpg" loading="lazy" />`;
+                    return `<img width="18" height="18" style="transform: rotate(-90deg); opacity: 0.75;" src="https://keystone-heroes.com/static/icons/${affixes[affix].icon}.jpg" />`;
                   })
                   .join(""),
                 rotation: 90,
@@ -403,7 +460,7 @@ export function Graph({ data, title }: GraphProps): JSX.Element {
 
   return (
     <div className="p-4">
-      <HighchartsReact highcharts={Highcharts} options={options} />
+      <HighchartsReact highcharts={Highcharts} options={options} ref={ref} />
     </div>
   );
 }
