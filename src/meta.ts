@@ -95,5 +95,6 @@ export const affixRotations: Record<string, [number, number, number][]> = {
     [10, 6, 13], // Fortified, Raging Explosive
     [9, 11, 3], // Tyrannical, Bursting, Volcanic
     [10, 123, 4], // Fortified, Spiteful, Necrotic
+    [9, 122, 14], // Tyrannical, Inspiring, Quaking
   ],
 };
