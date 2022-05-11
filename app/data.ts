@@ -111,14 +111,16 @@ export const loaderMap = Object.entries(seasonStartDates).reduce<
     });
 
     const data = aggregateDataByDay(
-      datasets.map(({ customScore, customRank, ...dataset }) => {
-        return {
-          ...dataset,
-          timestamp: Number(dataset.timestamp) * 1000,
-          rank: customRank,
-          score: customScore,
-        };
-      })
+      datasets
+        .map(({ customScore, customRank, ...dataset }) => {
+          return {
+            ...dataset,
+            timestamp: Number(dataset.timestamp) * 1000,
+            rank: customRank,
+            score: customScore,
+          };
+        })
+        .filter((dataset) => dataset.score > 0 && dataset.rank > 0)
     ).reverse();
 
     return {
