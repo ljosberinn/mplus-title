@@ -10,8 +10,8 @@ import {
   useParams,
   Link,
 } from "@remix-run/react";
-import { seasonStartDates, latestSeason, orderedReasonsBySize } from "src/meta";
 
+import { seasonStartDates, latestSeason, orderedGeasonsBySize } from "./meta";
 import styles from "./styles/app.css";
 
 export const links: LinksFunction = () => {
@@ -117,7 +117,7 @@ function Nav() {
               </Link>
             </li>
           ) : null}
-          {orderedReasonsBySize.map((region) => {
+          {orderedGeasonsBySize.map((region) => {
             const path = [params.season, region].filter(Boolean).join("/");
 
             return (

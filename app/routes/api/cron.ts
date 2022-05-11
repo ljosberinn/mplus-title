@@ -4,8 +4,8 @@ import { Factions } from "@prisma/client";
 import { json } from "@remix-run/node";
 import type { LoaderFunction } from "@remix-run/node";
 import { load } from "cheerio";
-import { seasonStartDates } from "src/meta";
-import { prisma } from "src/prisma";
+import { seasonStartDates } from "~/meta";
+import { prisma } from "~/prisma";
 
 const rioBaseUrl = "https://raider.io";
 

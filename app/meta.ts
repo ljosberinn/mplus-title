@@ -1,6 +1,6 @@
 import type { Factions, Regions } from "@prisma/client";
 
-export const orderedReasonsBySize: Regions[] = ["eu", "us", "tw", "kr"];
+export const orderedGeasonsBySize: Regions[] = ["eu", "us", "tw", "kr"];
 
 export const seasonStartDates: Record<string, Record<Regions, number>> = {
   "sl-season-3": {

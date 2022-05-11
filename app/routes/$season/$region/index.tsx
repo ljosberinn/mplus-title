@@ -6,11 +6,11 @@ import type {
   MetaFunction,
 } from "@remix-run/node";
 import { useLoaderData, useParams } from "@remix-run/react";
-import { Graph } from "src/components";
-import type { Data } from "src/data";
-import { loaderMap } from "src/data";
-import { latestSeason } from "src/meta";
-import { isValidRegion } from "src/utils";
+import { Graph } from "~/components";
+import type { Data } from "~/data";
+import { loaderMap } from "~/data";
+import { latestSeason } from "~/meta";
+import { isValidRegion } from "~/utils";
 
 export const headers: HeadersFunction = () => {
   return {

@@ -4,10 +4,10 @@ import type {
   HeadersFunction,
   LoaderFunction,
 } from "@remix-run/server-runtime";
-import { Graph } from "src/components";
-import type { Data } from "src/data";
-import { loaderMap } from "src/data";
-import { latestSeason, orderedReasonsBySize } from "src/meta";
+import { Graph } from "~/components";
+import type { Data } from "~/data";
+import { loaderMap } from "~/data";
+import { latestSeason, orderedGeasonsBySize } from "~/meta";
 
 export const headers: HeadersFunction = () => {
   return {
@@ -43,7 +43,7 @@ export default function Season(): JSX.Element {
 
   return (
     <>
-      {orderedReasonsBySize.map((region) => {
+      {orderedGeasonsBySize.map((region) => {
         const subset = data.history.filter(
           (dataset) => dataset.region === region
         );
