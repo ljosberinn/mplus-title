@@ -64,7 +64,7 @@ const formatter = function (this: PointLabelObject) {
 
 const extrapolateByFaction = (
   data: Dataset[],
-  type: "customScore" | "customRank",
+  type: "score" | "rank",
   faction: Factions
 ):
   | {
@@ -117,7 +117,7 @@ const extrapolateByFaction = (
 
 const convertExtrapoationToSeries = (
   dataset: ReturnType<typeof extrapolateByFaction>,
-  type: "customScore" | "customRank",
+  type: "score" | "rank",
   faction: Factions
 ): null | SeriesLineOptions => {
   if (dataset.value === 0 || !dataset.connector) {
@@ -126,7 +126,7 @@ const convertExtrapoationToSeries = (
 
   return {
     type: "line",
-    name: `${type === "customRank" ? "Rank" : "Score"} Extrapolated: ${
+    name: `${type === "rank" ? "Rank" : "Score"} Extrapolated: ${
       faction === "alliance" ? "Alliance" : "Horde"
     }`,
     color: factionColors[faction],
@@ -134,7 +134,7 @@ const convertExtrapoationToSeries = (
       [dataset.connector.timestamp, dataset.connector[type]],
       [dataset.timestamp, dataset.value],
     ],
-    visible: type === "customScore",
+    visible: type === "score",
     dashStyle: "Dash",
     dataLabels: {
       formatter,
@@ -171,7 +171,7 @@ const affixes: Record<number, { icon: string }> = {
 };
 const extrapolate = (
   data: Dataset[],
-  type: "customScore" | "customRank",
+  type: "score" | "rank",
   seasonEnding: number | null
 ) => {
   // do not show extrapolation for seasons that have ended or are ending
@@ -224,21 +224,17 @@ const calculateExtremesToZoomTo = (
 };
 
 export function Graph({ data, title }: GraphProps): JSX.Element {
-  const sanitizedScore = data.history.filter(
-    (dataset) => dataset.customScore > 0
-  );
-  const sanitizedRank = data.history.filter(
-    (dataset) => dataset.customRank > 0
-  );
+  const sanitizedScore = data.history.filter((dataset) => dataset.score > 0);
+  const sanitizedRank = data.history.filter((dataset) => dataset.rank > 0);
 
   const extrapolatedScore = extrapolate(
     sanitizedScore,
-    "customScore",
+    "score",
     data.seasonEnding
   );
   const extrapolatedRank = extrapolate(
     sanitizedRank,
-    "customRank",
+    "rank",
     data.seasonEnding
   );
 
@@ -404,7 +400,7 @@ export function Graph({ data, title }: GraphProps): JSX.Element {
         data: sanitizedRank
           .filter((dataset) => dataset.faction === "horde")
           .map((dataset) => {
-            return [dataset.timestamp, dataset.customRank];
+            return [dataset.timestamp, dataset.rank];
           }),
         visible: false,
         dataLabels: {
@@ -418,7 +414,7 @@ export function Graph({ data, title }: GraphProps): JSX.Element {
         data: sanitizedRank
           .filter((dataset) => dataset.faction === "alliance")
           .map((dataset) => {
-            return [dataset.timestamp, dataset.customRank];
+            return [dataset.timestamp, dataset.rank];
           }),
         visible: false,
         dataLabels: {
@@ -432,7 +428,7 @@ export function Graph({ data, title }: GraphProps): JSX.Element {
         data: sanitizedScore
           .filter((dataset) => dataset.faction === "horde")
           .map((dataset) => {
-            return [dataset.timestamp, dataset.customScore];
+            return [dataset.timestamp, dataset.score];
           }),
         dataLabels: {
           formatter,
@@ -445,7 +441,7 @@ export function Graph({ data, title }: GraphProps): JSX.Element {
         data: sanitizedScore
           .filter((dataset) => dataset.faction === "alliance")
           .map((dataset) => {
-            return [dataset.timestamp, dataset.customScore];
+            return [dataset.timestamp, dataset.score];
           }),
         dataLabels: {
           formatter,

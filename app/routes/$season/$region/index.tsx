@@ -30,8 +30,8 @@ const findCutoff = (data: Data, faction: Factions, region?: Regions) => {
   return data.history.reduce((acc, dataset) => {
     return dataset.faction === faction &&
       dataset.region === region &&
-      dataset.customScore > acc
-      ? dataset.customScore
+      dataset.score > acc
+      ? dataset.score
       : acc;
   }, 0);
 };
