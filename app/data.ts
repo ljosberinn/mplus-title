@@ -111,12 +111,12 @@ export const loaderMap = Object.entries(seasonStartDates).reduce<
     });
 
     const data = aggregateDataByDay(
-      datasets.map((dataset) => {
+      datasets.map(({ customScore, customRank, ...dataset }) => {
         return {
           ...dataset,
           timestamp: Number(dataset.timestamp) * 1000,
-          rank: dataset.customRank,
-          score: dataset.customScore,
+          rank: customRank,
+          score: customScore,
         };
       })
     ).reverse();
