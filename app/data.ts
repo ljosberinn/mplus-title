@@ -19,7 +19,7 @@ export type Data = {
 
 type Loader = (params?: { region?: string; faction?: string }) => Promise<Data>;
 
-export type Dataset = Omit<History, "id">;
+export type Dataset = Omit<History, "id" | "rioRank" | "rioScore">;
 
 const aggregateDataByDay = (data: Dataset[]) => {
   const map: Record<string, Record<string, number>> = {};
@@ -96,8 +96,8 @@ export const loaderMap = Object.entries(seasonStartDates).reduce<
         region: true,
         customRank: true,
         customScore: true,
-        rioRank: true,
-        rioScore: true,
+        // rioRank: true,
+        // rioScore: true,
       },
       orderBy: {
         timestamp: "desc",
