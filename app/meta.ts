@@ -64,7 +64,7 @@ export const confirmedCutoffs: Record<
   },
   "sl-season-2": {
     eu: {
-      horde: 0,
+      horde: 2887.5,
       alliance: 0,
     },
     // https://us.forums.blizzard.com/en/wow/t/m-tormented-hero-title-score-updated-daily/1184111
