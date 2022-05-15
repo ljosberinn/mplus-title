@@ -14,7 +14,7 @@ import { isValidRegion } from "~/utils";
 
 export const headers: HeadersFunction = () => {
   return {
-    "Cache-Control": "max-age=300, s-maxage=3600",
+    "Cache-Control": "max-age=1800, s-maxage=3600",
   };
 };
 
