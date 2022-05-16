@@ -223,6 +223,8 @@ const calculateExtremesToZoomTo = (
   return [backThen ? backThen.timestamp : 0, end];
 };
 
+const oneWeekInMs = 7 * 24 * 60 * 60 * 1000;
+
 export function Graph({ data, title }: GraphProps): JSX.Element {
   const sanitizedScore = data.history.filter((dataset) => dataset.score > 0);
   const sanitizedRank = data.history.filter((dataset) => dataset.rank > 0);
@@ -257,6 +259,95 @@ export function Graph({ data, title }: GraphProps): JSX.Element {
     ref.current.chart.xAxis[0].setExtremes(start, end);
     ref.current.chart.showResetZoom();
   }, [data, extrapolatedRank]);
+
+  const sanitizedScoreHorde = sanitizedScore.filter(
+    (dataset) => dataset.faction === "horde"
+  );
+  const sanitizedScoreAlliance = sanitizedScore.filter(
+    (dataset) => dataset.faction === "alliance"
+  );
+
+  const sanitizedScoreHordeReverse = [...sanitizedScoreHorde].reverse();
+  const sanitizedScoreAllianceReverse = [...sanitizedScoreAlliance].reverse();
+
+  const plotBands: XAxisPlotBandsOptions[] = [
+    ...(data.affixRotation
+      ? data.affixRotation.map<XAxisPlotBandsOptions>((rotation, index) => {
+          const start = data.seasonStart + index * oneWeekInMs;
+          const end = start + oneWeekInMs;
+
+          return {
+            from: start,
+            to: end,
+            color: index % 2 === 0 ? gray["600"] : gray["800"],
+            label: {
+              useHTML: true,
+              style: {
+                display: "flex",
+              },
+              text: rotation
+                .map((affix) => {
+                  return `<img width="18" height="18" style="transform: rotate(-90deg); opacity: 0.75;" src="https://keystone-heroes.com/static/icons/${affixes[affix].icon}.jpg" />`;
+                })
+                .join(""),
+              rotation: 90,
+              align: "left",
+              x: 5,
+              y: 5,
+            },
+          };
+        })
+      : []),
+    ...(data.affixRotation
+      ? data.affixRotation.map<XAxisPlotBandsOptions>((_, index) => {
+          const start = data.seasonStart + index * oneWeekInMs;
+          const end = start + oneWeekInMs;
+
+          const hordeStartMatch = sanitizedScoreHorde.find(
+            (dataset) => dataset.timestamp >= start
+          );
+          const hordeEndMatch = sanitizedScoreHordeReverse.find(
+            (dataset) => dataset.timestamp < end
+          );
+
+          const allianceStartMatch = sanitizedScoreAlliance.find(
+            (dataset) => dataset.timestamp >= start
+          );
+          const allianceEndMatch = sanitizedScoreAllianceReverse.find(
+            (dataset) => dataset.timestamp < end
+          );
+
+          return {
+            from: start,
+            to: end,
+            color: "transparent",
+            label: {
+              verticalAlign: "bottom",
+              text: [
+                hordeEndMatch && hordeStartMatch
+                  ? `<span style="font-size: 10px; color: ${
+                      factionColors.horde
+                    }">+${(hordeEndMatch.score - hordeStartMatch.score).toFixed(
+                      1
+                    )}</span>`
+                  : null,
+                allianceEndMatch && allianceStartMatch
+                  ? `<span style="font-size: 10px; color: ${
+                      factionColors.alliance
+                    }">+${(
+                      allianceEndMatch.score - allianceStartMatch.score
+                    ).toFixed(1)}</span>`
+                  : null,
+              ]
+                .filter(Boolean)
+                .join("<br />"),
+              useHTML: true,
+              y: -25,
+            },
+          };
+        })
+      : []),
+  ];
 
   const options: Options = {
     title: {
@@ -309,35 +400,7 @@ export function Graph({ data, title }: GraphProps): JSX.Element {
         },
       },
       type: "datetime",
-      plotBands: data.affixRotation
-        ? data.affixRotation.map<XAxisPlotBandsOptions>((rotation, index) => {
-            const oneWeekInMs = 7 * 24 * 60 * 60 * 1000;
-
-            const start = data.seasonStart + index * oneWeekInMs;
-            const end = start + oneWeekInMs;
-
-            return {
-              from: start,
-              to: end,
-              color: index % 2 === 0 ? gray["600"] : gray["800"],
-              label: {
-                useHTML: true,
-                style: {
-                  display: "flex",
-                },
-                text: rotation
-                  .map((affix) => {
-                    return `<img width="18" height="18" style="transform: rotate(-90deg); opacity: 0.75;" src="https://keystone-heroes.com/static/icons/${affixes[affix].icon}.jpg" />`;
-                  })
-                  .join(""),
-                rotation: 90,
-                align: "left",
-                x: 5,
-                y: 5,
-              },
-            };
-          })
-        : undefined,
+      plotBands,
       plotLines: data.seasonEnding
         ? [
             {
@@ -425,11 +488,9 @@ export function Graph({ data, title }: GraphProps): JSX.Element {
         type: "line",
         name: "Score: Horde",
         color: factionColors.horde,
-        data: sanitizedScore
-          .filter((dataset) => dataset.faction === "horde")
-          .map((dataset) => {
-            return [dataset.timestamp, dataset.score];
-          }),
+        data: sanitizedScoreHorde.map((dataset) => {
+          return [dataset.timestamp, dataset.score];
+        }),
         dataLabels: {
           formatter,
         },
@@ -438,11 +499,9 @@ export function Graph({ data, title }: GraphProps): JSX.Element {
         type: "line",
         name: "Score: Alliance",
         color: factionColors.alliance,
-        data: sanitizedScore
-          .filter((dataset) => dataset.faction === "alliance")
-          .map((dataset) => {
-            return [dataset.timestamp, dataset.score];
-          }),
+        data: sanitizedScoreAlliance.map((dataset) => {
+          return [dataset.timestamp, dataset.score];
+        }),
         dataLabels: {
           formatter,
         },
