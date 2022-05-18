@@ -468,7 +468,7 @@ export function Graph({ data, title }: GraphProps): JSX.Element {
       data.crossFactionData.length > 0
         ? {
             type: "line",
-            name: "X-faction Cutoff Score",
+            name: "Score: X-Faction",
             color: factionColors.xFaction,
             data: data.crossFactionData.map((dataset) => [
               dataset.timestamp,
