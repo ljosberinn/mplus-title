@@ -11,11 +11,12 @@ import HighchartsReact from "highcharts-react-official";
 import { useEffect, useRef } from "react";
 import { red, blue, gray } from "tailwindcss/colors";
 
-import type { Data, Dataset } from "./data";
+import type { Data, LegacyDataset } from "./data";
 
-const factionColors: Record<Factions, string> = {
+const factionColors: Record<string, string> = {
   alliance: blue["400"],
   horde: red["400"],
+  xFaction: "#B389AF",
 };
 
 type GraphProps = {
@@ -23,6 +24,7 @@ type GraphProps = {
     confirmedCutoff: Record<Factions, number> | null;
     seasonEnding: number | null;
     seasonStart: number;
+    crossFactionData: { timestamp: number; score: number }[];
   };
   title?: string;
 };
@@ -63,8 +65,7 @@ const formatter = function (this: PointLabelObject) {
 };
 
 const extrapolateByFaction = (
-  data: Dataset[],
-  type: "score" | "rank",
+  data: LegacyDataset[],
   faction: Factions
 ):
   | {
@@ -75,7 +76,7 @@ const extrapolateByFaction = (
   | {
       value: number;
       timestamp: number;
-      connector: Dataset;
+      connector: LegacyDataset;
     } => {
   const now = Date.now();
   const last = [...data]
@@ -109,7 +110,7 @@ const extrapolateByFaction = (
   const factor = twoWeeksInDays / daysPassed;
 
   return {
-    value: Math.round(last[type] + (last[type] - first[type]) * factor),
+    value: Math.round(last.score + (last.score - first.score) * factor),
     timestamp: last.timestamp + twoWeeksInDays * 24 * 60 * 60 * 1000,
     connector: last,
   };
@@ -117,7 +118,6 @@ const extrapolateByFaction = (
 
 const convertExtrapoationToSeries = (
   dataset: ReturnType<typeof extrapolateByFaction>,
-  type: "score" | "rank",
   faction: Factions
 ): null | SeriesLineOptions => {
   if (dataset.value === 0 || !dataset.connector) {
@@ -126,15 +126,14 @@ const convertExtrapoationToSeries = (
 
   return {
     type: "line",
-    name: `${type === "rank" ? "Rank" : "Score"} Extrapolated: ${
+    name: `Score Extrapolated: ${
       faction === "alliance" ? "Alliance" : "Horde"
     }`,
     color: factionColors[faction],
     data: [
-      [dataset.connector.timestamp, dataset.connector[type]],
+      [dataset.connector.timestamp, dataset.connector.score],
       [dataset.timestamp, dataset.value],
     ],
-    visible: type === "score",
     dashStyle: "Dash",
     dataLabels: {
       formatter,
@@ -169,22 +168,18 @@ const affixes: Record<number, { icon: string }> = {
   129: { /* name: "Infernal",*/ icon: "inv_infernalbrimstone" },
   130: { /* name: "Encrypted",*/ icon: "spell_progenitor_orb" },
 };
-const extrapolate = (
-  data: Dataset[],
-  type: "score" | "rank",
-  seasonEnding: number | null
-) => {
+const extrapolate = (data: LegacyDataset[], seasonEnding: number | null) => {
   // do not show extrapolation for seasons that have ended or are ending
   if (seasonEnding !== null) {
     return { horde: null, alliance: null };
   }
 
-  const horde = extrapolateByFaction(data, type, "horde");
-  const alliance = extrapolateByFaction(data, type, "alliance");
+  const horde = extrapolateByFaction(data, "horde");
+  const alliance = extrapolateByFaction(data, "alliance");
 
   return {
-    horde: convertExtrapoationToSeries(horde, type, "horde"),
-    alliance: convertExtrapoationToSeries(alliance, type, "alliance"),
+    horde: convertExtrapoationToSeries(horde, "horde"),
+    alliance: convertExtrapoationToSeries(alliance, "alliance"),
   };
 };
 
@@ -206,7 +201,7 @@ const findTimestampOfExtrapolation = (
 };
 
 const calculateExtremesToZoomTo = (
-  history: Dataset[],
+  history: LegacyDataset[],
   extrapolated: SeriesLineOptions | null
 ): [number, number] => {
   const maybeEnd = findTimestampOfExtrapolation(extrapolated);
@@ -227,18 +222,8 @@ const oneWeekInMs = 7 * 24 * 60 * 60 * 1000;
 
 export function Graph({ data, title }: GraphProps): JSX.Element {
   const sanitizedScore = data.history.filter((dataset) => dataset.score > 0);
-  const sanitizedRank = data.history.filter((dataset) => dataset.rank > 0);
 
-  const extrapolatedScore = extrapolate(
-    sanitizedScore,
-    "score",
-    data.seasonEnding
-  );
-  const extrapolatedRank = extrapolate(
-    sanitizedRank,
-    "rank",
-    data.seasonEnding
-  );
+  const extrapolatedScore = extrapolate(sanitizedScore, data.seasonEnding);
 
   const ref = useRef<HighchartsReact.RefObject | null>(null);
 
@@ -249,7 +234,7 @@ export function Graph({ data, title }: GraphProps): JSX.Element {
 
     const [start, end] = calculateExtremesToZoomTo(
       data.history,
-      extrapolatedRank.horde
+      extrapolatedScore.horde
     );
 
     if (start === 0 || end === 0) {
@@ -258,7 +243,7 @@ export function Graph({ data, title }: GraphProps): JSX.Element {
 
     ref.current.chart.xAxis[0].setExtremes(start, end);
     ref.current.chart.showResetZoom();
-  }, [data, extrapolatedRank]);
+  }, [data, extrapolatedScore]);
 
   const sanitizedScoreHorde = sanitizedScore.filter(
     (dataset) => dataset.faction === "horde"
@@ -419,7 +404,7 @@ export function Graph({ data, title }: GraphProps): JSX.Element {
     },
     yAxis: {
       title: {
-        text: "Rank",
+        text: "Score",
         style: {
           color: "#fff",
         },
@@ -458,34 +443,6 @@ export function Graph({ data, title }: GraphProps): JSX.Element {
     series: [
       {
         type: "line",
-        name: "Rank: Horde",
-        color: factionColors.horde,
-        data: sanitizedRank
-          .filter((dataset) => dataset.faction === "horde")
-          .map((dataset) => {
-            return [dataset.timestamp, dataset.rank];
-          }),
-        visible: false,
-        dataLabels: {
-          formatter,
-        },
-      },
-      {
-        type: "line",
-        name: "Rank: Alliance",
-        color: factionColors.alliance,
-        data: sanitizedRank
-          .filter((dataset) => dataset.faction === "alliance")
-          .map((dataset) => {
-            return [dataset.timestamp, dataset.rank];
-          }),
-        visible: false,
-        dataLabels: {
-          formatter,
-        },
-      },
-      {
-        type: "line",
         name: "Score: Horde",
         color: factionColors.horde,
         data: sanitizedScoreHorde.map((dataset) => {
@@ -506,10 +463,22 @@ export function Graph({ data, title }: GraphProps): JSX.Element {
           formatter,
         },
       },
-      extrapolatedRank.alliance,
-      extrapolatedRank.horde,
       extrapolatedScore.alliance,
       extrapolatedScore.horde,
+      data.crossFactionData.length > 0
+        ? {
+            type: "line",
+            name: "X-faction Cutoff Score",
+            color: factionColors.xFaction,
+            data: data.crossFactionData.map((dataset) => [
+              dataset.timestamp,
+              dataset.score,
+            ]),
+            dataLabels: {
+              formatter,
+            },
+          }
+        : null,
     ].filter((series): series is SeriesLineOptions => series !== null),
   };
 

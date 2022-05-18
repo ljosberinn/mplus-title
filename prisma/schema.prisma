@@ -21,6 +21,15 @@ model History {
     customRank  Int
 }
 
+model CrossFactionHistory {
+    id Int @id @default(autoincrement())
+
+    timestamp Int
+    region    Regions
+    score     Float
+    rank      Int
+}
+
 enum Factions {
     horde
     alliance

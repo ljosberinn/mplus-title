@@ -4,46 +4,10 @@ import { Factions } from "@prisma/client";
 import { json } from "@remix-run/node";
 import type { LoaderFunction } from "@remix-run/node";
 import { load } from "cheerio";
-import { seasonStartDates } from "~/meta";
+import { crossFactionSupportDates, seasonStartDates } from "~/meta";
 import { prisma } from "~/prisma";
 
 const rioBaseUrl = "https://raider.io";
-
-type QuantileDataset = {
-  quantile: number;
-  quantileMinValue: number;
-  quantilePopulationCount: number;
-  quantilePopulationFraction: number;
-  totalPopulationCount: number;
-};
-
-type QuantileData = {
-  horde: QuantileDataset;
-  hordeColor: string;
-  allianceColor: string;
-  alliance: QuantileDataset;
-};
-
-type CutoffApiResponse = {
-  cutoffs: {
-    region: {
-      name: string;
-      slug: string;
-      short_name: string;
-    };
-    p999: QuantileData;
-    p990: QuantileData;
-    p900: QuantileData;
-    p750: QuantileData;
-    p600: QuantileData;
-    keystoneMaster: QuantileData;
-    keystoneConqueror: QuantileData;
-  };
-  uid: {
-    season: string;
-    region: string;
-  };
-};
 
 const determineSeason = (region: Regions) => {
   const firstMatch = Object.entries(seasonStartDates).find(
@@ -59,14 +23,9 @@ const determineSeason = (region: Regions) => {
   return firstMatch[0].replace("-season", "");
 };
 
-const createPageUrl = (region: Regions, faction: Factions, page = 0) => {
+const createFactionPageUrl = (region: Regions, faction: Factions, page = 0) => {
   const season = determineSeason(region);
   return `${rioBaseUrl}/mythic-plus-character-faction-rankings/season-${season}/${region}/all/all/${faction}/${page}`;
-};
-
-const createEndpointUrl = (region: Regions) => {
-  const season = determineSeason(region);
-  return `${rioBaseUrl}/api/v1/mythic-plus/season-cutoffs?season=season-${season}&region=${region}`;
 };
 
 if (!String.prototype.replaceAll) {
@@ -115,6 +74,16 @@ export const action: LoaderFunction = async ({ request }) => {
 
     if (!mostOutdatedRegion) {
       console.info("ending request early, nothing to update");
+      return json([], 204);
+    }
+
+    const hasCrossFactionSupport =
+      crossFactionSupportDates[mostOutdatedRegion] > 0;
+
+    if (hasCrossFactionSupport) {
+      console.info("region has x-faction support. this is deprecated now.", {
+        mostOutdatedRegion,
+      });
       return json([], 204);
     }
 
@@ -198,14 +167,10 @@ const parseRegionData = async (
 ): Promise<Prisma.HistoryCreateManyInput[]> => {
   const now = Math.round(Date.now() / 1000);
 
-  const url = createEndpointUrl(region);
-  const response = await fetch(url);
-  const json: CutoffApiResponse = await response.json();
-
   const parsedData = await Promise.all(
     Object.values(Factions).map(async (faction) => {
       try {
-        const firstPageUrl = createPageUrl(region, faction);
+        const firstPageUrl = createFactionPageUrl(region, faction);
         const firstPageResponse = await fetch(firstPageUrl);
         const firstPageText = await firstPageResponse.text();
 
@@ -236,7 +201,7 @@ const parseRegionData = async (
 
         const scorePage =
           lastEligibleRank <= 20 ? 0 : Math.floor(lastEligibleRank / 20);
-        const scorePageUrl = createPageUrl(
+        const scorePageUrl = createFactionPageUrl(
           region,
           faction,
           // if rank is divisible by 20, e.g. 80, it would result in page 4
@@ -300,8 +265,8 @@ const parseRegionData = async (
       faction: "horde",
       customRank: parsedHordeData.rank,
       customScore: parsedHordeData.score,
-      rioRank: json.cutoffs?.p999?.horde?.quantilePopulationCount ?? 0,
-      rioScore: json.cutoffs?.p999?.horde?.quantileMinValue ?? 0,
+      rioRank: 0,
+      rioScore: 0,
       timestamp: now,
     },
     {
@@ -309,8 +274,8 @@ const parseRegionData = async (
       faction: "alliance",
       customRank: parsedAllianceData.rank,
       customScore: parsedAllianceData.score,
-      rioRank: json.cutoffs?.p999?.alliance?.quantilePopulationCount ?? 0,
-      rioScore: json.cutoffs?.p999?.alliance?.quantileMinValue ?? 0,
+      rioRank: 0,
+      rioScore: 0,
       timestamp: now,
     },
   ];

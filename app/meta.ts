@@ -17,6 +17,13 @@ export const seasonStartDates: Record<string, Record<Regions, number>> = {
   },
 };
 
+export const crossFactionSupportDates: Record<Regions, number> = {
+  eu: 0,
+  kr: 0,
+  tw: 0,
+  us: 0,
+};
+
 export const seasonEndings = Object.entries(seasonStartDates).reduce<
   Record<string, Record<Regions, number>>
 >((acc, [, regionEndingTimestampMap], index, arr) => {
