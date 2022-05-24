@@ -11,7 +11,7 @@ import HighchartsReact from "highcharts-react-official";
 import { useEffect, useRef } from "react";
 import { red, blue, gray } from "tailwindcss/colors";
 
-import type { Data, LegacyDataset } from "./data";
+import type { CrossFactionDataset, Data, LegacyDataset } from "./data";
 
 const factionColors: Record<string, string> = {
   alliance: blue["400"],
@@ -64,9 +64,11 @@ const formatter = function (this: PointLabelObject) {
   return this.x === max ? this.y : null;
 };
 
-const extrapolateByFaction = (
-  data: LegacyDataset[],
-  faction: Factions
+const oneWeekInMs = 7 * 24 * 60 * 60 * 1000;
+
+const extrapolateBy = (
+  data: GraphProps["data"]["crossFactionData"],
+  by = 2 * oneWeekInMs
 ):
   | {
       value: 0;
@@ -76,25 +78,14 @@ const extrapolateByFaction = (
   | {
       value: number;
       timestamp: number;
-      connector: LegacyDataset;
+      connector:
+        | LegacyDataset
+        | (CrossFactionDataset & { timestamp: number; score: number });
     } => {
-  const now = Date.now();
-  const last = [...data]
-    .reverse()
-    .find((dataset) => dataset.timestamp <= now && dataset.faction === faction);
+  const last = data[data.length - 1];
+  const then = last.timestamp - by;
 
-  if (!last) {
-    return {
-      value: 0,
-      timestamp: 0,
-      connector: null,
-    };
-  }
-
-  const twoWeeksAgo = last.timestamp - 2 * 7 * 24 * 60 * 60 * 1000;
-  const first = data.find(
-    (dataset) => dataset.timestamp >= twoWeeksAgo && dataset.faction === faction
-  );
+  const first = data.find((dataset) => dataset.timestamp >= then);
 
   if (!first) {
     return {
@@ -111,14 +102,14 @@ const extrapolateByFaction = (
 
   return {
     value: Math.round(last.score + (last.score - first.score) * factor),
-    timestamp: last.timestamp + twoWeeksInDays * 24 * 60 * 60 * 1000,
+    timestamp: last.timestamp + 2 * oneWeekInMs,
     connector: last,
   };
 };
 
 const convertExtrapoationToSeries = (
-  dataset: ReturnType<typeof extrapolateByFaction>,
-  faction: Factions
+  dataset: ReturnType<typeof extrapolateBy>,
+  faction: Factions | null
 ): null | SeriesLineOptions => {
   if (dataset.value === 0 || !dataset.connector) {
     return null;
@@ -127,9 +118,9 @@ const convertExtrapoationToSeries = (
   return {
     type: "line",
     name: `Score Extrapolated: ${
-      faction === "alliance" ? "Alliance" : "Horde"
+      faction ? (faction === "alliance" ? "Alliance" : "Horde") : "X-Faction"
     }`,
-    color: factionColors[faction],
+    color: faction ? factionColors[faction] : factionColors.xFaction,
     data: [
       [dataset.connector.timestamp, dataset.connector.score],
       [dataset.timestamp, dataset.value],
@@ -168,20 +159,6 @@ const affixes: Record<number, { icon: string }> = {
   129: { /* name: "Infernal",*/ icon: "inv_infernalbrimstone" },
   130: { /* name: "Encrypted",*/ icon: "spell_progenitor_orb" },
 };
-const extrapolate = (data: LegacyDataset[], seasonEnding: number | null) => {
-  // do not show extrapolation for seasons that have ended or are ending
-  if (seasonEnding !== null) {
-    return { horde: null, alliance: null };
-  }
-
-  const horde = extrapolateByFaction(data, "horde");
-  const alliance = extrapolateByFaction(data, "alliance");
-
-  return {
-    horde: convertExtrapoationToSeries(horde, "horde"),
-    alliance: convertExtrapoationToSeries(alliance, "alliance"),
-  };
-};
 
 // fun in a bun.
 const findTimestampOfExtrapolation = (
@@ -218,32 +195,10 @@ const calculateExtremesToZoomTo = (
   return [backThen ? backThen.timestamp : 0, end];
 };
 
-const oneWeekInMs = 7 * 24 * 60 * 60 * 1000;
-
 export function Graph({ data, title }: GraphProps): JSX.Element {
-  const sanitizedScore = data.history.filter((dataset) => dataset.score > 0);
-
-  const extrapolatedScore = extrapolate(sanitizedScore, data.seasonEnding);
-
   const ref = useRef<HighchartsReact.RefObject | null>(null);
 
-  useEffect(() => {
-    if (!ref.current || data.seasonEnding) {
-      return;
-    }
-
-    const [start, end] = calculateExtremesToZoomTo(
-      data.history,
-      extrapolatedScore.horde
-    );
-
-    if (start === 0 || end === 0) {
-      return;
-    }
-
-    ref.current.chart.xAxis[0].setExtremes(start, end);
-    ref.current.chart.showResetZoom();
-  }, [data, extrapolatedScore]);
+  const sanitizedScore = data.history.filter((dataset) => dataset.score > 0);
 
   const sanitizedScoreHorde = sanitizedScore.filter(
     (dataset) => dataset.faction === "horde"
@@ -254,6 +209,43 @@ export function Graph({ data, title }: GraphProps): JSX.Element {
 
   const sanitizedScoreHordeReverse = [...sanitizedScoreHorde].reverse();
   const sanitizedScoreAllianceReverse = [...sanitizedScoreAlliance].reverse();
+
+  const xFactionExtrapolation = data.seasonEnding
+    ? null
+    : convertExtrapoationToSeries(extrapolateBy(data.crossFactionData), null);
+  const allianceExtrapolation = data.seasonEnding
+    ? null
+    : convertExtrapoationToSeries(
+        extrapolateBy(sanitizedScoreAlliance),
+        "alliance"
+      );
+  const hordeExtrapolation = data.seasonEnding
+    ? null
+    : convertExtrapoationToSeries(extrapolateBy(sanitizedScoreHorde), "horde");
+
+  useEffect(() => {
+    if (!ref.current) {
+      return;
+    }
+
+    if (data.seasonEnding || !xFactionExtrapolation) {
+      ref.current.chart.zoomOut();
+
+      return;
+    }
+
+    const [start, end] = calculateExtremesToZoomTo(
+      data.history,
+      xFactionExtrapolation
+    );
+
+    if (start === 0 || end === 0) {
+      return;
+    }
+
+    ref.current.chart.xAxis[0].setExtremes(start, end);
+    ref.current.chart.showResetZoom();
+  }, [data, xFactionExtrapolation]);
 
   const plotBands: XAxisPlotBandsOptions[] = [
     ...(data.affixRotation
@@ -463,8 +455,6 @@ export function Graph({ data, title }: GraphProps): JSX.Element {
           formatter,
         },
       },
-      extrapolatedScore.alliance,
-      extrapolatedScore.horde,
       data.crossFactionData.length > 0
         ? {
             type: "line",
@@ -479,6 +469,9 @@ export function Graph({ data, title }: GraphProps): JSX.Element {
             },
           }
         : null,
+      hordeExtrapolation,
+      allianceExtrapolation,
+      xFactionExtrapolation,
     ].filter((series): series is SeriesLineOptions => series !== null),
   };
 
