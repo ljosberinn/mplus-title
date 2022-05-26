@@ -18,10 +18,11 @@ export const seasonStartDates: Record<string, Record<Regions, number>> = {
 };
 
 export const crossFactionSupportDates: Record<Regions, number> = {
-  eu: 0,
-  kr: 0,
-  tw: 0,
-  us: 0,
+  // eslint-disable-next-line sonarjs/no-duplicate-string
+  eu: seasonStartDates["sl-season-3"].eu + 13 * 7 * 24 * 60 * 60 * 1000,
+  us: seasonStartDates["sl-season-3"].us + 13 * 7 * 24 * 60 * 60 * 1000,
+  kr: seasonStartDates["sl-season-3"].kr + 13 * 7 * 24 * 60 * 60 * 1000,
+  tw: seasonStartDates["sl-season-3"].tw + 13 * 7 * 24 * 60 * 60 * 1000,
 };
 
 export const seasonEndings = Object.entries(seasonStartDates).reduce<
