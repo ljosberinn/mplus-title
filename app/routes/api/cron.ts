@@ -78,7 +78,7 @@ export const action: LoaderFunction = async ({ request }) => {
     }
 
     const hasCrossFactionSupport =
-      crossFactionSupportDates[mostOutdatedRegion] > 0;
+      crossFactionSupportDates[mostOutdatedRegion] > Date.now();
 
     if (hasCrossFactionSupport) {
       console.info("region has x-faction support. this is deprecated now.", {
