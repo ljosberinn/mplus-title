@@ -99,11 +99,13 @@ export const action: LoaderFunction = async ({ request }) => {
 const getMostOutdatedRegion = async () => {
   const now = Date.now();
 
-  const hasCrossFactionSupport = Object.entries(crossFactionSupportDates)
-    .filter(([, value]) => {
-      return value <= now;
-    })
-    .map(([key]) => key);
+  const hasCrossFactionSupport = Object.keys(
+    Object.fromEntries(
+      Object.entries(crossFactionSupportDates).filter(([, value]) => {
+        return value <= now;
+      })
+    )
+  );
 
   if (hasCrossFactionSupport.length === 4) {
     return null;
@@ -142,6 +144,10 @@ const getMostOutdatedRegion = async () => {
     where: {
       timestamp: {
         lte: threshold,
+      },
+      region: {
+        // @ts-expect-error is a key of crossFactionSupportDates and thus Regions
+        notIn: hasCrossFactionSupport,
       },
     },
     orderBy: {
