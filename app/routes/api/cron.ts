@@ -77,16 +77,6 @@ export const action: LoaderFunction = async ({ request }) => {
       return json([], 204);
     }
 
-    const hasCrossFactionSupport =
-      false; // crossFactionSupportDates[mostOutdatedRegion] <= Date.now();
-
-    if (hasCrossFactionSupport) {
-      console.info("region has x-faction support. this is deprecated now.", {
-        mostOutdatedRegion,
-      });
-      return json([], 204);
-    }
-
     console.time("parseRegionData");
     const regionData = await parseRegionData(mostOutdatedRegion);
     console.timeEnd("parseRegionData");
@@ -107,12 +97,28 @@ export const action: LoaderFunction = async ({ request }) => {
 };
 
 const getMostOutdatedRegion = async () => {
-  const threshold = Math.round(Date.now() / 1000 - 1 * 60 * 60);
+  const now = Date.now();
+
+  const hasCrossFactionSupport = Object.entries(crossFactionSupportDates)
+    .filter(([, value]) => {
+      return value <= now;
+    })
+    .map(([key]) => key);
+
+  if (hasCrossFactionSupport.length === 4) {
+    return null;
+  }
+
+  const threshold = Math.round(now / 1000 - 1 * 60 * 60);
 
   const mostRecentData = await prisma.history.findMany({
     where: {
       timestamp: {
         gte: threshold,
+      },
+      region: {
+        // @ts-expect-error is a key of crossFactionSupportDates and thus Regions
+        notIn: hasCrossFactionSupport,
       },
     },
     orderBy: {
@@ -123,6 +129,10 @@ const getMostOutdatedRegion = async () => {
       timestamp: true,
     },
   });
+
+  if (mostRecentData.length === 0) {
+    return null;
+  }
 
   const mostRecentlyUpdatedRegions = new Set(
     mostRecentData.map((dataset) => dataset.region)
