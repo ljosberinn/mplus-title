@@ -213,15 +213,20 @@ export function Graph({ data, title }: GraphProps): JSX.Element {
   const xFactionExtrapolation = data.seasonEnding
     ? null
     : convertExtrapoationToSeries(extrapolateBy(data.crossFactionData), null);
-  const allianceExtrapolation = data.seasonEnding
-    ? null
-    : convertExtrapoationToSeries(
-        extrapolateBy(sanitizedScoreAlliance),
-        "alliance"
-      );
-  const hordeExtrapolation = data.seasonEnding
-    ? null
-    : convertExtrapoationToSeries(extrapolateBy(sanitizedScoreHorde), "horde");
+  const allianceExtrapolation =
+    data.seasonEnding || data.crossFactionData.length > 0
+      ? null
+      : convertExtrapoationToSeries(
+          extrapolateBy(sanitizedScoreAlliance),
+          "alliance"
+        );
+  const hordeExtrapolation =
+    data.seasonEnding || data.crossFactionData.length > 0
+      ? null
+      : convertExtrapoationToSeries(
+          extrapolateBy(sanitizedScoreHorde),
+          "horde"
+        );
 
   useEffect(() => {
     if (!ref.current) {
