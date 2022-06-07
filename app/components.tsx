@@ -67,8 +67,7 @@ const formatter = function (this: PointLabelObject) {
 const oneWeekInMs = 7 * 24 * 60 * 60 * 1000;
 
 const extrapolateBy = (
-  data: GraphProps["data"]["crossFactionData"],
-  by = 2 * oneWeekInMs
+  data: GraphProps["data"]["crossFactionData"]
 ):
   | {
       value: 0;
@@ -83,7 +82,7 @@ const extrapolateBy = (
         | (CrossFactionDataset & { timestamp: number; score: number });
     } => {
   const last = data[data.length - 1];
-  const then = last.timestamp - by;
+  const then = last.timestamp - data[0].timestamp;
 
   const first = data.find((dataset) => dataset.timestamp >= then);
 
@@ -185,8 +184,8 @@ const calculateExtremesToZoomTo = (
 
   const end = maybeEnd > 0 ? maybeEnd : history[history.length - 1].timestamp;
 
-  // offset by 4 weeks since extrapolation is two into the future
-  const offset = (extrapolated ? 4 : 2) * 7 * 24 * 60 * 60 * 1000;
+  // offset by +2 weeks since extrapolation is two into the future
+  const offset = (extrapolated ? 6 : 4) * 7 * 24 * 60 * 60 * 1000;
 
   const backThen = [...history]
     .reverse()
