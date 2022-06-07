@@ -199,6 +199,10 @@ export function Graph({ data, title }: GraphProps): JSX.Element {
   const ref = useRef<HighchartsReact.RefObject | null>(null);
 
   const sanitizedScore = data.history.filter((dataset) => dataset.score > 0);
+  const sanitizedXFactionScore = data.crossFactionData.filter(
+    (dataset) => dataset.score > 0
+  );
+  const sanitizedXFactionScoreReversed = [...sanitizedXFactionScore].reverse();
 
   const sanitizedScoreHorde = sanitizedScore.filter(
     (dataset) => dataset.faction === "horde"
@@ -285,19 +289,51 @@ export function Graph({ data, title }: GraphProps): JSX.Element {
           const start = data.seasonStart + index * oneWeekInMs;
           const end = start + oneWeekInMs;
 
+          const xFactionStartMatch = sanitizedXFactionScore.find(
+            (dataset) => dataset.timestamp >= start && dataset.timestamp <= end
+          );
+          const xFactionEndMatch = sanitizedXFactionScoreReversed.find(
+            (dataset) => dataset.timestamp < end && dataset.timestamp > start
+          );
+
           const hordeStartMatch = sanitizedScoreHorde.find(
-            (dataset) => dataset.timestamp >= start
+            (dataset) => dataset.timestamp >= start && dataset.timestamp <= end
           );
           const hordeEndMatch = sanitizedScoreHordeReverse.find(
-            (dataset) => dataset.timestamp < end
+            (dataset) => dataset.timestamp < end && dataset.timestamp > start
           );
 
           const allianceStartMatch = sanitizedScoreAlliance.find(
-            (dataset) => dataset.timestamp >= start
+            (dataset) => dataset.timestamp >= start && dataset.timestamp <= end
           );
           const allianceEndMatch = sanitizedScoreAllianceReverse.find(
-            (dataset) => dataset.timestamp < end
+            (dataset) => dataset.timestamp < end && dataset.timestamp > start
           );
+
+          if (
+            !hordeStartMatch &&
+            !hordeEndMatch &&
+            !allianceEndMatch &&
+            !allianceEndMatch &&
+            xFactionEndMatch &&
+            xFactionStartMatch
+          ) {
+            return {
+              from: start,
+              to: end,
+              color: "transparent",
+              label: {
+                verticalAlign: "bottom",
+                useHTML: true,
+                text: `<span style="font-size: 10px; color: ${
+                  factionColors.xFaction
+                }">+${(
+                  xFactionEndMatch.score - xFactionStartMatch.score
+                ).toFixed(1)}</span>`,
+                y: -15,
+              },
+            };
+          }
 
           return {
             from: start,
@@ -320,11 +356,18 @@ export function Graph({ data, title }: GraphProps): JSX.Element {
                       allianceEndMatch.score - allianceStartMatch.score
                     ).toFixed(1)}</span>`
                   : null,
+                xFactionStartMatch && xFactionEndMatch
+                  ? `<span style="font-size: 10px; color: ${
+                      factionColors.xFaction
+                    }">+${(
+                      xFactionEndMatch.score - xFactionStartMatch.score
+                    ).toFixed(1)}</span>`
+                  : null,
               ]
                 .filter(Boolean)
                 .join("<br />"),
               useHTML: true,
-              y: -25,
+              y: xFactionStartMatch && xFactionEndMatch ? -45 : -25,
             },
           };
         })
