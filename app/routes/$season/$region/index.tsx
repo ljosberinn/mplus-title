@@ -18,13 +18,29 @@ export const headers: HeadersFunction = () => {
   };
 };
 
-const findCutoff = (data: Data, faction: Factions, region?: Regions) => {
+const findCutoff = (data: Data, faction?: Factions, region?: Regions) => {
   if (!region) {
     return 0;
   }
 
-  if (data.confirmedCutoff && data.confirmedCutoff[region][faction] > 0) {
-    return data.confirmedCutoff[region][faction];
+  if (data.crossFactionData.length > 0) {
+    if (data.confirmedCutoff?.[region]) {
+      const [first] = Object.values(data.confirmedCutoff[region]);
+
+      if (first > 0) {
+        return first;
+      }
+    }
+
+    return data.crossFactionData.reduce((acc, dataset) => {
+      return dataset.region === region && dataset.score > acc
+        ? dataset.score
+        : acc;
+    }, 0);
+  }
+
+  if (data.confirmedCutoff?.[region]) {
+    return Object.values(data.confirmedCutoff[region])[0];
   }
 
   return data.history.reduce((acc, dataset) => {
@@ -41,6 +57,21 @@ export const meta: MetaFunction = ({ data, params }) => {
     params.region && isValidRegion(params.region) ? params.region : undefined;
   const season =
     params.season === "latest" ? latestSeason : params.season ?? "unknown";
+
+  if (data.crossFactionData.length > 0) {
+    const xFactionCutoff = findCutoff(data, undefined, region);
+
+    const description = `${season} cutoff for ${
+      region ?? "unknown"
+    } @ ${xFactionCutoff}`;
+
+    return {
+      charset: "utf-8",
+      "og:description": description,
+      "twitter:description": description,
+      description,
+    };
+  }
 
   const hordeCutoff = findCutoff(data, "horde", region);
   const allianceCutoff = findCutoff(data, "alliance", region);
