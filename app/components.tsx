@@ -344,21 +344,21 @@ export function Graph({ data, title }: GraphProps): JSX.Element {
                 hordeEndMatch && hordeStartMatch
                   ? `<span style="font-size: 10px; color: ${
                       factionColors.horde
-                    }">+${(hordeEndMatch.score - hordeStartMatch.score).toFixed(
+                    }">${hordeEndMatch.score - hordeStartMatch.score > 0 ? '+' : ''}+${(hordeEndMatch.score - hordeStartMatch.score).toFixed(
                       1
                     )}</span>`
                   : null,
                 allianceEndMatch && allianceStartMatch
                   ? `<span style="font-size: 10px; color: ${
                       factionColors.alliance
-                    }">+${(
+                    }">${allianceEndMatch.score - allianceStartMatch.score > 0 ? '+' : ''}${(
                       allianceEndMatch.score - allianceStartMatch.score
                     ).toFixed(1)}</span>`
                   : null,
                 xFactionStartMatch && xFactionEndMatch
                   ? `<span style="font-size: 10px; color: ${
                       factionColors.xFaction
-                    }">+${(
+                    }">${xFactionEndMatch.score - xFactionStartMatch.score > 0 ? '+' : ''}${(
                       xFactionEndMatch.score - xFactionStartMatch.score
                     ).toFixed(1)}</span>`
                   : null,
