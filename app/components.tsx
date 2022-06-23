@@ -317,6 +317,8 @@ export function Graph({ data, title }: GraphProps): JSX.Element {
             xFactionEndMatch &&
             xFactionStartMatch
           ) {
+            const result = xFactionEndMatch.score - xFactionStartMatch.score;
+
             return {
               from: start,
               to: end,
@@ -326,8 +328,8 @@ export function Graph({ data, title }: GraphProps): JSX.Element {
                 useHTML: true,
                 text: `<span style="font-size: 10px; color: ${
                   factionColors.xFaction
-                }">+${(
-                  xFactionEndMatch.score - xFactionStartMatch.score
+                }">${result  0 ? '+': ''}${(
+                  result
                 ).toFixed(1)}</span>`,
                 y: -15,
               },
