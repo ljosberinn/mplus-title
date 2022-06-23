@@ -328,7 +328,7 @@ export function Graph({ data, title }: GraphProps): JSX.Element {
                 useHTML: true,
                 text: `<span style="font-size: 10px; color: ${
                   factionColors.xFaction
-                }">${result  0 ? '+': ''}${(
+                }">${result > 0 ? '+': ''}${(
                   result
                 ).toFixed(1)}</span>`,
                 y: -15,
@@ -346,7 +346,7 @@ export function Graph({ data, title }: GraphProps): JSX.Element {
                 hordeEndMatch && hordeStartMatch
                   ? `<span style="font-size: 10px; color: ${
                       factionColors.horde
-                    }">${hordeEndMatch.score - hordeStartMatch.score > 0 ? '+' : ''}+${(hordeEndMatch.score - hordeStartMatch.score).toFixed(
+                    }">${hordeEndMatch.score - hordeStartMatch.score > 0 ? '+' : ''}${(hordeEndMatch.score - hordeStartMatch.score).toFixed(
                       1
                     )}</span>`
                   : null,
