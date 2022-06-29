@@ -194,68 +194,18 @@ const calculateExtremesToZoomTo = (
   return [backThen ? backThen.timestamp : 0, end];
 };
 
-export function Graph({ data, title }: GraphProps): JSX.Element {
-  const ref = useRef<HighchartsReact.RefObject | null>(null);
-
-  const sanitizedScore = data.history.filter((dataset) => dataset.score > 0);
+const createPlotBands = (
+  data: GraphProps["data"],
+  { horde, alliance }: Record<Factions, LegacyDataset[]>
+): XAxisPlotBandsOptions[] => {
   const sanitizedXFactionScore = data.crossFactionData.filter(
     (dataset) => dataset.score > 0
   );
   const sanitizedXFactionScoreReversed = [...sanitizedXFactionScore].reverse();
+  const sanitizedScoreHordeReverse = [...horde].reverse();
+  const sanitizedScoreAllianceReverse = [...alliance].reverse();
 
-  const sanitizedScoreHorde = sanitizedScore.filter(
-    (dataset) => dataset.faction === "horde"
-  );
-  const sanitizedScoreAlliance = sanitizedScore.filter(
-    (dataset) => dataset.faction === "alliance"
-  );
-
-  const sanitizedScoreHordeReverse = [...sanitizedScoreHorde].reverse();
-  const sanitizedScoreAllianceReverse = [...sanitizedScoreAlliance].reverse();
-
-  const xFactionExtrapolation = data.seasonEnding
-    ? null
-    : convertExtrapoationToSeries(extrapolateBy(data.crossFactionData), null);
-  const allianceExtrapolation =
-    data.seasonEnding || data.crossFactionData.length > 0
-      ? null
-      : convertExtrapoationToSeries(
-          extrapolateBy(sanitizedScoreAlliance),
-          "alliance"
-        );
-  const hordeExtrapolation =
-    data.seasonEnding || data.crossFactionData.length > 0
-      ? null
-      : convertExtrapoationToSeries(
-          extrapolateBy(sanitizedScoreHorde),
-          "horde"
-        );
-
-  useEffect(() => {
-    if (!ref.current) {
-      return;
-    }
-
-    if (data.seasonEnding || !xFactionExtrapolation) {
-      ref.current.chart.zoomOut();
-
-      return;
-    }
-
-    const [start, end] = calculateExtremesToZoomTo(
-      data.history,
-      xFactionExtrapolation
-    );
-
-    if (start === 0 || end === 0) {
-      return;
-    }
-
-    ref.current.chart.xAxis[0].setExtremes(start, end);
-    ref.current.chart.showResetZoom();
-  }, [data, xFactionExtrapolation]);
-
-  const plotBands: XAxisPlotBandsOptions[] = [
+  return [
     ...(data.affixRotation
       ? data.affixRotation.map<XAxisPlotBandsOptions>((rotation, index) => {
           const start = data.seasonStart + index * oneWeekInMs;
@@ -285,8 +235,9 @@ export function Graph({ data, title }: GraphProps): JSX.Element {
       : []),
     ...(data.affixRotation
       ? data.affixRotation.map<XAxisPlotBandsOptions>((_, index) => {
-          const start = data.seasonStart + index * oneWeekInMs;
-          const end = start + oneWeekInMs;
+          const oneDayInMs = 24 * 60 * 60 * 1000;
+          const start = data.seasonStart + index * oneWeekInMs - oneDayInMs;
+          const end = start + oneWeekInMs + oneDayInMs;
 
           const xFactionStartMatch = sanitizedXFactionScore.find(
             (dataset) => dataset.timestamp >= start && dataset.timestamp <= end
@@ -295,14 +246,14 @@ export function Graph({ data, title }: GraphProps): JSX.Element {
             (dataset) => dataset.timestamp < end && dataset.timestamp > start
           );
 
-          const hordeStartMatch = sanitizedScoreHorde.find(
+          const hordeStartMatch = horde.find(
             (dataset) => dataset.timestamp >= start && dataset.timestamp <= end
           );
           const hordeEndMatch = sanitizedScoreHordeReverse.find(
             (dataset) => dataset.timestamp < end && dataset.timestamp > start
           );
 
-          const allianceStartMatch = sanitizedScoreAlliance.find(
+          const allianceStartMatch = alliance.find(
             (dataset) => dataset.timestamp >= start && dataset.timestamp <= end
           );
           const allianceEndMatch = sanitizedScoreAllianceReverse.find(
@@ -318,7 +269,7 @@ export function Graph({ data, title }: GraphProps): JSX.Element {
             xFactionStartMatch
           ) {
             return {
-              from: start,
+              from: start + oneDayInMs,
               to: end,
               color: "transparent",
               label: {
@@ -335,7 +286,7 @@ export function Graph({ data, title }: GraphProps): JSX.Element {
           }
 
           return {
-            from: start,
+            from: start + oneDayInMs,
             to: end,
             color: "transparent",
             label: {
@@ -372,8 +323,43 @@ export function Graph({ data, title }: GraphProps): JSX.Element {
         })
       : []),
   ];
+};
 
-  const options: Options = {
+const createOptions = (
+  data: GraphProps["data"],
+  title: GraphProps["title"],
+  xFactionExtrapolation: SeriesLineOptions | null
+): Options => {
+  const sanitizedScore = data.history.filter((dataset) => dataset.score > 0);
+
+  const sanitizedScoreHorde = sanitizedScore.filter(
+    (dataset) => dataset.faction === "horde"
+  );
+  const sanitizedScoreAlliance = sanitizedScore.filter(
+    (dataset) => dataset.faction === "alliance"
+  );
+
+  const allianceExtrapolation =
+    data.seasonEnding || data.crossFactionData.length > 0
+      ? null
+      : convertExtrapoationToSeries(
+          extrapolateBy(sanitizedScoreAlliance),
+          "alliance"
+        );
+  const hordeExtrapolation =
+    data.seasonEnding || data.crossFactionData.length > 0
+      ? null
+      : convertExtrapoationToSeries(
+          extrapolateBy(sanitizedScoreHorde),
+          "horde"
+        );
+
+  const plotBands = createPlotBands(data, {
+    horde: sanitizedScoreHorde,
+    alliance: sanitizedScoreAlliance,
+  });
+
+  return {
     title: {
       text: title,
       style: {
@@ -521,6 +507,40 @@ export function Graph({ data, title }: GraphProps): JSX.Element {
       xFactionExtrapolation,
     ].filter((series): series is SeriesLineOptions => series !== null),
   };
+};
+
+export function Graph({ data, title }: GraphProps): JSX.Element {
+  const ref = useRef<HighchartsReact.RefObject | null>(null);
+
+  const xFactionExtrapolation = data.seasonEnding
+    ? null
+    : convertExtrapoationToSeries(extrapolateBy(data.crossFactionData), null);
+
+  useEffect(() => {
+    if (!ref.current) {
+      return;
+    }
+
+    if (data.seasonEnding || !xFactionExtrapolation) {
+      ref.current.chart.zoomOut();
+
+      return;
+    }
+
+    const [start, end] = calculateExtremesToZoomTo(
+      data.history,
+      xFactionExtrapolation
+    );
+
+    if (start === 0 || end === 0) {
+      return;
+    }
+
+    ref.current.chart.xAxis[0].setExtremes(start, end);
+    ref.current.chart.showResetZoom();
+  }, [data, xFactionExtrapolation]);
+
+  const options = createOptions(data, title, xFactionExtrapolation);
 
   return (
     <div className="p-4">
