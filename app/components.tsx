@@ -268,6 +268,8 @@ const createPlotBands = (
             xFactionEndMatch &&
             xFactionStartMatch
           ) {
+            const result = xFactionEndMatch.score - xFactionStartMatch.score;
+
             return {
               from: start + oneDayInMs,
               to: end,
@@ -277,8 +279,8 @@ const createPlotBands = (
                 useHTML: true,
                 text: `<span style="font-size: 10px; color: ${
                   factionColors.xFaction
-                }">+${(
-                  xFactionEndMatch.score - xFactionStartMatch.score
+                }">${result > 0 ? '+': ''}${(
+                  result
                 ).toFixed(1)}</span>`,
                 y: -15,
               },
@@ -295,21 +297,21 @@ const createPlotBands = (
                 hordeEndMatch && hordeStartMatch
                   ? `<span style="font-size: 10px; color: ${
                       factionColors.horde
-                    }">+${(hordeEndMatch.score - hordeStartMatch.score).toFixed(
+                    }">${hordeEndMatch.score - hordeStartMatch.score > 0 ? '+' : ''}${(hordeEndMatch.score - hordeStartMatch.score).toFixed(
                       1
                     )}</span>`
                   : null,
                 allianceEndMatch && allianceStartMatch
                   ? `<span style="font-size: 10px; color: ${
                       factionColors.alliance
-                    }">+${(
+                    }">${allianceEndMatch.score - allianceStartMatch.score > 0 ? '+' : ''}${(
                       allianceEndMatch.score - allianceStartMatch.score
                     ).toFixed(1)}</span>`
                   : null,
                 xFactionStartMatch && xFactionEndMatch
                   ? `<span style="font-size: 10px; color: ${
                       factionColors.xFaction
-                    }">+${(
+                    }">${xFactionEndMatch.score - xFactionStartMatch.score > 0 ? '+' : ''}${(
                       xFactionEndMatch.score - xFactionStartMatch.score
                     ).toFixed(1)}</span>`
                   : null,
