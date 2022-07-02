@@ -3,6 +3,12 @@ import type { Factions, Regions } from "@prisma/client";
 export const orderedGeasonsBySize: Regions[] = ["eu", "us", "tw", "kr"];
 
 export const seasonStartDates: Record<string, Record<Regions, number>> = {
+  "sl-season-4": {
+    us: 1_659_452_400_000,
+    eu: 1_659_495_600_000,
+    kr: 1_659_564_000_000,
+    tw: 1_659_564_000_000,
+  },
   "sl-season-3": {
     us: 1_646_146_800_000,
     eu: 1_646_190_000_000,
