@@ -133,5 +133,5 @@ const slSeason3: [number, number, number][] = [
 ];
 
 export const affixRotations: Record<string, [number, number, number][]> = {
-  "sl-season-3": [...slSeason3, ...slSeason3, ...slSeason3],
+  "sl-season-3": [...slSeason3, ...slSeason3],
 };
