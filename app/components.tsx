@@ -197,7 +197,7 @@ const calculateExtremesToZoomTo = (
 
   const end = maybeEnd > 0 ? maybeEnd : history[history.length - 1].timestamp;
 
-  // offset by +2 weeks since extrapolation is two into the future
+  // offset by +2 weeks since extrapolation is at least tw into the future
   const offset = (extrapolated ? 6 : 4) * 7 * 24 * 60 * 60 * 1000;
 
   const backThen = [...history]
@@ -387,7 +387,6 @@ const createOptions = (
       text: title,
       style: {
         color: "#fff",
-        zIndex: 100
       },
     },
     chart: {
@@ -546,7 +545,7 @@ export function Graph({ data, title }: GraphProps): JSX.Element {
       return;
     }
 
-    if (data.seasonEnding || !xFactionExtrapolation) {
+    if (!xFactionExtrapolation) {
       ref.current.chart.zoomOut();
 
       return;
