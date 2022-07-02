@@ -65,6 +65,8 @@ export default function App(): JSX.Element {
           </h1>
 
           <p className="pb-4 italic text-center">updates hourly</p>
+          <p className="pb-4 italic text-center">extrapolation relies on all known data so far - it may be misleading and is a guesstimation!</p>
+
 
           <Nav />
           <Outlet />
@@ -92,20 +94,22 @@ function Nav() {
   return (
     <nav className="flex flex-col justify-between w-full md:flex-row md:px-4">
       <ul className="flex px-4 pt-4 space-x-2 md:pt-0 md:px-0">
-        {Object.keys(seasonStartDates).map((season) => {
-          const seasonName = season === latestSeason ? "latest" : season;
-          const path = [seasonName, params.region, params.faction]
-            .filter(Boolean)
-            .join("/");
+        {Object.keys(seasonStartDates)
+          .filter((key) => Date.now() >= seasonStartDates[key].us)
+          .map((season) => {
+            const seasonName = season === latestSeason ? "latest" : season;
+            const path = [seasonName, params.region, params.faction]
+              .filter(Boolean)
+              .join("/");
 
-          return (
-            <li key={season}>
-              <NavLink className={navLinkClassNameActivity} to={path}>
-                {seasonName}
-              </NavLink>
-            </li>
-          );
-        })}
+            return (
+              <li key={season}>
+                <NavLink className={navLinkClassNameActivity} to={path}>
+                  {seasonName}
+                </NavLink>
+              </li>
+            );
+          })}
       </ul>
 
       {params.season ? (

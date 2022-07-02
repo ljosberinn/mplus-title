@@ -41,23 +41,42 @@ export const seasonEndings = Object.entries(seasonStartDates).reduce<
   }
 
   const oneWeekInMs = 7 * 24 * 60 * 60 * 1000;
+  const amountOfOffSeasonWeeks = prevSeasonName === 'sl-season-3' ? 0 : 1;
 
   acc[prevSeasonName] = {
-    eu: regionEndingTimestampMap.eu - oneWeekInMs,
-    us: regionEndingTimestampMap.eu - oneWeekInMs,
-    tw: regionEndingTimestampMap.eu - oneWeekInMs,
-    kr: regionEndingTimestampMap.eu - oneWeekInMs,
+    eu: regionEndingTimestampMap.eu - amountOfOffSeasonWeeks * oneWeekInMs,
+    us: regionEndingTimestampMap.eu - amountOfOffSeasonWeeks * oneWeekInMs,
+    tw: regionEndingTimestampMap.eu - amountOfOffSeasonWeeks * oneWeekInMs,
+    kr: regionEndingTimestampMap.eu - amountOfOffSeasonWeeks * oneWeekInMs,
   };
 
   return acc;
 }, {});
 
-export const [latestSeason] = Object.keys(seasonStartDates);
+export const latestSeason = 'sl-season-3';
 
 export const confirmedCutoffs: Record<
   string,
   Record<Regions, Record<Factions, number>>
 > = {
+  "sl-season-4": {
+    eu: {
+      horde: 0,
+      alliance: 0,
+    },
+    us: {
+      horde: 0,
+      alliance: 0,
+    },
+    kr: {
+      horde: 0,
+      alliance: 0,
+    },
+    tw: {
+      horde: 0,
+      alliance: 0,
+    },
+  },
   "sl-season-3": {
     eu: {
       horde: 0,

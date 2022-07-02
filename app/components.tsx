@@ -67,7 +67,8 @@ const formatter = function (this: PointLabelObject) {
 const oneWeekInMs = 7 * 24 * 60 * 60 * 1000;
 
 const extrapolateBy = (
-  data: GraphProps["data"]["crossFactionData"]
+  data: GraphProps["data"]["crossFactionData"],
+  seasonEnding: null | number
 ):
   | {
       value: 0;
@@ -81,6 +82,14 @@ const extrapolateBy = (
         | LegacyDataset
         | (CrossFactionDataset & { timestamp: number; score: number });
     } => {
+  if (seasonEnding && Date.now() >= seasonEnding) {
+    return {
+      value: 0,
+      timestamp: 0,
+      connector: null,
+    };
+  }
+
   const last = data[data.length - 1];
   const then = last.timestamp - data[0].timestamp;
 
@@ -96,12 +105,16 @@ const extrapolateBy = (
 
   const timePassed = last.timestamp - first.timestamp;
   const daysPassed = timePassed / 1000 / 60 / 60 / 24;
-  const twoWeeksInDays = 14;
-  const factor = twoWeeksInDays / daysPassed;
+
+  const daysUntilSeasonEndingOrTwoWeeks = seasonEnding
+    ? (seasonEnding - Date.now()) / 1000 / 60 / 60 / 24
+    : 14;
+  const factor = daysUntilSeasonEndingOrTwoWeeks / daysPassed;
 
   return {
     value: Math.round(last.score + (last.score - first.score) * factor),
-    timestamp: last.timestamp + 2 * oneWeekInMs,
+    timestamp:
+      last.timestamp + (daysUntilSeasonEndingOrTwoWeeks / 7) * oneWeekInMs,
     connector: last,
   };
 };
@@ -279,9 +292,7 @@ const createPlotBands = (
                 useHTML: true,
                 text: `<span style="font-size: 10px; color: ${
                   factionColors.xFaction
-                }">${result > 0 ? '+': ''}${(
-                  result
-                ).toFixed(1)}</span>`,
+                }">${result > 0 ? "+" : ""}${result.toFixed(1)}</span>`,
                 y: -15,
               },
             };
@@ -297,21 +308,31 @@ const createPlotBands = (
                 hordeEndMatch && hordeStartMatch
                   ? `<span style="font-size: 10px; color: ${
                       factionColors.horde
-                    }">${hordeEndMatch.score - hordeStartMatch.score > 0 ? '+' : ''}${(hordeEndMatch.score - hordeStartMatch.score).toFixed(
+                    }">${
+                      hordeEndMatch.score - hordeStartMatch.score > 0 ? "+" : ""
+                    }${(hordeEndMatch.score - hordeStartMatch.score).toFixed(
                       1
                     )}</span>`
                   : null,
                 allianceEndMatch && allianceStartMatch
                   ? `<span style="font-size: 10px; color: ${
                       factionColors.alliance
-                    }">${allianceEndMatch.score - allianceStartMatch.score > 0 ? '+' : ''}${(
+                    }">${
+                      allianceEndMatch.score - allianceStartMatch.score > 0
+                        ? "+"
+                        : ""
+                    }${(
                       allianceEndMatch.score - allianceStartMatch.score
                     ).toFixed(1)}</span>`
                   : null,
                 xFactionStartMatch && xFactionEndMatch
                   ? `<span style="font-size: 10px; color: ${
                       factionColors.xFaction
-                    }">${xFactionEndMatch.score - xFactionStartMatch.score > 0 ? '+' : ''}${(
+                    }">${
+                      xFactionEndMatch.score - xFactionStartMatch.score > 0
+                        ? "+"
+                        : ""
+                    }${(
                       xFactionEndMatch.score - xFactionStartMatch.score
                     ).toFixed(1)}</span>`
                   : null,
@@ -342,17 +363,17 @@ const createOptions = (
   );
 
   const allianceExtrapolation =
-    data.seasonEnding || data.crossFactionData.length > 0
+    data.crossFactionData.length > 0
       ? null
       : convertExtrapoationToSeries(
-          extrapolateBy(sanitizedScoreAlliance),
+          extrapolateBy(sanitizedScoreAlliance, data.seasonEnding),
           "alliance"
         );
   const hordeExtrapolation =
-    data.seasonEnding || data.crossFactionData.length > 0
+    data.crossFactionData.length > 0
       ? null
       : convertExtrapoationToSeries(
-          extrapolateBy(sanitizedScoreHorde),
+          extrapolateBy(sanitizedScoreHorde, data.seasonEnding),
           "horde"
         );
 
@@ -366,6 +387,7 @@ const createOptions = (
       text: title,
       style: {
         color: "#fff",
+        zIndex: 100
       },
     },
     chart: {
@@ -514,9 +536,10 @@ const createOptions = (
 export function Graph({ data, title }: GraphProps): JSX.Element {
   const ref = useRef<HighchartsReact.RefObject | null>(null);
 
-  const xFactionExtrapolation = data.seasonEnding
-    ? null
-    : convertExtrapoationToSeries(extrapolateBy(data.crossFactionData), null);
+  const xFactionExtrapolation = convertExtrapoationToSeries(
+    extrapolateBy(data.crossFactionData, data.seasonEnding),
+    null
+  );
 
   useEffect(() => {
     if (!ref.current) {
