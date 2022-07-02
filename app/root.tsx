@@ -59,7 +59,7 @@ export default function App(): JSX.Element {
         <Links />
       </head>
       <body className="text-gray-200 bg-gray-900">
-        <main className="max-w-5xl m-auto">
+        <main className="max-w-7xl m-auto">
           <h1 className="pt-8 pb-2 text-2xl text-center text-semibold">
             {title}
           </h1>
