@@ -33,88 +33,6 @@ export type CrossFactionDataset = {
   score: number;
 };
 
-const aggregateFactionDataByDay = (data: LegacyDataset[]) => {
-  const map: Record<string, Record<string, number>> = {};
-
-  return data.reduce<LegacyDataset[]>((acc, dataset) => {
-    const outerKey = `${dataset.region}-${dataset.faction}`;
-    const innerKey = new Date(dataset.timestamp).toDateString();
-
-    // havent seen region-faction yet
-    if (!(outerKey in map)) {
-      map[outerKey] = {
-        // remember day
-        [innerKey]: dataset.timestamp,
-      };
-
-      acc.push(dataset);
-      return acc;
-    }
-
-    // havent seen this day yet
-    if (!(innerKey in map[outerKey])) {
-      // remember day
-      map[outerKey][innerKey] = dataset.timestamp;
-      acc.push(dataset);
-      return acc;
-    }
-
-    const prev = map[outerKey][innerKey];
-
-    // dataset is same region, faction, day but from a later point in time
-    if (dataset.timestamp >= prev) {
-      map[outerKey][innerKey] = dataset.timestamp;
-      return [
-        ...acc.filter((d) => new Date(d.timestamp).toDateString() !== innerKey),
-        dataset,
-      ];
-    }
-
-    return acc;
-  }, []);
-};
-
-const aggregateCrossFactionDataByDa = (data: CrossFactionDataset[]) => {
-  const map: Record<string, Record<string, number>> = {};
-
-  return data.reduce<CrossFactionDataset[]>((acc, dataset) => {
-    const outerKey = `${dataset.region}`;
-    const innerKey = new Date(dataset.timestamp).toDateString();
-
-    // havent seen region-faction yet
-    if (!(outerKey in map)) {
-      map[outerKey] = {
-        // remember day
-        [innerKey]: dataset.timestamp,
-      };
-
-      acc.push(dataset);
-      return acc;
-    }
-
-    // havent seen this day yet
-    if (!(innerKey in map[outerKey])) {
-      // remember day
-      map[outerKey][innerKey] = dataset.timestamp;
-      acc.push(dataset);
-      return acc;
-    }
-
-    const prev = map[outerKey][innerKey];
-
-    // dataset is same region, faction, day but from a later point in time
-    if (dataset.timestamp >= prev) {
-      map[outerKey][innerKey] = dataset.timestamp;
-      return [
-        ...acc.filter((d) => new Date(d.timestamp).toDateString() !== innerKey),
-        dataset,
-      ];
-    }
-
-    return acc;
-  }, []);
-};
-
 export const loaderMap = Object.entries(seasonStartDates).reduce<
   Record<string, Loader>
 >((acc, [seasonName, regionalStart], index, arr) => {
@@ -171,34 +89,31 @@ export const loaderMap = Object.entries(seasonStartDates).reduce<
       }),
     ]);
 
-    const history = aggregateFactionDataByDay(
-      rawHistory
-        .map(({ customScore, ...dataset }) => {
-          return {
-            ...dataset,
-            timestamp: Number(dataset.timestamp) * 1000,
-            // rank: customRank,
-            score: customScore,
-          };
-        })
-        .filter((dataset) => {
-          // ensures in a region multiview, only data post season start of this region is forwarded
-          return (
-            dataset.score > 0 &&
-            (region
-              ? dataset.timestamp >=
-                seasonStartDates[seasonName][dataset.region]
-              : true)
-          );
-        })
-    ).reverse();
+    const history = rawHistory
+      .map(({ customScore, ...dataset }) => {
+        return {
+          ...dataset,
+          timestamp: Number(dataset.timestamp) * 1000,
+          // rank: customRank,
+          score: customScore,
+        };
+      })
+      .filter((dataset) => {
+        // ensures in a region multiview, only data post season start of this region is forwarded
+        return (
+          dataset.score > 0 &&
+          (region
+            ? dataset.timestamp >= seasonStartDates[seasonName][dataset.region]
+            : true)
+        );
+      })
+      .reverse();
 
-    const crossFactionData = aggregateCrossFactionDataByDa(
-      rawCrossFactionData.map((dataset) => ({
+    const crossFactionData = rawCrossFactionData
+      .map((dataset) => ({
         ...dataset,
         timestamp: Number(dataset.timestamp) * 1000,
       }))
-    )
       // eslint-disable-next-line sonarjs/no-identical-functions
       .filter((dataset) => {
         // ensures in a region multiview, only data post season start of this region is forwarded
