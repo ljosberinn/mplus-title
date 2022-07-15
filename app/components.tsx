@@ -170,6 +170,7 @@ const affixes: Record<number, { icon: string }> = {
   128: { /* name: "Tormented",*/ icon: "spell_animamaw_orb" },
   129: { /* name: "Infernal",*/ icon: "inv_infernalbrimstone" },
   130: { /* name: "Encrypted",*/ icon: "spell_progenitor_orb" },
+  131: { /* name: "Shrouded",*/ icon: "spell_shadow_nethercloak" },
 };
 
 // fun in a bun.
@@ -248,9 +249,9 @@ const createPlotBands = (
       : []),
     ...(data.affixRotation
       ? data.affixRotation.map<XAxisPlotBandsOptions>((_, index) => {
-          const oneDayInMs = 24 * 60 * 60 * 1000;
-          const start = data.seasonStart + index * oneWeekInMs - oneDayInMs;
-          const end = start + oneWeekInMs + oneDayInMs;
+          const oneHourInMs = 60 * 60 * 1000;
+          const start = data.seasonStart + index * oneWeekInMs - oneHourInMs;
+          const end = start + oneWeekInMs + oneHourInMs;
 
           const xFactionStartMatch = sanitizedXFactionScore.find(
             (dataset) => dataset.timestamp >= start && dataset.timestamp <= end
@@ -284,7 +285,7 @@ const createPlotBands = (
             const result = xFactionEndMatch.score - xFactionStartMatch.score;
 
             return {
-              from: start + oneDayInMs,
+              from: start + oneHourInMs,
               to: end,
               color: "transparent",
               label: {
@@ -299,7 +300,7 @@ const createPlotBands = (
           }
 
           return {
-            from: start + oneDayInMs,
+            from: start + oneHourInMs,
             to: end,
             color: "transparent",
             label: {
