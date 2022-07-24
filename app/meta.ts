@@ -23,12 +23,14 @@ export const seasonStartDates: Record<string, Record<Regions, number>> = {
   },
 };
 
+const oneWeekInMs = 7 * 24 * 60 * 60 * 1000;
+
 export const crossFactionSupportDates: Record<Regions, number> = {
   // eslint-disable-next-line sonarjs/no-duplicate-string
-  eu: seasonStartDates["sl-season-3"].eu + 13 * 7 * 24 * 60 * 60 * 1000,
-  us: seasonStartDates["sl-season-3"].us + 13 * 7 * 24 * 60 * 60 * 1000,
-  kr: seasonStartDates["sl-season-3"].kr + 13 * 7 * 24 * 60 * 60 * 1000,
-  tw: seasonStartDates["sl-season-3"].tw + 13 * 7 * 24 * 60 * 60 * 1000,
+  eu: seasonStartDates["sl-season-3"].eu + 13 * oneWeekInMs,
+  us: seasonStartDates["sl-season-3"].us + 13 * oneWeekInMs,
+  kr: seasonStartDates["sl-season-3"].kr + 13 * oneWeekInMs,
+  tw: seasonStartDates["sl-season-3"].tw + 13 * oneWeekInMs,
 };
 
 export const seasonEndings = Object.entries(seasonStartDates).reduce<
@@ -40,7 +42,6 @@ export const seasonEndings = Object.entries(seasonStartDates).reduce<
     return acc;
   }
 
-  const oneWeekInMs = 7 * 24 * 60 * 60 * 1000;
   const amountOfOffSeasonWeeks = prevSeasonName === "sl-season-3" ? 0 : 1;
 
   acc[prevSeasonName] = {
@@ -53,7 +54,12 @@ export const seasonEndings = Object.entries(seasonStartDates).reduce<
   return acc;
 }, {});
 
-export const latestSeason = "sl-season-3";
+export const latestSeason = Object.entries(seasonStartDates)
+  .reverse()
+  .reduce(
+    (acc, [seasonName, values]) => (Date.now() >= values.us ? seasonName : acc),
+    "sl-season-3"
+  );
 
 export const confirmedCutoffs: Record<
   string,
@@ -134,4 +140,5 @@ const slSeason3: [number, number, number][] = [
 
 export const affixRotations: Record<string, [number, number, number][]> = {
   "sl-season-3": [...slSeason3, ...slSeason3],
+  "sl-season-4": [],
 };
