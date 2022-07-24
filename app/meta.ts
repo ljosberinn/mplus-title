@@ -1,6 +1,7 @@
 import type { Factions, Regions } from "@prisma/client";
 
 export const orderedGeasonsBySize: Regions[] = ["eu", "us", "tw", "kr"];
+const oneWeekInMs = 7 * 24 * 60 * 60 * 1000;
 
 export const seasonStartDates: Record<string, Record<Regions, number>> = {
   "sl-season-4": {
@@ -16,14 +17,12 @@ export const seasonStartDates: Record<string, Record<Regions, number>> = {
     tw: 1_646_258_400_000,
   },
   "sl-season-2": {
-    us: 1_625_583_600_000,
-    eu: 1_625_626_800_000,
-    kr: 1_625_695_200_000,
-    tw: 1_625_695_200_000,
+    us: 1_625_583_600_000 - oneWeekInMs,
+    eu: 1_625_626_800_000 - oneWeekInMs,
+    kr: 1_625_695_200_000 - oneWeekInMs,
+    tw: 1_625_695_200_000 - oneWeekInMs,
   },
 };
-
-const oneWeekInMs = 7 * 24 * 60 * 60 * 1000;
 
 export const crossFactionSupportDates: Record<Regions, number> = {
   // eslint-disable-next-line sonarjs/no-duplicate-string
@@ -123,6 +122,21 @@ export const confirmedCutoffs: Record<
   },
 };
 
+const slSeason2: [number, number, number][] = [
+  [9, 11, 3], // Tyrannical, Bursting, Volcanic
+  [10, 122, 12], // Fortified, Inspiring, Grievous
+  [9, 123, 4], // Tyrannical, Spiteful, Necrotic
+  [10, 7, 14], // Fortified, Bolstering, Quaking
+  [9, 8, 124], // Tyrannical, Sanguine, Storming
+  [10, 6, 13], // Fortified, Raging, Explosive
+  [9, 11, 3], // Tyrannical, Bursting, Volcanic
+  [10, 4, 12], // Fortified, Necrotic Grievous
+  [9, 122, 14], // Tyrannical, Inspiring, Quaking
+  [10, 8, 4], // Fortified, Sanguine Necrotic
+  [9, 7, 13], // Tyrannical, Bolstering, Explosive
+  [10, 11, 124], // Fortified, Bursting, Storming
+];
+
 const slSeason3: [number, number, number][] = [
   [9, 7, 13], // Tyrannical, Bolstering, Explosive
   [10, 11, 124], // Fortified, Bursting, Storming
@@ -139,6 +153,7 @@ const slSeason3: [number, number, number][] = [
 ];
 
 export const affixRotations: Record<string, [number, number, number][]> = {
+  "sl-season-2": [...slSeason2, ...slSeason2, ...slSeason2],
   "sl-season-3": [...slSeason3, ...slSeason3],
   "sl-season-4": [],
 };
