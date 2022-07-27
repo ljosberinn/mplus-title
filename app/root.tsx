@@ -11,7 +11,7 @@ import {
   Link,
 } from "@remix-run/react";
 
-import { seasonStartDates, latestSeason, orderedGeasonsBySize } from "./meta";
+import { seasonStartDates, latestSeason, orderedRegionsBySize } from "./meta";
 import styles from "./styles/app.css";
 
 export const links: LinksFunction = () => {
@@ -121,7 +121,7 @@ function Nav() {
               </Link>
             </li>
           ) : null}
-          {orderedGeasonsBySize.map((region) => {
+          {orderedRegionsBySize.map((region) => {
             const path = [params.season, region].filter(Boolean).join("/");
 
             return (

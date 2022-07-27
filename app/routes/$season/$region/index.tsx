@@ -142,6 +142,7 @@ export default function Region(): JSX.Element | null {
         seasonEnding: data.seasonEnding ? data.seasonEnding[region] : null,
         confirmedCutoff: data.confirmedCutoff[region],
         seasonStart: data.seasonStart[region],
+        bluePost: data.bluePosts[region]
       }}
       title={params.season === "latest" ? latestSeason : params.season}
     />

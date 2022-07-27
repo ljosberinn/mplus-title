@@ -20,11 +20,15 @@ const factionColors: Record<string, string> = {
 };
 
 type GraphProps = {
-  data: Omit<Data, "confirmedCutoff" | "seasonEnding" | "seasonStart"> & {
+  data: Omit<
+    Data,
+    "confirmedCutoff" | "seasonEnding" | "seasonStart" | "bluePosts"
+  > & {
     confirmedCutoff: Record<Factions, number> | null;
     seasonEnding: number | null;
     seasonStart: number;
     crossFactionData: { timestamp: number; score: number }[];
+    bluePost: string;
   };
   title?: string;
 };
@@ -385,10 +389,13 @@ const createOptions = (
 
   return {
     title: {
-      text: title,
+      text: data.bluePost
+        ? `<a target="_blank" style="text-decoration: underline;" href="${data.bluePost}">${title} (click for daily updated bluepost)</a>`
+        : title,
       style: {
         color: "#fff",
       },
+      useHTML: true,
     },
     chart: {
       backgroundColor: gray["700"],

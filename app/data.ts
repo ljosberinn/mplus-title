@@ -5,6 +5,7 @@ import {
   confirmedCutoffs,
   seasonEndings,
   seasonStartDates,
+  bluePostForSeasonEnding,
 } from "./meta";
 import { prisma } from "./prisma";
 import { isValidRegion } from "./utils";
@@ -16,6 +17,7 @@ export type Data = {
   affixRotation: [number, number, number][] | null;
   seasonStart: Record<Regions, number>;
   crossFactionData: CrossFactionDataset[];
+  bluePosts: Record<Regions, string>;
 };
 
 type Loader = (params?: { region?: string; faction?: string }) => Promise<Data>;
@@ -134,6 +136,7 @@ export const loaderMap = Object.entries(seasonStartDates).reduce<
       affixRotation: affixRotations[seasonName] ?? null,
       seasonStart: seasonStartDates[seasonName],
       crossFactionData,
+      bluePosts: bluePostForSeasonEnding[seasonName],
     };
   };
 

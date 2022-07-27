@@ -1,6 +1,6 @@
 import type { Factions, Regions } from "@prisma/client";
 
-export const orderedGeasonsBySize: Regions[] = ["eu", "us", "tw", "kr"];
+export const orderedRegionsBySize: Regions[] = ["eu", "us", "tw", "kr"];
 const oneWeekInMs = 7 * 24 * 60 * 60 * 1000;
 
 export const seasonStartDates: Record<string, Record<Regions, number>> = {
@@ -30,6 +30,30 @@ export const crossFactionSupportDates: Record<Regions, number> = {
   us: seasonStartDates["sl-season-3"].us + 13 * oneWeekInMs,
   kr: seasonStartDates["sl-season-3"].kr + 13 * oneWeekInMs,
   tw: seasonStartDates["sl-season-3"].tw + 13 * oneWeekInMs,
+};
+
+export const bluePostForSeasonEnding: Record<
+  string,
+  Record<Regions, string>
+> = {
+  "sl-season-4": {
+    eu: "",
+    kr: "",
+    tw: "",
+    us: "",
+  },
+  "sl-season-3": {
+    eu: "https://eu.forums.blizzard.com/en/wow/t/m-cryptic-hero-title-score-updated-daily/371434",
+    kr: "",
+    tw: "",
+    us: "https://us.forums.blizzard.com/en/wow/t/m-cryptic-hero-title-score-updated-daily/1290001/1",
+  },
+  "sl-season-2": {
+    eu: "",
+    kr: "",
+    tw: "",
+    us: "",
+  },
 };
 
 export const seasonEndings = Object.entries(seasonStartDates).reduce<

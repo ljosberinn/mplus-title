@@ -7,7 +7,7 @@ import type {
 import { Graph } from "~/components";
 import type { Data } from "~/data";
 import { loaderMap } from "~/data";
-import { latestSeason, orderedGeasonsBySize } from "~/meta";
+import { latestSeason, orderedRegionsBySize } from "~/meta";
 
 export const headers: HeadersFunction = () => {
   return {
@@ -43,7 +43,7 @@ export default function Season(): JSX.Element {
 
   return (
     <>
-      {orderedGeasonsBySize.map((region) => {
+      {orderedRegionsBySize.map((region) => {
         const history = data.history.filter(
           (dataset) => dataset.region === region
         );
@@ -63,6 +63,7 @@ export default function Season(): JSX.Element {
                 : null,
               affixRotation: data.affixRotation,
               crossFactionData,
+              bluePost: data.bluePosts[region]
             }}
             title={region.toUpperCase()}
             key={region}
