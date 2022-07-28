@@ -196,16 +196,39 @@ const findTimestampOfExtrapolation = (
 
 const calculateExtremesToZoomTo = (
   history: LegacyDataset[],
-  extrapolated: SeriesLineOptions | null
+  crossFactionHistory: CrossFactionDataset[] &
+    {
+      timestamp: number;
+      score: number;
+    }[],
+  extrapolated: SeriesLineOptions | null,
+  seasonEnding: number | null
 ): [number, number] => {
   const maybeEnd = findTimestampOfExtrapolation(extrapolated);
 
   const end = maybeEnd > 0 ? maybeEnd : history[history.length - 1].timestamp;
 
+  const datasets =
+    crossFactionHistory.length > 0 ? crossFactionHistory : history;
+
+  if (seasonEnding) {
+    const daysUntilEnd = (seasonEnding - Date.now()) / 1000 / 60 / 60 / 24;
+
+    if (daysUntilEnd < 7) {
+      const offset = (extrapolated ? 3 : 2) * 7 * 24 * 60 * 60 * 1000;
+
+      const backThen = [...datasets]
+        .reverse()
+        .find((dataset) => dataset.timestamp < end - offset);
+
+      return [backThen ? backThen.timestamp : 0, end];
+    }
+  }
+
   // offset by +2 weeks since extrapolation is at least tw into the future
   const offset = (extrapolated ? 6 : 4) * 7 * 24 * 60 * 60 * 1000;
 
-  const backThen = [...history]
+  const backThen = [...datasets]
     .reverse()
     .find((dataset) => dataset.timestamp < end - offset);
 
@@ -310,7 +333,9 @@ const createPlotBands = (
             label: {
               verticalAlign: "bottom",
               text: [
-                hordeEndMatch && hordeStartMatch
+                hordeEndMatch &&
+                hordeStartMatch &&
+                hordeEndMatch.score - hordeStartMatch.score !== 0
                   ? `<span style="font-size: 10px; color: ${
                       factionColors.horde
                     }">${
@@ -319,7 +344,9 @@ const createPlotBands = (
                       1
                     )}</span>`
                   : null,
-                allianceEndMatch && allianceStartMatch
+                allianceEndMatch &&
+                allianceStartMatch &&
+                allianceEndMatch.score - allianceStartMatch.score !== 0
                   ? `<span style="font-size: 10px; color: ${
                       factionColors.alliance
                     }">${
@@ -330,7 +357,9 @@ const createPlotBands = (
                       allianceEndMatch.score - allianceStartMatch.score
                     ).toFixed(1)}</span>`
                   : null,
-                xFactionStartMatch && xFactionEndMatch
+                xFactionStartMatch &&
+                xFactionEndMatch &&
+                xFactionEndMatch.score - xFactionStartMatch.score !== 0
                   ? `<span style="font-size: 10px; color: ${
                       factionColors.xFaction
                     }">${
@@ -561,7 +590,9 @@ export function Graph({ data, title }: GraphProps): JSX.Element {
 
     const [start, end] = calculateExtremesToZoomTo(
       data.history,
-      xFactionExtrapolation
+      data.crossFactionData,
+      xFactionExtrapolation,
+      data.seasonEnding
     );
 
     if (start === 0 || end === 0) {
