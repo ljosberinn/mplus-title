@@ -140,7 +140,7 @@ const convertExtrapoationToSeries = (
     name: `Score Extrapolated: ${
       faction ? (faction === "alliance" ? "Alliance" : "Horde") : "X-Faction"
     }`,
-    color: faction ? factionColors[faction] : factionColors.xFaction,
+    color: `${faction ? factionColors[faction] : factionColors.xFaction}75`,
     data: [
       [dataset.connector.timestamp, dataset.connector.score],
       [dataset.timestamp, dataset.value],
