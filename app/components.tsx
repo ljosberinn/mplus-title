@@ -115,8 +115,12 @@ const extrapolateBy = (
     : 14;
   const factor = daysUntilSeasonEndingOrTwoWeeks / daysPassed;
 
+  const value = Number.parseFloat(
+    (last.score + (last.score - first.score) * factor).toFixed(1)
+  );
+
   return {
-    value: Math.round(last.score + (last.score - first.score) * factor),
+    value,
     timestamp:
       last.timestamp + (daysUntilSeasonEndingOrTwoWeeks / 7) * oneWeekInMs,
     connector: last,
