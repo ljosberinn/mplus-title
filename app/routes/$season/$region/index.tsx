@@ -9,7 +9,7 @@ import { useLoaderData, useParams } from "@remix-run/react";
 import { Graph } from "~/components";
 import type { Data } from "~/data";
 import { loaderMap } from "~/data";
-import { latestSeason } from "~/meta";
+import { hasSeasonEndedForAllRegions, latestSeason } from "~/meta";
 import { isValidRegion } from "~/utils";
 
 export const headers: HeadersFunction = () => {
@@ -88,7 +88,7 @@ export const meta: MetaFunction = ({ data, params }) => {
   };
 };
 
-export const loader: LoaderFunction = async ({ params }) => {
+export const loader: LoaderFunction = async ({ params, request }) => {
   if (
     !("season" in params) ||
     !("region" in params) ||
@@ -116,6 +116,15 @@ export const loader: LoaderFunction = async ({ params }) => {
       status: 400,
       statusText: "Unknown season.",
     });
+  }
+
+  if (
+    params.season !== "latest" &&
+    params.season !== latestSeason &&
+    hasSeasonEndedForAllRegions(params.season)
+  ) {
+    request.headers.delete("Cache-Control");
+    request.headers.append("Cache-Control", "max-age-18000, s-maxage=36000");
   }
 
   const data = await seasonLoader({

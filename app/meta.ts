@@ -81,8 +81,18 @@ export const latestSeason = Object.entries(seasonStartDates)
   .reverse()
   .reduce(
     (acc, [seasonName, values]) => (Date.now() >= values.us ? seasonName : acc),
-    "sl-season-3"
+    "sl-season-4"
   );
+
+export const hasSeasonEndedForAllRegions = (season: string): boolean => {
+  if (!(season in seasonEndings)) {
+    return false;
+  }
+
+  const regionData = seasonEndings[season];
+
+  return Object.values(regionData).every((timestamp) => Date.now() > timestamp);
+};
 
 export const confirmedCutoffs: Record<
   string,

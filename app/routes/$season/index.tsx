@@ -7,7 +7,11 @@ import type {
 import { Graph } from "~/components";
 import type { Data } from "~/data";
 import { loaderMap } from "~/data";
-import { latestSeason, orderedRegionsBySize } from "~/meta";
+import {
+  hasSeasonEndedForAllRegions,
+  latestSeason,
+  orderedRegionsBySize,
+} from "~/meta";
 
 export const headers: HeadersFunction = () => {
   return {
@@ -15,7 +19,7 @@ export const headers: HeadersFunction = () => {
   };
 };
 
-export const loader: LoaderFunction = async ({ params }) => {
+export const loader: LoaderFunction = async ({ params, request }) => {
   if (!("season" in params) || !params.season) {
     throw new Response(undefined, {
       status: 400,
@@ -31,6 +35,15 @@ export const loader: LoaderFunction = async ({ params }) => {
       status: 400,
       statusText: "Unknown season.",
     });
+  }
+
+  if (
+    params.season !== "latest" &&
+    params.season !== latestSeason &&
+    hasSeasonEndedForAllRegions(params.season)
+  ) {
+    request.headers.delete("Cache-Control");
+    request.headers.append("Cache-Control", "max-age-18000, s-maxage=36000");
   }
 
   const data = await seasonLoader();
