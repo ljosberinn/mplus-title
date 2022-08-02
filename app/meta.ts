@@ -12,7 +12,7 @@ export const seasonStartDates: Record<string, Record<Regions, number>> = {
   },
   "sl-season-3": {
     us: 1_646_146_800_000,
-    eu: 1_646_190_000_000 + 4 * 60 * 60 * 1000,
+    eu: 1_646_190_000_000,
     kr: 1_646_258_400_000,
     tw: 1_646_258_400_000,
   },
@@ -69,9 +69,9 @@ export const seasonEndings = Object.entries(seasonStartDates).reduce<
 
   acc[prevSeasonName] = {
     eu: regionEndingTimestampMap.eu - amountOfOffSeasonWeeks * oneWeekInMs,
-    us: regionEndingTimestampMap.eu - amountOfOffSeasonWeeks * oneWeekInMs,
-    tw: regionEndingTimestampMap.eu - amountOfOffSeasonWeeks * oneWeekInMs,
-    kr: regionEndingTimestampMap.eu - amountOfOffSeasonWeeks * oneWeekInMs,
+    us: regionEndingTimestampMap.us - amountOfOffSeasonWeeks * oneWeekInMs,
+    tw: regionEndingTimestampMap.tw - amountOfOffSeasonWeeks * oneWeekInMs,
+    kr: regionEndingTimestampMap.kr - amountOfOffSeasonWeeks * oneWeekInMs,
   };
 
   return acc;

@@ -122,6 +122,7 @@ const extrapolateBy = (
   return {
     value,
     timestamp:
+      seasonEnding ??
       last.timestamp + (daysUntilSeasonEndingOrTwoWeeks / 7) * oneWeekInMs,
     connector: last,
   };
@@ -421,10 +422,17 @@ const createOptions = (
   });
 
   return {
+    accessibility: {
+      enabled: true,
+    },
+    time: {
+      timezoneOffset: -120,
+    },
     title: {
-      text: data.bluePost
-        ? `<a target="_blank" style="text-decoration: underline;" href="${data.bluePost}">${title} (click for daily updated bluepost)</a>`
-        : title,
+      text:
+        data.bluePost && title
+          ? `<a target="_blank" style="text-decoration: underline;" href="${data.bluePost}">${title} (click for daily updated bluepost)</a>`
+          : title,
       style: {
         color: "#fff",
       },
