@@ -219,6 +219,16 @@ const calculateExtremesToZoomTo = (
   if (seasonEnding) {
     const daysUntilEnd = (seasonEnding - Date.now()) / 1000 / 60 / 60 / 24;
 
+    if (daysUntilEnd < 1) {
+      const offset = 1.1 * 7 * 24 * 60 * 60 * 1000;
+
+      const backThen = [...datasets]
+        .reverse()
+        .find((dataset) => dataset.timestamp < end - offset);
+
+      return [backThen ? backThen.timestamp : 0, end];
+    }
+
     if (daysUntilEnd < 7) {
       const offset = (extrapolated ? 3 : 2) * 7 * 24 * 60 * 60 * 1000;
 
