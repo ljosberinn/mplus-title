@@ -44,12 +44,16 @@ export default function Season(): JSX.Element {
   return (
     <>
       {orderedRegionsBySize.map((region) => {
+        const seasonStart = data.seasonStart[region];
+
         const history = data.history.filter(
-          (dataset) => dataset.region === region
+          (dataset) =>
+            dataset.region === region && dataset.timestamp > seasonStart
         );
 
         const crossFactionData = data.crossFactionData.filter(
-          (dataset) => dataset.region === region
+          (dataset) =>
+            dataset.region === region && dataset.timestamp > seasonStart
         );
 
         return (
@@ -63,7 +67,7 @@ export default function Season(): JSX.Element {
                 : null,
               affixRotation: data.affixRotation,
               crossFactionData,
-              bluePost: data.bluePosts[region]
+              bluePost: data.bluePosts[region],
             }}
             title={region.toUpperCase()}
             key={region}
