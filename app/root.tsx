@@ -65,8 +65,10 @@ export default function App(): JSX.Element {
           </h1>
 
           <p className="pb-4 italic text-center">updates hourly</p>
-          <p className="pb-4 italic text-center">extrapolation relies on all known data so far - it may be misleading and is a guesstimation!</p>
-
+          <p className="pb-4 italic text-center">
+            extrapolation relies on all known data so far - it may be misleading
+            and is a guesstimation!
+          </p>
 
           <Nav />
           <Outlet />

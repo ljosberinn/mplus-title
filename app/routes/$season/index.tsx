@@ -42,7 +42,7 @@ export default function Season(): JSX.Element {
   const data = useLoaderData<Data>();
 
   return (
-    <>
+    <div className="space-y-4 p-4">
       {orderedRegionsBySize.map((region) => {
         const seasonStart = data.seasonStart[region];
 
@@ -74,6 +74,6 @@ export default function Season(): JSX.Element {
           />
         );
       })}
-    </>
+    </div>
   );
 }

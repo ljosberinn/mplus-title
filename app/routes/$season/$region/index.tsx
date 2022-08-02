@@ -136,15 +136,17 @@ export default function Region(): JSX.Element | null {
   }
 
   return (
-    <Graph
-      data={{
-        ...data,
-        seasonEnding: data.seasonEnding ? data.seasonEnding[region] : null,
-        confirmedCutoff: data.confirmedCutoff[region],
-        seasonStart: data.seasonStart[region],
-        bluePost: data.bluePosts[region]
-      }}
-      title={params.season === "latest" ? latestSeason : params.season}
-    />
+    <div className="space-y-4 p-4">
+      <Graph
+        data={{
+          ...data,
+          seasonEnding: data.seasonEnding ? data.seasonEnding[region] : null,
+          confirmedCutoff: data.confirmedCutoff[region],
+          seasonStart: data.seasonStart[region],
+          bluePost: data.bluePosts[region],
+        }}
+        title={params.season === "latest" ? latestSeason : params.season}
+      />
+    </div>
   );
 }

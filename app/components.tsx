@@ -548,28 +548,32 @@ const createOptions = (
       },
     },
     series: [
-      sanitizedScoreHorde.length > 0 ? {
-        type: "line",
-        name: "Score: Horde",
-        color: factionColors.horde,
-        data: sanitizedScoreHorde.map((dataset) => {
-          return [dataset.timestamp, dataset.score];
-        }),
-        dataLabels: {
-          formatter,
-        },
-      }: null,
-      sanitizedScoreAlliance.length > 0 ? {
-        type: "line",
-        name: "Score: Alliance",
-        color: factionColors.alliance,
-        data: sanitizedScoreAlliance.map((dataset) => {
-          return [dataset.timestamp, dataset.score];
-        }),
-        dataLabels: {
-          formatter,
-        },
-      }: null,
+      sanitizedScoreHorde.length > 0
+        ? {
+            type: "line",
+            name: "Score: Horde",
+            color: factionColors.horde,
+            data: sanitizedScoreHorde.map((dataset) => {
+              return [dataset.timestamp, dataset.score];
+            }),
+            dataLabels: {
+              formatter,
+            },
+          }
+        : null,
+      sanitizedScoreAlliance.length > 0
+        ? {
+            type: "line",
+            name: "Score: Alliance",
+            color: factionColors.alliance,
+            data: sanitizedScoreAlliance.map((dataset) => {
+              return [dataset.timestamp, dataset.score];
+            }),
+            dataLabels: {
+              formatter,
+            },
+          }
+        : null,
       data.crossFactionData.length > 0
         ? {
             type: "line",
@@ -625,11 +629,17 @@ export function Graph({ data, title }: GraphProps): JSX.Element {
     ref.current.chart.showResetZoom();
   }, [data, xFactionExtrapolation]);
 
+  if (data.crossFactionData.length === 0 && data.history.length === 0) {
+    return (
+      <div className="p-4 bg-gray-700 rounded-lg">
+        <h2>No data yet in <b>{title}</b>, give it a couple hours.</h2>
+      </div>
+    );
+  }
+
   const options = createOptions(data, title, xFactionExtrapolation);
 
   return (
-    <div className="p-4">
-      <HighchartsReact highcharts={Highcharts} options={options} ref={ref} />
-    </div>
+    <HighchartsReact highcharts={Highcharts} options={options} ref={ref} />
   );
 }
