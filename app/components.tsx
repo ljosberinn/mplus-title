@@ -86,7 +86,7 @@ const extrapolateBy = (
         | LegacyDataset
         | (CrossFactionDataset & { timestamp: number; score: number });
     } => {
-  if (seasonEnding && Date.now() >= seasonEnding) {
+  if ((seasonEnding && Date.now() >= seasonEnding) || data.length === 0) {
     return {
       value: 0,
       timestamp: 0,
