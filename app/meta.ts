@@ -176,8 +176,12 @@ const slSeason3: [number, number, number][] = [
   [10, 8, 12], // Fortified, Sanguine, Grievous
 ];
 
+const slSeason4: [number, number, number][] = [
+  [9, 122, 14], // Tyrannical, Inspiring, Quaking
+];
+
 export const affixRotations: Record<string, [number, number, number][]> = {
   "sl-season-2": [...slSeason2, ...slSeason2, ...slSeason2],
   "sl-season-3": [...slSeason3, ...slSeason3],
-  "sl-season-4": [],
+  "sl-season-4": [...slSeason4],
 };
