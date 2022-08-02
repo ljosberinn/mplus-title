@@ -548,7 +548,7 @@ const createOptions = (
       },
     },
     series: [
-      {
+      sanitizedScoreHorde.length > 0 ? {
         type: "line",
         name: "Score: Horde",
         color: factionColors.horde,
@@ -558,8 +558,8 @@ const createOptions = (
         dataLabels: {
           formatter,
         },
-      },
-      {
+      }: null,
+      sanitizedScoreAlliance.length > 0 ? {
         type: "line",
         name: "Score: Alliance",
         color: factionColors.alliance,
@@ -569,7 +569,7 @@ const createOptions = (
         dataLabels: {
           formatter,
         },
-      },
+      }: null,
       data.crossFactionData.length > 0
         ? {
             type: "line",
