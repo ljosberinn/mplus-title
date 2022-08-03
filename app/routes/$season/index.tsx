@@ -66,23 +66,20 @@ export default function Season(): JSX.Element | null {
     <div className="space-y-4 p-4">
       {orderedRegionsBySize.map((region) => {
         const seasonStart = data.seasonStart[region];
+        const seasonEnd = data.seasonEnding ? data.seasonEnding[region] : null;
 
         const history = data.history.filter(
           (dataset) =>
             dataset.region === region &&
             dataset.timestamp > seasonStart &&
-            (seasonEndings[season][region]
-              ? dataset.timestamp < seasonEndings[season][region]
-              : true)
+            (seasonEnd ? dataset.timestamp < seasonEnd : true)
         );
 
         const crossFactionData = data.crossFactionData.filter((dataset) => {
           return (
             dataset.region === region &&
             dataset.timestamp > seasonStart &&
-            (seasonEndings[season][region]
-              ? dataset.timestamp < seasonEndings[season][region]
-              : true)
+            (seasonEnd ? dataset.timestamp < seasonEnd : true)
           );
         });
 

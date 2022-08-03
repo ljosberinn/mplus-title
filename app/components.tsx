@@ -298,41 +298,69 @@ const createPlotBands = (
         })
       : []),
     ...(data.affixRotation
-      ? data.affixRotation.map<XAxisPlotBandsOptions>((_, index) => {
-          const oneHourInMs = 60 * 60 * 1000;
-          const start = data.seasonStart + index * oneWeekInMs - oneHourInMs;
-          const end = start + oneWeekInMs + oneHourInMs;
+      ? data.affixRotation
+          .map<XAxisPlotBandsOptions | null>((_, index) => {
+            const oneHourInMs = 60 * 60 * 1000;
+            const start = data.seasonStart + index * oneWeekInMs - oneHourInMs;
+            const end = start + oneWeekInMs + oneHourInMs;
 
-          const xFactionStartMatch = sanitizedXFactionScore.find(
-            (dataset) => dataset.timestamp >= start && dataset.timestamp <= end
-          );
-          const xFactionEndMatch = sanitizedXFactionScoreReversed.find(
-            (dataset) => dataset.timestamp < end && dataset.timestamp > start
-          );
+            const xFactionStartMatch = sanitizedXFactionScore.find(
+              (dataset) =>
+                dataset.timestamp >= start && dataset.timestamp <= end
+            );
+            const xFactionEndMatch = sanitizedXFactionScoreReversed.find(
+              (dataset) => dataset.timestamp < end && dataset.timestamp > start
+            );
 
-          const hordeStartMatch = horde.find(
-            (dataset) => dataset.timestamp >= start && dataset.timestamp <= end
-          );
-          const hordeEndMatch = sanitizedScoreHordeReverse.find(
-            (dataset) => dataset.timestamp < end && dataset.timestamp > start
-          );
+            const hordeStartMatch = horde.find(
+              (dataset) =>
+                dataset.timestamp >= start && dataset.timestamp <= end
+            );
+            const hordeEndMatch = sanitizedScoreHordeReverse.find(
+              (dataset) => dataset.timestamp < end && dataset.timestamp > start
+            );
 
-          const allianceStartMatch = alliance.find(
-            (dataset) => dataset.timestamp >= start && dataset.timestamp <= end
-          );
-          const allianceEndMatch = sanitizedScoreAllianceReverse.find(
-            (dataset) => dataset.timestamp < end && dataset.timestamp > start
-          );
+            const allianceStartMatch = alliance.find(
+              (dataset) =>
+                dataset.timestamp >= start && dataset.timestamp <= end
+            );
+            const allianceEndMatch = sanitizedScoreAllianceReverse.find(
+              (dataset) => dataset.timestamp < end && dataset.timestamp > start
+            );
 
-          if (
-            !hordeStartMatch &&
-            !hordeEndMatch &&
-            !allianceEndMatch &&
-            !allianceEndMatch &&
-            xFactionEndMatch &&
-            xFactionStartMatch
-          ) {
-            const result = xFactionEndMatch.score - xFactionStartMatch.score;
+            if (
+              !hordeStartMatch &&
+              !hordeEndMatch &&
+              !allianceEndMatch &&
+              !allianceEndMatch &&
+              xFactionEndMatch &&
+              xFactionStartMatch
+            ) {
+              const isFirstElement =
+                xFactionStartMatch.timestamp ===
+                sanitizedXFactionScore[0].timestamp;
+              const result =
+                xFactionEndMatch.score -
+                (isFirstElement ? 0 : xFactionStartMatch.score);
+
+              if (result <= 0) {
+                return null;
+              }
+
+              return {
+                from: start + oneHourInMs,
+                to: end,
+                color: "transparent",
+                label: {
+                  verticalAlign: "bottom",
+                  useHTML: true,
+                  text: `<span style="font-size: 10px; color: ${
+                    factionColors.xFaction
+                  }">${result > 0 ? "+" : ""}${result.toFixed(1)}</span>`,
+                  y: -15,
+                },
+              };
+            }
 
             return {
               from: start + oneHourInMs,
@@ -340,67 +368,63 @@ const createPlotBands = (
               color: "transparent",
               label: {
                 verticalAlign: "bottom",
+                text: [
+                  hordeEndMatch &&
+                  hordeStartMatch &&
+                  hordeEndMatch.score - hordeStartMatch.score !== 0
+                    ? `<span style="font-size: 10px; color: ${
+                        factionColors.horde
+                      }">${
+                        hordeEndMatch.score - hordeStartMatch.score > 0
+                          ? "+"
+                          : ""
+                      }${(
+                        hordeEndMatch.score -
+                        (hordeStartMatch.timestamp === horde[0].timestamp
+                          ? 0
+                          : hordeStartMatch.score)
+                      ).toFixed(1)}</span>`
+                    : null,
+                  allianceEndMatch &&
+                  allianceStartMatch &&
+                  allianceEndMatch.score - allianceStartMatch.score !== 0
+                    ? `<span style="font-size: 10px; color: ${
+                        factionColors.alliance
+                      }">${
+                        allianceEndMatch.score - allianceStartMatch.score > 0
+                          ? "+"
+                          : ""
+                      }${(
+                        allianceEndMatch.score -
+                        (allianceStartMatch.timestamp === alliance[0].timestamp
+                          ? 0
+                          : allianceStartMatch.score)
+                      ).toFixed(1)}</span>`
+                    : null,
+                  xFactionStartMatch &&
+                  xFactionEndMatch &&
+                  xFactionEndMatch.score - xFactionStartMatch.score > 0
+                    ? `<span style="font-size: 10px; color: ${
+                        factionColors.xFaction
+                      }">${
+                        xFactionEndMatch.score - xFactionStartMatch.score > 0
+                          ? "+"
+                          : ""
+                      }${(
+                        xFactionEndMatch.score - xFactionStartMatch.score
+                      ).toFixed(1)}</span>`
+                    : null,
+                ]
+                  .filter(Boolean)
+                  .join("<br />"),
                 useHTML: true,
-                text: `<span style="font-size: 10px; color: ${
-                  factionColors.xFaction
-                }">${result > 0 ? "+" : ""}${result.toFixed(1)}</span>`,
-                y: -15,
+                y: xFactionStartMatch && xFactionEndMatch ? -45 : -25,
               },
             };
-          }
-
-          return {
-            from: start + oneHourInMs,
-            to: end,
-            color: "transparent",
-            label: {
-              verticalAlign: "bottom",
-              text: [
-                hordeEndMatch &&
-                hordeStartMatch &&
-                hordeEndMatch.score - hordeStartMatch.score !== 0
-                  ? `<span style="font-size: 10px; color: ${
-                      factionColors.horde
-                    }">${
-                      hordeEndMatch.score - hordeStartMatch.score > 0 ? "+" : ""
-                    }${(hordeEndMatch.score - hordeStartMatch.score).toFixed(
-                      1
-                    )}</span>`
-                  : null,
-                allianceEndMatch &&
-                allianceStartMatch &&
-                allianceEndMatch.score - allianceStartMatch.score !== 0
-                  ? `<span style="font-size: 10px; color: ${
-                      factionColors.alliance
-                    }">${
-                      allianceEndMatch.score - allianceStartMatch.score > 0
-                        ? "+"
-                        : ""
-                    }${(
-                      allianceEndMatch.score - allianceStartMatch.score
-                    ).toFixed(1)}</span>`
-                  : null,
-                xFactionStartMatch &&
-                xFactionEndMatch &&
-                xFactionEndMatch.score - xFactionStartMatch.score !== 0
-                  ? `<span style="font-size: 10px; color: ${
-                      factionColors.xFaction
-                    }">${
-                      xFactionEndMatch.score - xFactionStartMatch.score > 0
-                        ? "+"
-                        : ""
-                    }${(
-                      xFactionEndMatch.score - xFactionStartMatch.score
-                    ).toFixed(1)}</span>`
-                  : null,
-              ]
-                .filter(Boolean)
-                .join("<br />"),
-              useHTML: true,
-              y: xFactionStartMatch && xFactionEndMatch ? -45 : -25,
-            },
-          };
-        })
+          })
+          .filter(
+            (dataset): dataset is XAxisPlotBandsOptions => dataset !== null
+          )
       : []),
   ];
 };
