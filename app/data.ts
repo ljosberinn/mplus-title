@@ -50,7 +50,7 @@ export const loaderMap = Object.entries(seasonStartDates).reduce<
       (region ? regionalStart[region] : regionalStart.us) / 1000
     );
     const lte = nextSeason
-      ? Math.round((region ? nextSeason[1][region] : nextSeason[1].us) / 1000)
+      ? Math.round((region ? nextSeason[1][region] : nextSeason[1].tw) / 1000)
       : undefined;
 
     const [rawHistory, rawCrossFactionData] = await Promise.all([

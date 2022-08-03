@@ -1,5 +1,5 @@
 import { json } from "@remix-run/node";
-import { useLoaderData } from "@remix-run/react";
+import { useLoaderData, useParams } from "@remix-run/react";
 import type {
   HeadersFunction,
   LoaderFunction,
@@ -11,6 +11,7 @@ import {
   hasSeasonEndedForAllRegions,
   latestSeason,
   orderedRegionsBySize,
+  seasonEndings,
 } from "~/meta";
 
 export const headers: HeadersFunction = () => {
@@ -51,8 +52,15 @@ export const loader: LoaderFunction = async ({ params, request }) => {
   return json(data);
 };
 
-export default function Season(): JSX.Element {
+export default function Season(): JSX.Element | null {
   const data = useLoaderData<Data>();
+  const params = useParams();
+
+  const { season } = params;
+
+  if (!season) {
+    return null;
+  }
 
   return (
     <div className="space-y-4 p-4">
@@ -61,13 +69,22 @@ export default function Season(): JSX.Element {
 
         const history = data.history.filter(
           (dataset) =>
-            dataset.region === region && dataset.timestamp > seasonStart
+            dataset.region === region &&
+            dataset.timestamp > seasonStart &&
+            (seasonEndings[season][region]
+              ? dataset.timestamp < seasonEndings[season][region]
+              : true)
         );
 
-        const crossFactionData = data.crossFactionData.filter(
-          (dataset) =>
-            dataset.region === region && dataset.timestamp > seasonStart
-        );
+        const crossFactionData = data.crossFactionData.filter((dataset) => {
+          return (
+            dataset.region === region &&
+            dataset.timestamp > seasonStart &&
+            (seasonEndings[season][region]
+              ? dataset.timestamp < seasonEndings[season][region]
+              : true)
+          );
+        });
 
         return (
           <Graph
