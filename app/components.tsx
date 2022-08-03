@@ -110,6 +110,14 @@ const extrapolateBy = (
   const timePassed = last.timestamp - first.timestamp;
   const daysPassed = timePassed / 1000 / 60 / 60 / 24;
 
+  if (daysPassed < 5) {
+    return {
+      value: 0,
+      timestamp: 0,
+      connector: null,
+    };
+  }
+
   const daysUntilSeasonEndingOrTwoWeeks = seasonEnding
     ? (seasonEnding - Date.now()) / 1000 / 60 / 60 / 24
     : 14;
@@ -632,7 +640,9 @@ export function Graph({ data, title }: GraphProps): JSX.Element {
   if (data.crossFactionData.length === 0 && data.history.length === 0) {
     return (
       <div className="p-4 bg-gray-700 rounded-lg">
-        <h2>No data yet in <b>{title}</b>, give it a couple hours.</h2>
+        <h2>
+          No data yet in <b>{title}</b>, give it a couple hours.
+        </h2>
       </div>
     );
   }
