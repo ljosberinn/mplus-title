@@ -188,6 +188,17 @@ const slSeason3: [number, number, number][] = [
 
 const slSeason4: [number, number, number][] = [
   [9, 122, 14], // Tyrannical, Inspiring, Quaking
+  [10, 8, 12], // Fortified, Sanguine, Grievous
+  [9, 7, 13], // Tyrannical, Bolstering, Explosive
+  [10, 11, 124], // Fortified, Bursting, Storming
+  [9, 6, 3], // Tyrannical, Raging, Volcanic
+  [10, 122, 12], // Fortified, Inspiring, Grievous
+  [9, 123, 4], // Tyrannical, Spiteful, Necrotic
+  [10, 7, 14], // Fortified, Bolstering, Quaking
+  [9, 8, 124], // Tyrannical, Sanguine, Storming
+  [10, 6, 13], // Fortified, Raging Explosive
+  [9, 11, 3], // Tyrannical, Bursting, Volcanic
+  [10, 123, 4], // Fortified, Spiteful, Necrotic
 ];
 
 export const affixRotations: Record<string, [number, number, number][]> = {
