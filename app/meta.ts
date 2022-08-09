@@ -17,10 +17,10 @@ export const seasonStartDates: Record<string, Record<Regions, number>> = {
     tw: 1_646_258_400_000,
   },
   "sl-season-2": {
-    us: 1_625_583_600_000 - oneWeekInMs,
-    eu: 1_625_626_800_000 - oneWeekInMs,
-    kr: 1_625_695_200_000 - oneWeekInMs,
-    tw: 1_625_695_200_000 - oneWeekInMs,
+    us: 1_625_583_600_000,
+    eu: 1_625_626_800_000,
+    kr: 1_625_695_200_000,
+    tw: 1_625_695_200_000,
   },
 };
 
