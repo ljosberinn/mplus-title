@@ -110,7 +110,7 @@ const extrapolateBy = (
   const timePassed = last.timestamp - first.timestamp;
   const daysPassed = timePassed / 1000 / 60 / 60 / 24;
 
-  if (daysPassed < 5) {
+  if (daysPassed < 21) {
     return {
       value: 0,
       timestamp: 0,
