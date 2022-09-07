@@ -68,11 +68,32 @@ const formatter = function (this: PointLabelObject) {
   return this.x === max ? this.y : null;
 };
 
+const determineExtrapolationStart = (
+  data: GraphProps["data"]["crossFactionData"],
+  seasonStart: number
+) => {
+  const [first] = data;
+  const timePassedSinceSeasonStart = first.timestamp - seasonStart;
+
+  if (timePassedSinceSeasonStart < oneWeekInMs * 2) {
+    const firstDatasetAfterTwoWeeks = data.find(
+      (dataset) => dataset.timestamp > seasonStart + oneWeekInMs * 2
+    );
+
+    if (firstDatasetAfterTwoWeeks) {
+      return firstDatasetAfterTwoWeeks.timestamp;
+    }
+  }
+
+  return first.timestamp;
+};
+
 const oneWeekInMs = 7 * 24 * 60 * 60 * 1000;
 
 const extrapolateBy = (
   data: GraphProps["data"]["crossFactionData"],
-  seasonEnding: null | number
+  seasonEnding: null | number,
+  seasonStart: number
 ):
   | {
       value: 0;
@@ -95,7 +116,7 @@ const extrapolateBy = (
   }
 
   const last = data[data.length - 1];
-  const then = last.timestamp - data[0].timestamp;
+  const then = determineExtrapolationStart(data, seasonStart);
 
   const first = data.find((dataset) => dataset.timestamp >= then);
 
@@ -109,14 +130,6 @@ const extrapolateBy = (
 
   const timePassed = last.timestamp - first.timestamp;
   const daysPassed = timePassed / 1000 / 60 / 60 / 24;
-
-  if (daysPassed < 35) { // 4 weeks are still not enough, so try 5
-    return {
-      value: 0,
-      timestamp: 0,
-      connector: null,
-    };
-  }
 
   const daysUntilSeasonEndingOrTwoWeeks = seasonEnding
     ? (seasonEnding - Date.now()) / 1000 / 60 / 60 / 24
@@ -447,14 +460,22 @@ const createOptions = (
     data.crossFactionData.length > 0
       ? null
       : convertExtrapoationToSeries(
-          extrapolateBy(sanitizedScoreAlliance, data.seasonEnding),
+          extrapolateBy(
+            sanitizedScoreAlliance,
+            data.seasonEnding,
+            data.seasonStart
+          ),
           "alliance"
         );
   const hordeExtrapolation =
     data.crossFactionData.length > 0
       ? null
       : convertExtrapoationToSeries(
-          extrapolateBy(sanitizedScoreHorde, data.seasonEnding),
+          extrapolateBy(
+            sanitizedScoreHorde,
+            data.seasonEnding,
+            data.seasonStart
+          ),
           "horde"
         );
 
@@ -631,7 +652,7 @@ export function Graph({ data, title }: GraphProps): JSX.Element {
   const ref = useRef<HighchartsReact.RefObject | null>(null);
 
   const xFactionExtrapolation = convertExtrapoationToSeries(
-    extrapolateBy(data.crossFactionData, data.seasonEnding),
+    extrapolateBy(data.crossFactionData, data.seasonEnding, data.seasonStart),
     null
   );
 
