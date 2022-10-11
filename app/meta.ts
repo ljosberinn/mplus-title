@@ -70,7 +70,7 @@ export const bluePostForSeasonEnding: Record<
 
 const offSeasonWeeks :Record<string, number> = {
   'sl-season-3': 0,
-  'sl-season-4': 6
+  'sl-season-4': 7,
 }
 
 export const seasonEndings = Object.entries(seasonStartDates).reduce<
