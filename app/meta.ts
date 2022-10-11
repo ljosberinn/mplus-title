@@ -4,6 +4,12 @@ export const orderedRegionsBySize: Regions[] = ["eu", "us", "tw", "kr"];
 const oneWeekInMs = 7 * 24 * 60 * 60 * 1000;
 
 export const seasonStartDates: Record<string, Record<Regions, number>> = {
+  'df-season-1': {
+    us: 1_670_943_600_000,
+    eu: 1_671_001_200_000,
+    kr: 1_671_058_800_000,
+    tw: 1_671_058_800_000,
+  },
   "sl-season-4": {
     us: 1_659_452_400_000,
     eu: 1_659_495_600_000,
@@ -36,6 +42,12 @@ export const bluePostForSeasonEnding: Record<
   string,
   Record<Regions, string>
 > = {
+  'df-season-1': {
+    eu: "",
+    kr: "",
+    tw: "",
+    us: "",
+  },
   "sl-season-4": {
     eu: "",
     kr: "",
@@ -56,6 +68,11 @@ export const bluePostForSeasonEnding: Record<
   },
 };
 
+const offSeasonWeeks :Record<string, number> = {
+  'sl-season-3': 0,
+  'sl-season-4': 7
+}
+
 export const seasonEndings = Object.entries(seasonStartDates).reduce<
   Record<string, Record<Regions, number>>
 >((acc, [, regionEndingTimestampMap], index, arr) => {
@@ -65,7 +82,7 @@ export const seasonEndings = Object.entries(seasonStartDates).reduce<
     return acc;
   }
 
-  const amountOfOffSeasonWeeks = prevSeasonName === "sl-season-3" ? 0 : 1;
+  const amountOfOffSeasonWeeks = offSeasonWeeks[prevSeasonName] ?? 1
 
   acc[prevSeasonName] = {
     eu: regionEndingTimestampMap.eu - amountOfOffSeasonWeeks * oneWeekInMs,
