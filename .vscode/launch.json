@@ -1,0 +1,23 @@
+{
+  "configurations": [
+    {
+      "type": "node-terminal",
+      "request": "launch",
+      "name": "Launch Server",
+      "command": "yarn dev",
+      "skipFiles": ["<node_internals>/**"],
+      "sourceMapPathOverrides": {
+        "route:*": "*" // <-- fix up the paths, so route:<path> just becomes <path>
+      },
+      "outFiles": ["${workspaceFolder}/build/**/*.js"]
+    },
+
+    {
+      "name": "Launch Client",
+      "request": "launch",
+      "type": "chrome",
+      "url": "http://localhost:3000",
+      "webRoot": "${workspaceFolder}/public/build" // tell the debugger that relative sourcemaps paths should be resolved from here
+    }
+  ]
+}
