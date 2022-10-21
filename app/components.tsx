@@ -192,7 +192,7 @@ const affixes: Record<number, { icon: string }> = {
     /* name: "Reaping",*/ icon: "ability_racial_embraceoftheloa_bwonsomdi",
   },
   119: { /* name: "Beguiling",*/ icon: "spell_shadow_mindshear" },
-  20: { /* name: "Awakened",*/ icon: "trade_archaeology_nerubian_obelisk" },
+  120: { /* name: "Awakened",*/ icon: "trade_archaeology_nerubian_obelisk" },
   121: { /* name: "Prideful",*/ icon: "spell_animarevendreth_buff" },
   122: { /* name: "Inspiring",*/ icon: "spell_holy_prayerofspirit" },
   123: { /* name: "Spiteful",*/ icon: "spell_holy_prayerofshadowprotection" },
@@ -201,6 +201,7 @@ const affixes: Record<number, { icon: string }> = {
   129: { /* name: "Infernal",*/ icon: "inv_infernalbrimstone" },
   130: { /* name: "Encrypted",*/ icon: "spell_progenitor_orb" },
   131: { /* name: "Shrouded",*/ icon: "spell_shadow_nethercloak" },
+  132: { /* name: "Thundering",*/ icon: "shaman-pvp-leaderclan" },
 };
 
 // fun in a bun.
