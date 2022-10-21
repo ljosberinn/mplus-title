@@ -11,7 +11,6 @@ import {
   hasSeasonEndedForAllRegions,
   latestSeason,
   orderedRegionsBySize,
-  seasonEndings,
 } from "~/meta";
 
 export const headers: HeadersFunction = () => {

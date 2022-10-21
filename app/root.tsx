@@ -7,11 +7,9 @@ import {
   Scripts,
   ScrollRestoration,
   NavLink,
-  useParams,
-  Link,
 } from "@remix-run/react";
 
-import { seasonStartDates, latestSeason, orderedRegionsBySize } from "./meta";
+import { seasonStartDates, latestSeason,  } from "./meta";
 import styles from "./styles/app.css";
 
 export const links: LinksFunction = () => {
@@ -92,7 +90,6 @@ function navLinkClassNameActivity({ isActive }: { isActive: boolean }) {
 }
 
 function Nav() {
-  const params = useParams();
 
   return (
     <nav className="flex flex-col justify-between w-full md:flex-row md:px-4">
@@ -101,42 +98,16 @@ function Nav() {
           .filter((key) => Date.now() >= seasonStartDates[key].us)
           .map((season) => {
             const seasonName = season === latestSeason ? "latest" : season;
-            const path = [seasonName, params.region, params.faction]
-              .filter(Boolean)
-              .join("/");
 
             return (
               <li key={season}>
-                <NavLink className={navLinkClassNameActivity} to={path}>
+                <NavLink className={navLinkClassNameActivity} to={seasonName}>
                   {seasonName}
                 </NavLink>
               </li>
             );
           })}
       </ul>
-
-      {params.season ? (
-        <ul className="flex px-4 pt-4 space-x-2 md:pt-0 md:px-0">
-          {params.region ? (
-            <li>
-              <Link className={linkClassName} to={`${params.season}`}>
-                all
-              </Link>
-            </li>
-          ) : null}
-          {orderedRegionsBySize.map((region) => {
-            const path = [params.season, region].filter(Boolean).join("/");
-
-            return (
-              <li key={region}>
-                <NavLink className={navLinkClassNameActivity} to={path}>
-                  {region.toUpperCase()}
-                </NavLink>
-              </li>
-            );
-          })}
-        </ul>
-      ) : null}
     </nav>
   );
 }
