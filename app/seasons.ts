@@ -1,5 +1,7 @@
 import type { Factions, Regions } from "@prisma/client";
 
+import { prisma } from "./prisma";
+
 type CutoffSource = { score: number; source: string | null };
 
 enum Affix {
@@ -32,28 +34,28 @@ enum Affix {
   Thundering = 132,
 }
 
-const UNKNOWN_SEASON_ENDING = 0;
+const UNKNOWN_SEASON_ENDING = null;
 
 export type Season = {
   name: string;
   slug: string;
   startDates: Record<Regions, number>;
-  endDates: Record<Regions, number>;
+  endDates: Record<Regions, number | null>;
   confirmedCutoffs: Record<
     Regions,
-    CutoffSource | Record<Factions, CutoffSource>
+    CutoffSource | ({ source: string | null } & Record<Factions, number>)
   >;
   affixes: [Affix, Affix, Affix, Affix][];
   rioKey: string;
-  hasCrossFactionSupport: boolean;
+  crossFactionSupport: "complete" | "none" | "partial";
 };
 
-const seasons: Season[] = [
+export const seasons: Season[] = [
   {
     name: "DF S1 - Thundering",
     slug: "df-season-1",
     rioKey: "season-df-1",
-    hasCrossFactionSupport: true,
+    crossFactionSupport: "complete",
     startDates: {
       us: 1_670_943_600_000,
       eu: 1_671_001_200_000,
@@ -78,7 +80,7 @@ const seasons: Season[] = [
     name: "SL S4 - Shrouded",
     slug: "sl-season-4",
     rioKey: "season-sl-4",
-    hasCrossFactionSupport: true,
+    crossFactionSupport: "complete",
     startDates: {
       us: 1_659_452_400_000,
       eu: 1_659_510_000_000,
@@ -88,8 +90,8 @@ const seasons: Season[] = [
     endDates: {
       us: 1_666_710_000_000,
       eu: 1_666_767_600_000,
-      kr: 1_666_825_200_000,
-      tw: 1_666_825_200_000,
+      kr: 1_666_821_600_000,
+      tw: 1_666_821_600_000,
     },
     confirmedCutoffs: {
       eu: { score: 0, source: null },
@@ -116,7 +118,7 @@ const seasons: Season[] = [
     name: "SL S3 - Encrypted",
     slug: "sl-season-3",
     rioKey: "season-sl-3",
-    hasCrossFactionSupport: true,
+    crossFactionSupport: "partial",
     startDates: {
       us: 1_646_146_800_000,
       eu: 1_646_204_400_000,
@@ -158,7 +160,7 @@ const seasons: Season[] = [
     name: "SL S2 - Tormented",
     slug: "sl-season-2",
     rioKey: "season-sl-2",
-    hasCrossFactionSupport: false,
+    crossFactionSupport: "none",
     startDates: {
       us: 1_625_583_600_000,
       eu: 1_625_641_200_000,
@@ -173,48 +175,26 @@ const seasons: Season[] = [
     },
     confirmedCutoffs: {
       eu: {
-        alliance: {
-          score: 2788,
-          source:
-            "https://eu.forums.blizzard.com/en/wow/t/m-tormented-hero-title-score-updated-daily/341108",
-        },
-        horde: {
-          score: 2875,
-          source:
-            "https://eu.forums.blizzard.com/en/wow/t/m-tormented-hero-title-score-updated-daily/341108",
-        },
+        source:
+          "https://eu.forums.blizzard.com/en/wow/t/m-tormented-hero-title-score-updated-daily/341108",
+        alliance: 2788,
+        horde: 2875,
       },
       us: {
-        alliance: {
-          score: 2768,
-          source:
-            "https://us.forums.blizzard.com/en/wow/t/m-tormented-hero-title-score-updated-daily/1184111",
-        },
-        horde: {
-          score: 2847,
-          source:
-            "https://us.forums.blizzard.com/en/wow/t/m-tormented-hero-title-score-updated-daily/1184111",
-        },
+        source:
+          "https://us.forums.blizzard.com/en/wow/t/m-tormented-hero-title-score-updated-daily/1184111",
+        alliance: 2768,
+        horde: 2847,
       },
       kr: {
-        alliance: {
-          score: 0,
-          source: null,
-        },
-        horde: {
-          score: 0,
-          source: null,
-        },
+        source: null,
+        alliance: 0,
+        horde: 0,
       },
       tw: {
-        alliance: {
-          score: 0,
-          source: null,
-        },
-        horde: {
-          score: 0,
-          source: null,
-        },
+        source: null,
+        alliance: 0,
+        horde: 0,
       },
     },
     affixes: [
@@ -249,15 +229,121 @@ export const hasSeasonEndedForAllRegions = (slug: string): boolean => {
 
   const now = Date.now();
 
-  return endDates.every((date) => now >= date);
+  return endDates.every((date) => now >= (date ?? 0));
 };
 
-export const determineCurrentSeason = (timestamp: number): Season | null => {
+export const findSeasonByTimestamp = (
+  timestamp = Date.now()
+): Season | null => {
   const season = seasons.find(
     (season) =>
       Object.values(season.startDates).some((start) => timestamp >= start) &&
-      Object.values(season.endDates).some((end) => end === 0 || end > timestamp)
+      Object.values(season.endDates).some(
+        (end) => end === UNKNOWN_SEASON_ENDING || end > timestamp
+      )
   );
 
   return season ?? null;
+};
+
+export const findSeasonByName = (slug: string): Season | null => {
+  if (slug === "latest") {
+    const ongoingSeason = findSeasonByTimestamp();
+
+    if (!ongoingSeason) {
+      const mostRecentlyStartedSeason = seasons.find(
+        (season) => Date.now() >= season.startDates.us
+      );
+
+      if (mostRecentlyStartedSeason) {
+        return mostRecentlyStartedSeason;
+      }
+    }
+  }
+
+  const match = seasons.find((season) => {
+    return season.slug === slug;
+  });
+
+  return match ?? null;
+};
+
+const getCrossFactionHistory = (region: Regions, gte: number, lte?: number) => {
+  return prisma.crossFactionHistory.findMany({
+    where: {
+      region,
+      timestamp: {
+        gte: Math.ceil(gte / 1000),
+        lte: lte ? Math.ceil(lte / 1000) : lte,
+      },
+    },
+    select: {
+      timestamp: true,
+      score: true,
+    },
+    orderBy: {
+      timestamp: "desc",
+    },
+  });
+};
+
+const getHistory = (region: Regions, gte: number, lte?: number) => {
+  return prisma.history.findMany({
+    where: {
+      region,
+      timestamp: {
+        gte: Math.ceil(gte / 1000),
+        lte: lte ? Math.ceil(lte / 1000) : lte,
+      },
+    },
+    select: {
+      timestamp: true,
+      faction: true,
+      customScore: true,
+    },
+    orderBy: {
+      timestamp: "desc",
+    },
+  });
+};
+
+export type Dataset = {
+  ts: number;
+  score: number;
+  faction?: Factions;
+};
+
+export const loadDataForRegion = async (
+  region: Regions,
+  season: Season
+): Promise<Dataset[]> => {
+  const gte = season.startDates[region];
+  const lte = season.endDates[region] ?? undefined;
+
+  const [rawHistory, rawCrossFactionHistory] = await Promise.all([
+    season.crossFactionSupport === "complete"
+      ? []
+      : getHistory(region, gte, lte),
+    season.crossFactionSupport === "none"
+      ? []
+      : getCrossFactionHistory(region, gte, lte),
+  ]);
+
+  return [...rawHistory, ...rawCrossFactionHistory]
+    .map((dataset) => {
+      const next: Dataset = {
+        ts: Number(dataset.timestamp) * 1000,
+        score: "customScore" in dataset ? dataset.customScore : dataset.score,
+      };
+
+      if ("faction" in dataset) {
+        next.faction = dataset.faction;
+      }
+
+      return next;
+    })
+    .filter((dataset) => {
+      return dataset.score > 0;
+    })
+    .sort((a, b) => a.ts - b.ts);
 };

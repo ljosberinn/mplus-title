@@ -9,7 +9,7 @@ import {
   NavLink,
 } from "@remix-run/react";
 
-import { seasonStartDates, latestSeason,  } from "./meta";
+import { seasons } from "./seasons";
 import styles from "./styles/app.css";
 
 export const links: LinksFunction = () => {
@@ -94,15 +94,15 @@ function Nav() {
   return (
     <nav className="flex flex-col justify-between w-full md:flex-row md:px-4">
       <ul className="flex px-4 pt-4 space-x-2 md:pt-0 md:px-0">
-        {Object.keys(seasonStartDates)
-          .filter((key) => Date.now() >= seasonStartDates[key].us)
-          .map((season) => {
-            const seasonName = season === latestSeason ? "latest" : season;
+        {seasons
+          .filter((season) => Date.now() >= season.startDates.us)
+          .map((season, index) => {
+            const seasonName = index === 0 ? "latest" : season.slug;
 
             return (
-              <li key={season}>
+              <li key={season.slug}>
                 <NavLink className={navLinkClassNameActivity} to={seasonName}>
-                  {seasonName}
+                  {season.name}
                 </NavLink>
               </li>
             );
