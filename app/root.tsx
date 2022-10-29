@@ -7,11 +7,9 @@ import {
   Scripts,
   ScrollRestoration,
   NavLink,
-  useParams,
-  Link,
 } from "@remix-run/react";
 
-import { seasonStartDates, latestSeason, orderedRegionsBySize } from "./meta";
+import { seasons } from "./seasons";
 import styles from "./styles/app.css";
 
 export const links: LinksFunction = () => {
@@ -92,51 +90,24 @@ function navLinkClassNameActivity({ isActive }: { isActive: boolean }) {
 }
 
 function Nav() {
-  const params = useParams();
 
   return (
     <nav className="flex flex-col justify-between w-full md:flex-row md:px-4">
       <ul className="flex px-4 pt-4 space-x-2 md:pt-0 md:px-0">
-        {Object.keys(seasonStartDates)
-          .filter((key) => Date.now() >= seasonStartDates[key].us)
-          .map((season) => {
-            const seasonName = season === latestSeason ? "latest" : season;
-            const path = [seasonName, params.region, params.faction]
-              .filter(Boolean)
-              .join("/");
+        {seasons
+          .filter((season) => Date.now() >= season.startDates.us)
+          .map((season, index) => {
+            const seasonName = index === 0 ? "latest" : season.slug;
 
             return (
-              <li key={season}>
-                <NavLink className={navLinkClassNameActivity} to={path}>
-                  {seasonName}
+              <li key={season.slug}>
+                <NavLink className={navLinkClassNameActivity} to={seasonName}>
+                  {season.name}
                 </NavLink>
               </li>
             );
           })}
       </ul>
-
-      {params.season ? (
-        <ul className="flex px-4 pt-4 space-x-2 md:pt-0 md:px-0">
-          {params.region ? (
-            <li>
-              <Link className={linkClassName} to={`${params.season}`}>
-                all
-              </Link>
-            </li>
-          ) : null}
-          {orderedRegionsBySize.map((region) => {
-            const path = [params.season, region].filter(Boolean).join("/");
-
-            return (
-              <li key={region}>
-                <NavLink className={navLinkClassNameActivity} to={path}>
-                  {region.toUpperCase()}
-                </NavLink>
-              </li>
-            );
-          })}
-        </ul>
-      ) : null}
     </nav>
   );
 }

@@ -1,32 +1,12 @@
 /* eslint-disable no-console */
 import type { Prisma, Regions } from "@prisma/client";
-import { Factions } from "@prisma/client";
+import type { ActionFunction, LoaderFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import type { LoaderFunction } from "@remix-run/node";
 import { load } from "cheerio";
-import { crossFactionSupportDates, seasonStartDates } from "~/meta";
 import { prisma } from "~/prisma";
+import { findSeasonByTimestamp } from "~/seasons";
 
 const rioBaseUrl = "https://raider.io";
-
-const determineSeason = (region: Regions) => {
-  const firstMatch = Object.entries(seasonStartDates).find(
-    ([, regionStartMap]) => {
-      return Date.now() >= regionStartMap[region];
-    }
-  );
-
-  if (!firstMatch) {
-    throw new Error("could not determine current season");
-  }
-
-  return firstMatch[0].replace("-season", "");
-};
-
-const createFactionPageUrl = (region: Regions, faction: Factions, page = 0) => {
-  const season = determineSeason(region);
-  return `${rioBaseUrl}/mythic-plus-character-faction-rankings/season-${season}/${region}/all/all/${faction}/${page}`;
-};
 
 if (!String.prototype.replaceAll) {
   // eslint-disable-next-line no-extend-native, func-names
@@ -45,7 +25,7 @@ if (!String.prototype.replaceAll) {
   };
 }
 
-export const action: LoaderFunction = async ({ request }) => {
+export const action: ActionFunction = async ({ request }) => {
   if (request.method !== "POST") {
     return json([], 404);
   }
@@ -66,6 +46,14 @@ export const action: LoaderFunction = async ({ request }) => {
       if (!maybeSecret || secret !== maybeSecret) {
         return json({ error: "secret missing" }, 403);
       }
+    } else {
+      console.info("Skipping verification of secret.", { payload });
+    }
+
+    const season = findSeasonByTimestamp();
+
+    if (!season) {
+      return json({ info: "No ongoing season, bailing." });
     }
 
     console.time("getMostOutdatedRegion");
@@ -78,49 +66,29 @@ export const action: LoaderFunction = async ({ request }) => {
     }
 
     console.time("parseRegionData");
-    const regionData = await parseRegionData(mostOutdatedRegion);
+    const regionData = await parseRegionData(mostOutdatedRegion, season.rioKey);
     console.timeEnd("parseRegionData");
 
-    if (process.env.NODE_ENV === "production") {
-      console.time("persistRegionData");
-      await persistRegionData(regionData);
-      console.timeEnd("persistRegionData");
-    } else {
-      console.info("skipping persistence");
-    }
+    await prisma.crossFactionHistory.create({ data: regionData });
 
-    return json({ mostOutdatedRegion });
+    return json({ mostOutdatedRegion, regionData });
   } catch (error) {
-    console.error(error);
+    console.error("yikes", error);
     return json([], 500);
   }
 };
 
+export const loader: LoaderFunction = () => {
+  return json([], 405);
+};
+
 const getMostOutdatedRegion = async () => {
-  const now = Date.now();
+  const threshold = Math.round(Date.now() / 1000 - 1 * 60 * 60);
 
-  const hasCrossFactionSupport = Object.keys(
-    Object.fromEntries(
-      Object.entries(crossFactionSupportDates).filter(([, value]) => {
-        return value <= now;
-      })
-    )
-  );
-
-  if (hasCrossFactionSupport.length === 4) {
-    return null;
-  }
-
-  const threshold = Math.round(now / 1000 - 1 * 60 * 60);
-
-  const mostRecentData = await prisma.history.findMany({
+  const mostRecentData = await prisma.crossFactionHistory.findMany({
     where: {
       timestamp: {
         gte: threshold,
-      },
-      region: {
-        // @ts-expect-error is a key of crossFactionSupportDates and thus Regions
-        notIn: hasCrossFactionSupport,
       },
     },
     orderBy: {
@@ -131,23 +99,15 @@ const getMostOutdatedRegion = async () => {
       timestamp: true,
     },
   });
-
-  if (mostRecentData.length === 0) {
-    return null;
-  }
 
   const mostRecentlyUpdatedRegions = new Set(
     mostRecentData.map((dataset) => dataset.region)
   );
 
-  const datasets = await prisma.history.findMany({
+  const datasets = await prisma.crossFactionHistory.findMany({
     where: {
       timestamp: {
         lte: threshold,
-      },
-      region: {
-        // @ts-expect-error is a key of crossFactionSupportDates and thus Regions
-        notIn: hasCrossFactionSupport,
       },
     },
     orderBy: {
@@ -158,6 +118,10 @@ const getMostOutdatedRegion = async () => {
       timestamp: true,
     },
   });
+
+  if (datasets.length === 0) {
+    return null;
+  }
 
   const mostOutdated = datasets.reduce((acc, dataset) => {
     if (mostRecentlyUpdatedRegions.has(dataset.region)) {
@@ -174,125 +138,181 @@ const getMostOutdatedRegion = async () => {
   return mostOutdated.region;
 };
 
-const persistRegionData = async (data: Prisma.HistoryCreateManyInput[]) => {
-  await prisma.history.createMany({ data, skipDuplicates: true });
+const createPageUrl = (rioSeasonName: string, region: Regions, page = 0) => {
+  return `${rioBaseUrl}/mythic-plus-character-rankings/${rioSeasonName}/${region}/all/all/${page}`;
+};
+
+type LastPageUrlParams = {
+  url: string;
+  page: number;
+  initialPage: number;
+};
+
+const retrieveLastPageUrl = async (
+  rioSeasonName: string,
+  region: Regions
+): Promise<LastPageUrlParams> => {
+  const firstPageUrl = createPageUrl(rioSeasonName, region);
+  const firstPageResponse = await fetch(firstPageUrl);
+  const firstPageText = await firstPageResponse.text();
+
+  const $firstPage = load(firstPageText);
+
+  const url = $firstPage(".rio-pagination--button").last().attr("href");
+
+  if (!url) {
+    return {
+      url: "",
+      initialPage: 0,
+      page: 0,
+    };
+  }
+
+  const withoutHash = url.includes("#content")
+    ? url.replace("#content", "")
+    : url;
+
+  const { page, url: urlWithoutPage } = parsePage(withoutHash);
+
+  return {
+    url: urlWithoutPage,
+    page,
+    initialPage: page,
+  };
+};
+
+const parsePage = (str: string) => {
+  const parts = str.split("/");
+
+  return {
+    page: Number.parseInt(parts[parts.length - 1]),
+    url: parts.slice(0, -1).join("/"),
+  };
+};
+
+const determineLastEligibleRank = async (
+  lastPageParams: LastPageUrlParams
+): Promise<number> => {
+  const retryDiff = lastPageParams.initialPage - lastPageParams.page;
+
+  if (retryDiff === 3) {
+    console.debug("too many retries to determine last eligible rank, bailing");
+    return 0;
+  }
+
+  const url = `${rioBaseUrl}${lastPageParams.url}/${lastPageParams.page}`;
+  const lastPageResponse = await fetch(url);
+  const lastPageText = await lastPageResponse.text();
+  const $lastPage = load(lastPageText);
+
+  const cellSelector =
+    ".mythic-plus-rankings--row:last-of-type .rank-text-normal";
+
+  const textContent = $lastPage(cellSelector).text();
+
+  const totalRankedCharacters = Number.parseInt(
+    textContent.replaceAll(",", "")
+  );
+
+  if (Number.isNaN(totalRankedCharacters)) {
+    const prevPage = lastPageParams.page - 1;
+
+    if (prevPage === 0) {
+      console.debug("probably no entries yet, bailing");
+      return 0;
+    }
+
+    return determineLastEligibleRank({
+      ...lastPageParams,
+      page: prevPage,
+    });
+  }
+
+  console.debug({ totalRankedCharacters });
+
+  return Math.floor(totalRankedCharacters * 0.001);
+};
+
+const retrieveScore = async (
+  rioSeasonName: string,
+  region: Regions,
+  lastEligibleRank: number
+) => {
+  const scorePage =
+    lastEligibleRank <= 20 ? 0 : Math.floor(lastEligibleRank / 20);
+
+  const scorePageUrl = createPageUrl(
+    rioSeasonName,
+    region, // if rank is divisible by 20, e.g. 80, it would result in page 4
+    // but its still on page 3
+    lastEligibleRank % 20 === 0 && lastEligibleRank > 20
+      ? scorePage - 1
+      : scorePage
+  );
+
+  const scorePageResponse = await fetch(scorePageUrl);
+  const scorePageText = await scorePageResponse.text();
+
+  const $scorePage = load(scorePageText);
+
+  const maybeScore = Number.parseFloat(
+    $scorePage(".mythic-plus-rankings--row .rank-text-normal")
+      .filter((_, element) => {
+        return (
+          $scorePage(element).text().replaceAll(",", "") ===
+          `${lastEligibleRank}`
+        );
+      })
+      .parents(".mythic-plus-rankings--row")
+      .find("b")
+      .text()
+  );
+
+  return Number.isNaN(maybeScore) ? 0 : maybeScore;
 };
 
 const parseRegionData = async (
-  region: Regions
-): Promise<Prisma.HistoryCreateManyInput[]> => {
+  region: Regions,
+  rioSeasonName: string
+): Promise<Prisma.CrossFactionHistoryCreateInput> => {
   const now = Math.round(Date.now() / 1000);
 
-  const parsedData = await Promise.all(
-    Object.values(Factions).map(async (faction) => {
-      try {
-        const firstPageUrl = createFactionPageUrl(region, faction);
-        const firstPageResponse = await fetch(firstPageUrl);
-        const firstPageText = await firstPageResponse.text();
+  console.time("retrieveLastPageUrl");
+  const lastPageUrlParams = await retrieveLastPageUrl(rioSeasonName, region);
+  console.timeEnd("retrieveLastPageUrl");
 
-        const $firstPage = load(firstPageText);
-        const lastPageUrl = $firstPage(".rio-pagination--button")
-          .last()
-          .attr("href");
-
-        if (!lastPageUrl) {
-          return {
-            faction,
-            score: 0,
-            rank: 0,
-          };
-        }
-
-        const lastPageResponse = await fetch(`${rioBaseUrl}${lastPageUrl}`);
-        const lastPageText = await lastPageResponse.text();
-
-        const $lastPage = load(lastPageText);
-        const cellSelector =
-          ".mythic-plus-rankings--row:last-of-type .rank-text-normal";
-
-        const totalRankedCharacters = Number.parseInt(
-          $lastPage(cellSelector).text().replaceAll(",", "")
-        );
-        const lastEligibleRank = Math.floor(totalRankedCharacters * 0.001);
-
-        const scorePage =
-          lastEligibleRank <= 20 ? 0 : Math.floor(lastEligibleRank / 20);
-        const scorePageUrl = createFactionPageUrl(
-          region,
-          faction,
-          // if rank is divisible by 20, e.g. 80, it would result in page 4
-          // but its still on page 3
-          lastEligibleRank % 20 === 0 && lastEligibleRank > 20
-            ? scorePage - 1
-            : scorePage
-        );
-
-        const scorePageResponse = await fetch(scorePageUrl);
-        const scorePageText = await scorePageResponse.text();
-
-        const $scorePage = load(scorePageText);
-
-        const maybeScore = Number.parseFloat(
-          $scorePage(".mythic-plus-rankings--row .rank-text-normal")
-            .filter((_, element) => {
-              return (
-                $scorePage(element).text().replaceAll(",", "") ===
-                `${lastEligibleRank}`
-              );
-            })
-            .parents(".mythic-plus-rankings--row")
-            .find("b")
-            .text()
-        );
-
-        const score = Number.isNaN(maybeScore) ? 0 : maybeScore;
-
-        return {
-          faction,
-          score,
-          rank: lastEligibleRank,
-        };
-      } catch (error) {
-        console.error(error);
-
-        return {
-          faction,
-          score: 0,
-          rank: 0,
-        };
-      }
-    })
-  );
-
-  const parsedHordeData = parsedData.find(
-    (dataset) => dataset.faction === "horde"
-  );
-  const parsedAllianceData = parsedData.find(
-    (dataset) => dataset.faction === "alliance"
-  );
-
-  if (!parsedHordeData || !parsedAllianceData) {
-    return [];
+  if (!lastPageUrlParams.url) {
+    console.warn("Could not parse last page button, bailing without data.");
+    return {
+      score: 0,
+      rank: 0,
+      timestamp: now,
+      region,
+    };
   }
 
-  return [
-    {
-      region,
-      faction: "horde",
-      customRank: parsedHordeData.rank,
-      customScore: parsedHordeData.score,
-      rioRank: 0,
-      rioScore: 0,
+  console.time("determineLastEligibleRank");
+  const lastEligibleRank = await determineLastEligibleRank(lastPageUrlParams);
+  console.timeEnd("determineLastEligibleRank");
+
+  if (lastEligibleRank === 0) {
+    console.warn("Could not parse last eligible rank, bailing without data.");
+    return {
+      score: 0,
+      rank: 0,
       timestamp: now,
-    },
-    {
       region,
-      faction: "alliance",
-      customRank: parsedAllianceData.rank,
-      customScore: parsedAllianceData.score,
-      rioRank: 0,
-      rioScore: 0,
-      timestamp: now,
-    },
-  ];
+    };
+  }
+
+  console.time("retrieveScore");
+  const score = await retrieveScore(rioSeasonName, region, lastEligibleRank);
+  console.timeEnd("retrieveScore");
+
+  return {
+    score,
+    rank: lastEligibleRank,
+    timestamp: now,
+    region,
+  };
 };
