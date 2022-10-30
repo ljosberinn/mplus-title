@@ -10,7 +10,7 @@ export const loader: LoaderFunction = () => {
     throw new Error("Couldn't determine latest season.");
   }
 
-  return redirect(`/${latest.slug}`, 301);
+  return redirect(`/${latest.slug}`, 307);
 };
 
 export default function Index(): JSX.Element {
