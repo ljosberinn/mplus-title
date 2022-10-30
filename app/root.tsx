@@ -91,31 +91,59 @@ function navLinkClassNameActivity({ isActive }: { isActive: boolean }) {
 }
 
 function Nav() {
+  const now = Date.now();
+
+  let sawMostRecentlyStartedSeason = false;
+
   return (
     <nav className="flex flex-col justify-between w-full md:flex-row md:px-4">
       <ul className="flex px-4 pt-4 md:space-x-2 md:pt-0 md:px-0 md:flex-row flex-col space-y-2 md:space-y-0">
-        {seasons
-          .filter((season) => Date.now() >= season.startDates.us)
-          .map((season, index) => {
-            const seasonName = index === 0 ? "latest" : season.slug;
+        {seasons.map((season) => {
+          const seasonName = sawMostRecentlyStartedSeason
+            ? season.slug
+            : "latest";
+          sawMostRecentlyStartedSeason = now >= season.startDates.us;
 
-            const seasonalAffixId =
-              season.affixes.length > 0 ? season.affixes[0][3] : null;
-            const icon = seasonalAffixId
-              ? getAffixIconUrl(seasonalAffixId)
-              : null;
+          const seasonalAffixId =
+            season.affixes.length > 0 ? season.affixes[0][3] : null;
+          const icon = seasonalAffixId
+            ? getAffixIconUrl(seasonalAffixId)
+            : null;
 
-            return (
-              <li key={season.slug}>
+          const body = (
+            <>
+              {icon && (
+                <img
+                  src={icon}
+                  alt=""
+                  loading="lazy"
+                  height="24"
+                  width="24"
+                  className="w-6 h-6"
+                />
+              )}
+              <span>{season.name}</span>
+            </>
+          );
+
+          return (
+            <li key={season.slug}>
+              {now >= season.startDates.us ? (
                 <NavLink className={navLinkClassNameActivity} to={seasonName}>
-                  {icon && (
-                    <img src={icon} alt="" loading="lazy" height="24" width="24" className="w-6 h-6" />
-                  )}
-                  <span>{season.name}</span>
+                  {body}
                 </NavLink>
-              </li>
-            );
-          })}
+              ) : (
+                <span
+                  className={linkClassName
+                    .replace("bg-gray-700", "bg-gray-800")
+                    .replace("hover:bg-gray-500", "")}
+                >
+                  {body}
+                </span>
+              )}
+            </li>
+          );
+        })}
       </ul>
     </nav>
   );

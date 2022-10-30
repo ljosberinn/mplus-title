@@ -5,8 +5,6 @@ import { prisma } from "./prisma";
 
 type CutoffSource = { score: number; source: string | null };
 
-
-
 const UNKNOWN_SEASON_ENDING = null;
 
 export type Season = {
@@ -47,7 +45,9 @@ export const seasons: Season[] = [
       kr: { score: 0, source: null },
       tw: { score: 0, source: null },
     },
-    affixes: [],
+    affixes: [
+      [Affix.Tyrannical, Affix.Tyrannical, Affix.Tyrannical, Affix.Thundering],
+    ],
   },
   {
     name: "SL S4",
