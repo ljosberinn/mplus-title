@@ -16,6 +16,7 @@ import Highcharts from "highcharts";
 import HighchartsReact from "highcharts-react-official";
 import { useRef, useEffect } from "react";
 import { red, blue, gray } from "tailwindcss/colors";
+import { getAffixIconUrl } from "~/affixes";
 
 import type { Dataset, Season } from "../../seasons";
 import {
@@ -417,7 +418,7 @@ const createSeries = (
       ? null
       : {
           type: "line",
-          name: "Score: Horde",
+          name: "Score Horde",
           color: factionColors.horde,
           data: season.data[region]
             .filter((dataset) => dataset.faction === Factions.horde)
@@ -434,7 +435,7 @@ const createSeries = (
       ? null
       : {
           type: "line",
-          name: "Score: Alliance",
+          name: "Score Alliance",
           color: factionColors.alliance,
           data: season.data[region]
             .filter((dataset) => dataset.faction === Factions.alliance)
@@ -535,36 +536,6 @@ const createFactionCutoffPlotlines = (
   return [];
 };
 
-const affixes: Record<number, { icon: string }> = {
-  2: { /* name: "Skittish",*/ icon: "spell_magic_lesserinvisibilty" },
-  3: { /* name: "Volcanic",*/ icon: "spell_shaman_lavasurge" },
-  4: { /* name: "Necrotic",*/ icon: "spell_deathknight_necroticplague" },
-  6: { /* name: "Raging",*/ icon: "ability_warrior_focusedrage" },
-  7: { /* name: "Bolstering",*/ icon: "ability_warrior_battleshout" },
-  8: { /* name: "Sanguine",*/ icon: "spell_shadow_bloodboil" },
-  9: { /* name: "Tyrannical",*/ icon: "achievement_boss_archaedas" },
-  10: { /* name: "Fortified",*/ icon: "ability_toughness" },
-  11: { /* name: "Bursting",*/ icon: "ability_ironmaidens_whirlofblood" },
-  12: { /* name: "Grievous",*/ icon: "ability_backstab" },
-  13: { /* name: "Explosive",*/ icon: "spell_fire_felflamering_red" },
-  14: { /* name: "Quaking",*/ icon: "spell_nature_earthquake" },
-  16: { /* name: "Infested",*/ icon: "achievement_nazmir_boss_ghuun" },
-  117: {
-    /* name: "Reaping",*/ icon: "ability_racial_embraceoftheloa_bwonsomdi",
-  },
-  119: { /* name: "Beguiling",*/ icon: "spell_shadow_mindshear" },
-  120: { /* name: "Awakened",*/ icon: "trade_archaeology_nerubian_obelisk" },
-  121: { /* name: "Prideful",*/ icon: "spell_animarevendreth_buff" },
-  122: { /* name: "Inspiring",*/ icon: "spell_holy_prayerofspirit" },
-  123: { /* name: "Spiteful",*/ icon: "spell_holy_prayerofshadowprotection" },
-  124: { /* name: "Storming",*/ icon: "spell_nature_cyclone" },
-  128: { /* name: "Tormented",*/ icon: "spell_animamaw_orb" },
-  129: { /* name: "Infernal",*/ icon: "inv_infernalbrimstone" },
-  130: { /* name: "Encrypted",*/ icon: "spell_progenitor_orb" },
-  131: { /* name: "Shrouded",*/ icon: "spell_shadow_nethercloak" },
-  132: { /* name: "Thundering",*/ icon: "shaman_pvp_leaderclan" },
-};
-
 const createPlotBands = (
   season: EnhancedSeason,
   region: Regions
@@ -600,7 +571,9 @@ const createPlotBands = (
         text: rotation
           .slice(0, 3)
           .map((affix) => {
-            return `<img width="18" height="18" style="transform: rotate(-90deg); opacity: 0.75;" src="https://wow.zamimg.com/images/wow/icons/small/${affixes[affix].icon}.jpg" />`;
+            return `<img width="18" height="18" style="transform: rotate(-90deg); opacity: 0.75;" src="${getAffixIconUrl(
+              affix
+            )}" />`;
           })
           .join(""),
         rotation: 90,
@@ -698,6 +671,7 @@ const createPlotBands = (
         y: text.length * -15,
       },
     };
+
     return [affixDisplay, weeklyGainDisplay].filter(
       (options): options is XAxisPlotBandsOptions => options !== null
     );

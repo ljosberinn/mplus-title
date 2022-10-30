@@ -1,38 +1,11 @@
 import type { Factions, Regions } from "@prisma/client";
 
+import { Affix } from "./affixes";
 import { prisma } from "./prisma";
 
 type CutoffSource = { score: number; source: string | null };
 
-enum Affix {
-  Overflowing = 1,
-  Skittish = 2,
-  Volcanic = 3,
-  Necrotic = 4,
-  Teeming = 5,
-  Raging = 6,
-  Bolstering = 7,
-  Sanguine = 8,
-  Tyrannical = 9,
-  Fortified = 10,
-  Bursting = 11,
-  Grievous = 12,
-  Explosive = 13,
-  Quaking = 14,
-  Infested = 16,
-  Reaping = 117,
-  Beguiling = 119,
-  Awakened = 120,
-  Prideful = 121,
-  Inspiring = 122,
-  Spiteful = 123,
-  Storming = 124,
-  Tormented = 128,
-  Infernal = 129,
-  Encrypted = 130,
-  Shrouded = 131,
-  Thundering = 132,
-}
+
 
 const UNKNOWN_SEASON_ENDING = null;
 
@@ -52,7 +25,7 @@ export type Season = {
 
 export const seasons: Season[] = [
   {
-    name: "DF S1 - Thundering",
+    name: "DF S1",
     slug: "df-season-1",
     rioKey: "season-df-1",
     crossFactionSupport: "complete",
@@ -77,7 +50,7 @@ export const seasons: Season[] = [
     affixes: [],
   },
   {
-    name: "SL S4 - Shrouded",
+    name: "SL S4",
     slug: "sl-season-4",
     rioKey: "season-sl-4",
     crossFactionSupport: "complete",
@@ -100,22 +73,22 @@ export const seasons: Season[] = [
       tw: { score: 0, source: null },
     },
     affixes: [
-      [Affix.Tyrannical, Affix.Inspiring, Affix.Quaking, Affix.Thundering],
-      [Affix.Fortified, Affix.Sanguine, Affix.Grievous, Affix.Thundering],
-      [Affix.Tyrannical, Affix.Bolstering, Affix.Explosive, Affix.Thundering],
-      [Affix.Fortified, Affix.Bursting, Affix.Storming, Affix.Thundering],
-      [Affix.Tyrannical, Affix.Raging, Affix.Volcanic, Affix.Thundering],
-      [Affix.Fortified, Affix.Inspiring, Affix.Grievous, Affix.Thundering],
-      [Affix.Tyrannical, Affix.Spiteful, Affix.Necrotic, Affix.Thundering],
-      [Affix.Fortified, Affix.Bolstering, Affix.Quaking, Affix.Thundering],
-      [Affix.Tyrannical, Affix.Sanguine, Affix.Storming, Affix.Thundering],
-      [Affix.Fortified, Affix.Raging, Affix.Explosive, Affix.Thundering],
-      [Affix.Tyrannical, Affix.Bursting, Affix.Volcanic, Affix.Thundering],
-      [Affix.Fortified, Affix.Spiteful, Affix.Necrotic, Affix.Thundering],
+      [Affix.Tyrannical, Affix.Inspiring, Affix.Quaking, Affix.Shrouded],
+      [Affix.Fortified, Affix.Sanguine, Affix.Grievous, Affix.Shrouded],
+      [Affix.Tyrannical, Affix.Bolstering, Affix.Explosive, Affix.Shrouded],
+      [Affix.Fortified, Affix.Bursting, Affix.Storming, Affix.Shrouded],
+      [Affix.Tyrannical, Affix.Raging, Affix.Volcanic, Affix.Shrouded],
+      [Affix.Fortified, Affix.Inspiring, Affix.Grievous, Affix.Shrouded],
+      [Affix.Tyrannical, Affix.Spiteful, Affix.Necrotic, Affix.Shrouded],
+      [Affix.Fortified, Affix.Bolstering, Affix.Quaking, Affix.Shrouded],
+      [Affix.Tyrannical, Affix.Sanguine, Affix.Storming, Affix.Shrouded],
+      [Affix.Fortified, Affix.Raging, Affix.Explosive, Affix.Shrouded],
+      [Affix.Tyrannical, Affix.Bursting, Affix.Volcanic, Affix.Shrouded],
+      [Affix.Fortified, Affix.Spiteful, Affix.Necrotic, Affix.Shrouded],
     ],
   },
   {
-    name: "SL S3 - Encrypted",
+    name: "SL S3",
     slug: "sl-season-3",
     rioKey: "season-sl-3",
     crossFactionSupport: "partial",
@@ -157,7 +130,7 @@ export const seasons: Season[] = [
     ],
   },
   {
-    name: "SL S2 - Tormented",
+    name: "SL S2",
     slug: "sl-season-2",
     rioKey: "season-sl-2",
     crossFactionSupport: "none",

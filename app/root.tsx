@@ -9,6 +9,7 @@ import {
   NavLink,
 } from "@remix-run/react";
 
+import { getAffixIconUrl } from "./affixes";
 import { seasons } from "./seasons";
 import styles from "./styles/app.css";
 
@@ -82,7 +83,7 @@ export default function App(): JSX.Element {
 }
 
 const linkClassName =
-  "px-2 py-1 text-white transition-all duration-200 ease-in-out rounded-lg outline-none bg-gray-700 hover:bg-gray-500 focus:outline-none focus:ring-2 focus-ring-gray:500";
+  "flex space-x-2 px-2 py-1 text-white transition-all duration-200 ease-in-out rounded-lg outline-none bg-gray-700 hover:bg-gray-500 focus:outline-none focus:ring-2 focus-ring-gray:500";
 const activeLinkClassName = "underline bg-gray-500";
 
 function navLinkClassNameActivity({ isActive }: { isActive: boolean }) {
@@ -90,19 +91,27 @@ function navLinkClassNameActivity({ isActive }: { isActive: boolean }) {
 }
 
 function Nav() {
-
   return (
     <nav className="flex flex-col justify-between w-full md:flex-row md:px-4">
-      <ul className="flex px-4 pt-4 space-x-2 md:pt-0 md:px-0">
+      <ul className="flex px-4 pt-4 md:space-x-2 md:pt-0 md:px-0 md:flex-row flex-col space-y-2 md:space-y-0">
         {seasons
           .filter((season) => Date.now() >= season.startDates.us)
           .map((season, index) => {
             const seasonName = index === 0 ? "latest" : season.slug;
 
+            const seasonalAffixId =
+              season.affixes.length > 0 ? season.affixes[0][3] : null;
+            const icon = seasonalAffixId
+              ? getAffixIconUrl(seasonalAffixId)
+              : null;
+
             return (
               <li key={season.slug}>
                 <NavLink className={navLinkClassNameActivity} to={seasonName}>
-                  {season.name}
+                  {icon && (
+                    <img src={icon} alt="" loading="lazy" height="24" width="24" className="w-6 h-6" />
+                  )}
+                  <span>{season.name}</span>
                 </NavLink>
               </li>
             );
