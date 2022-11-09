@@ -33,10 +33,33 @@ const factionColors: Record<string, string> = {
   xFaction: "#B389AF",
 };
 
-export const headers: HeadersFunction = () => {
-  return {
-    "Cache-Control": "max-age=1800, s-maxage=3600",
+const lastModified = "Last-Modified";
+const cacheControl = "Cache-Control";
+const eTag = "ETag";
+
+export const headers: HeadersFunction = ({ loaderHeaders, parentHeaders }) => {
+
+  const loaderCache = loaderHeaders.get(cacheControl)
+
+  const headers: HeadersInit = {
+    [cacheControl]: loaderCache ?? "max-age=1800, s-maxage=3600"
   };
+
+  const lastModifiedDate = loaderHeaders.get(lastModified);
+
+  if (lastModifiedDate) {
+    headers[lastModified] = lastModifiedDate;
+  }
+
+  const maybeETag = loaderHeaders.get(eTag);
+
+  if (maybeETag) {
+    headers[eTag] = maybeETag;
+  }
+
+  console.debug({ headers, loaderHeaders, parentHeaders });
+
+  return headers;
 };
 
 type EnhancedSeason = Season & {
@@ -187,8 +210,18 @@ export const loader: LoaderFunction = async ({ params, request }) => {
   }
 
   if (hasSeasonEndedForAllRegions(season.slug)) {
-    request.headers.delete("Cache-Control");
-    request.headers.append("Cache-Control", "max-age-18000, s-maxage=36000");
+    request.headers.delete(cacheControl);
+    request.headers.append(cacheControl, "max-age-18000, s-maxage=36000");
+
+    const lastEndDate = Object.values(season.endDates).reduce<number>(
+      (acc, endDate) => (endDate ? (acc > endDate ? acc : endDate) : acc),
+      0
+    );
+    request.headers.append(lastModified, new Date(lastEndDate).toUTCString());
+
+    request.headers.append(eTag, season.slug);
+
+    console.debug(request.headers);
   }
 
   const enhancedSeason: EnhancedSeason = {
