@@ -37,12 +37,11 @@ const lastModified = "Last-Modified";
 const cacheControl = "Cache-Control";
 const eTag = "ETag";
 
-export const headers: HeadersFunction = ({ loaderHeaders, parentHeaders }) => {
-
-  const loaderCache = loaderHeaders.get(cacheControl)
+export const headers: HeadersFunction = ({ loaderHeaders }) => {
+  const loaderCache = loaderHeaders.get(cacheControl);
 
   const headers: HeadersInit = {
-    [cacheControl]: loaderCache ?? "max-age=1800, s-maxage=3600"
+    [cacheControl]: loaderCache ?? "max-age=1800, s-maxage=3600",
   };
 
   const lastModifiedDate = loaderHeaders.get(lastModified);
@@ -56,8 +55,6 @@ export const headers: HeadersFunction = ({ loaderHeaders, parentHeaders }) => {
   if (maybeETag) {
     headers[eTag] = maybeETag;
   }
-
-  console.debug({ headers, loaderHeaders, parentHeaders });
 
   return headers;
 };
@@ -211,17 +208,11 @@ export const loader: LoaderFunction = async ({ params, request }) => {
 
   if (hasSeasonEndedForAllRegions(season.slug)) {
     request.headers.delete(cacheControl);
-    request.headers.append(cacheControl, "max-age-18000, s-maxage=36000");
-
-    const lastEndDate = Object.values(season.endDates).reduce<number>(
-      (acc, endDate) => (endDate ? (acc > endDate ? acc : endDate) : acc),
-      0
+    const thirtyDays = 30 * 24 * 60 * 60;
+    request.headers.append(
+      cacheControl,
+      `public, max-age=${thirtyDays}, s-maxage=${thirtyDays}, immutable`
     );
-    request.headers.append(lastModified, new Date(lastEndDate).toUTCString());
-
-    request.headers.append(eTag, season.slug);
-
-    console.debug(request.headers);
   }
 
   const enhancedSeason: EnhancedSeason = {
@@ -275,6 +266,16 @@ export const loader: LoaderFunction = async ({ params, request }) => {
       );
     })
   );
+
+  const mostRecentDataset = Object.values(enhancedSeason.data)
+    .flat()
+    .reduce((acc, dataset) => (acc > dataset.ts ? acc : dataset.ts), 0);
+  request.headers.append(
+    lastModified,
+    new Date(mostRecentDataset).toUTCString()
+  );
+
+  request.headers.append(eTag, `${season.slug}-${mostRecentDataset}`);
 
   return json(enhancedSeason);
 };
