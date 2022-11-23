@@ -46,7 +46,16 @@ export const seasons: Season[] = [
       tw: { score: 0, source: null },
     },
     affixes: [
-      [Affix.Tyrannical, Affix.Tyrannical, Affix.Tyrannical, Affix.Thundering],
+      [Affix.Fortified, Affix.Raging, Affix.Quaking, Affix.Thundering],
+      [Affix.Tyrannical, Affix.Bursting, Affix.Grievous, Affix.Thundering],
+      [Affix.Fortified, Affix.Sanguine, Affix.Volcanic, Affix.Thundering],
+      [Affix.Tyrannical, Affix.Raging, Affix.Storming, Affix.Thundering],
+      [Affix.Fortified, Affix.Spiteful, Affix.Grievous, Affix.Thundering],
+      [Affix.Tyrannical, Affix.Sanguine, Affix.Explosive, Affix.Thundering],
+      [Affix.Fortified, Affix.Bolstering, Affix.Storming, Affix.Thundering],
+      [Affix.Tyrannical, Affix.Spiteful, Affix.Quaking, Affix.Thundering],
+      [Affix.Fortified, Affix.Bursting, Affix.Explosive, Affix.Thundering],
+      [Affix.Tyrannical, Affix.Bolstering, Affix.Volcanic, Affix.Thundering],
     ],
   },
   {
