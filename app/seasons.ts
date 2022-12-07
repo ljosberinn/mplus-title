@@ -29,9 +29,9 @@ export const seasons: Season[] = [
     crossFactionSupport: "complete",
     startDates: {
       us: 1_670_943_600_000,
-      eu: 1_670_385_600_000,
-      kr: 1_670_454_000_000,
-      tw: 1_670_454_000_000,
+      eu: 1_670_990_400_000,
+      kr: 1_671_058_800_000,
+      tw: 1_671_058_800_000,
     },
     endDates: {
       us: UNKNOWN_SEASON_ENDING,
