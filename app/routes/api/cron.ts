@@ -1,9 +1,11 @@
 /* eslint-disable no-console */
-import type { Prisma, Regions } from "@prisma/client";
+import type { Prisma } from "@prisma/client";
+import { Regions } from "@prisma/client";
 import type { ActionFunction, LoaderFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { load } from "cheerio";
 import { prisma } from "~/prisma";
+import type { Season } from "~/seasons";
 import { findSeasonByTimestamp } from "~/seasons";
 
 const rioBaseUrl = "https://raider.io";
@@ -31,10 +33,10 @@ export const action: ActionFunction = async ({ request }) => {
   }
 
   try {
-    const body = await request.text();
-    const payload = JSON.parse(body);
-
     if (process.env.NODE_ENV === "production") {
+      const body = await request.text();
+      const payload = JSON.parse(body);
+
       const secret = process.env.SECRET;
 
       if (!secret) {
@@ -47,7 +49,7 @@ export const action: ActionFunction = async ({ request }) => {
         return json({ error: "secret missing" }, 403);
       }
     } else {
-      console.info("Skipping verification of secret.", { payload });
+      console.info("Skipping verification of secret.");
     }
 
     const season = findSeasonByTimestamp();
@@ -56,9 +58,9 @@ export const action: ActionFunction = async ({ request }) => {
       return json({ info: "No ongoing season, bailing." });
     }
 
-    console.time("getMostOutdatedRegion");
-    const mostOutdatedRegion = await getMostOutdatedRegion();
-    console.timeEnd("getMostOutdatedRegion");
+    console.time("getMostOutdatedRegionForSeason");
+    const mostOutdatedRegion = await getMostOutdatedRegionForSeason(season);
+    console.timeEnd("getMostOutdatedRegionForSeason");
 
     if (!mostOutdatedRegion) {
       console.info("ending request early, nothing to update");
@@ -69,7 +71,7 @@ export const action: ActionFunction = async ({ request }) => {
     const regionData = await parseRegionData(mostOutdatedRegion, season.rioKey);
     console.timeEnd("parseRegionData");
 
-    await prisma.crossFactionHistory.create({ data: regionData });
+    // await prisma.crossFactionHistory.create({ data: regionData });
 
     return json({ mostOutdatedRegion, regionData });
   } catch (error) {
@@ -82,13 +84,28 @@ export const loader: LoaderFunction = () => {
   return json([], 405);
 };
 
-const getMostOutdatedRegion = async () => {
+const getMostOutdatedRegionForSeason = async (season: Season) => {
+  const regionsWithSeasonStarted = Object.entries(season.startDates)
+    .filter(([, timestamp]) => timestamp < Date.now())
+    .map(([region]) => region)
+    .filter((region): region is Regions => region in Regions);
+
+  if (regionsWithSeasonStarted.length === 1) {
+    return regionsWithSeasonStarted[0];
+  }
+
   const threshold = Math.round(Date.now() / 1000 - 1 * 60 * 60);
 
   const mostRecentData = await prisma.crossFactionHistory.findMany({
     where: {
       timestamp: {
         gte: threshold,
+      },
+      region: {
+        in:
+          regionsWithSeasonStarted.length === 4
+            ? undefined
+            : regionsWithSeasonStarted,
       },
     },
     orderBy: {
@@ -108,6 +125,12 @@ const getMostOutdatedRegion = async () => {
     where: {
       timestamp: {
         lte: threshold,
+      },
+      region: {
+        in:
+          regionsWithSeasonStarted.length === 4
+            ? undefined
+            : regionsWithSeasonStarted,
       },
     },
     orderBy: {
