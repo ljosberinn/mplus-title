@@ -122,7 +122,7 @@ const calculateExtrapolation = (
   const daysPassed = timePassed / 1000 / 60 / 60 / 24;
 
   if (daysPassed <= 14) {
-    return null
+    return null;
   }
 
   const daysUntilSeasonEndingOrTwoWeeks = daysUntilSeasonEnding ?? 14;
@@ -318,15 +318,46 @@ function Graph({ season, region }: GraphProps): JSX.Element {
 
     const [start, end] = zoom;
 
+    if (!start || !end) {
+      return;
+    }
+
     ref.current.chart.xAxis[0].setExtremes(start, end);
     ref.current.chart.showResetZoom();
   }, [zoom]);
 
   if (season.data[region].length === 0) {
+    const seasonHasNotStartedForRegion = season.startDates[region] > Date.now();
+    const hoursUntilSeasonStart = seasonHasNotStartedForRegion
+      ? Math.max(
+          Math.round((season.startDates[region] - Date.now()) / 1000 / 60 / 60),
+          1
+        )
+      : 0;
+
     return (
       <div className="p-4 bg-gray-700 rounded-lg">
         <h2>
-          No data yet in <b>{region.toUpperCase()}</b>, give it a couple hours.
+          {seasonHasNotStartedForRegion ? (
+            <>
+              The season has not started in <b>{region.toUpperCase()}</b> yet.
+              Data will appear as soon as possible after{" "}
+              <time
+                dateTime={new Date(season.startDates[region]).toISOString()}
+              >
+                <b suppressHydrationWarning>
+                  {new Date(season.startDates[region]).toLocaleString()} (T-
+                  {hoursUntilSeasonStart} hours)
+                </b>
+              </time>
+              .
+            </>
+          ) : (
+            <>
+              No data yet in <b>{region.toUpperCase()}</b>, give it a couple
+              hours.
+            </>
+          )}
         </h2>
       </div>
     );
