@@ -76,10 +76,10 @@ export const seasons: Season[] = [
       tw: 1_666_821_600_000,
     },
     confirmedCutoffs: {
-      eu: { 
-        score: 3120, 
-        source: 
-          "https://eu.forums.blizzard.com/en/wow/t/m-shrouded-hero-title-november-16-update/395176/19"
+      eu: {
+        score: 3120,
+        source:
+          "https://eu.forums.blizzard.com/en/wow/t/m-shrouded-hero-title-november-16-update/395176/19",
       },
       us: { score: 0, source: null },
       kr: { score: 0, source: null },
@@ -236,14 +236,16 @@ export const findSeasonByName = (slug: string): Season | null => {
   if (slug === "latest") {
     const ongoingSeason = findSeasonByTimestamp();
 
-    if (!ongoingSeason) {
-      const mostRecentlyStartedSeason = seasons.find(
-        (season) => Date.now() >= season.startDates.us
-      );
+    if (ongoingSeason) {
+      return ongoingSeason;
+    }
 
-      if (mostRecentlyStartedSeason) {
-        return mostRecentlyStartedSeason;
-      }
+    const mostRecentlyStartedSeason = seasons.find(
+      (season) => Date.now() >= season.startDates.us
+    );
+
+    if (mostRecentlyStartedSeason) {
+      return mostRecentlyStartedSeason;
     }
   }
 
