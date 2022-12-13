@@ -71,7 +71,7 @@ export const action: ActionFunction = async ({ request }) => {
     const regionData = await parseRegionData(mostOutdatedRegion, season.rioKey);
     console.timeEnd("parseRegionData");
 
-    // await prisma.crossFactionHistory.create({ data: regionData });
+    await prisma.crossFactionHistory.create({ data: regionData });
 
     return json({ mostOutdatedRegion, regionData });
   } catch (error) {
