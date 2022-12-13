@@ -120,6 +120,11 @@ const calculateExtrapolation = (
 
   const timePassed = lastDataset.ts - firstRelevantDataset.ts;
   const daysPassed = timePassed / 1000 / 60 / 60 / 24;
+
+  if (daysPassed <= 14) {
+    return null
+  }
+
   const daysUntilSeasonEndingOrTwoWeeks = daysUntilSeasonEnding ?? 14;
   const factor = daysUntilSeasonEndingOrTwoWeeks / daysPassed;
 
