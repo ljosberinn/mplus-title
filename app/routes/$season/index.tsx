@@ -77,22 +77,14 @@ const determineExtrapolationStart = (
   data: Dataset[],
   season: Season,
   region: Regions
-) => {
-  const [first] = data;
+): Dataset | null => {
   const seasonStart = season.startDates[region];
-  const timePassedSinceSeasonStart = first.ts - seasonStart;
 
-  if (timePassedSinceSeasonStart >= oneWeekInMs * 2) {
-    const firstDatasetAfterTwoWeeks = data.find(
-      (dataset) => dataset.ts > seasonStart + oneWeekInMs * 2
-    );
+  const firstDataset = data.find((dataset) => {
+    return dataset.ts >= seasonStart + 2 * oneWeekInMs;
+  });
 
-    if (firstDatasetAfterTwoWeeks) {
-      return firstDatasetAfterTwoWeeks;
-    }
-  }
-
-  return first;
+  return firstDataset ?? null;
 };
 
 const calculateExtrapolation = (
@@ -118,13 +110,12 @@ const calculateExtrapolation = (
     region
   );
 
-  const timePassed = lastDataset.ts - firstRelevantDataset.ts;
-  const daysPassed = timePassed / 1000 / 60 / 60 / 24;
-
-  if (daysPassed <= 21) {
+  if (!firstRelevantDataset) {
     return null;
   }
 
+  const timePassed = lastDataset.ts - firstRelevantDataset.ts;
+  const daysPassed = timePassed / 1000 / 60 / 60 / 24;
   const daysUntilSeasonEndingOrTwoWeeks = daysUntilSeasonEnding ?? 14;
   const factor = daysUntilSeasonEndingOrTwoWeeks / daysPassed;
 
