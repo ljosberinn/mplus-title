@@ -81,7 +81,7 @@ const determineExtrapolationStart = (
   const seasonStart = season.startDates[region];
 
   const firstDataset = data.find((dataset) => {
-    return dataset.ts >= seasonStart + 2 * oneWeekInMs;
+    return dataset.ts >= seasonStart + 4 * oneWeekInMs;
   });
 
   return firstDataset ?? null;

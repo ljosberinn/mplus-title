@@ -65,7 +65,7 @@ export default function App(): JSX.Element {
 
           <p className="pb-4 italic text-center">updates hourly</p>
           <p className="pb-4 italic text-center">
-            extrapolation ignores the first two weeks of a season. apart from
+            extrapolation ignores the first FOUR weeks of a season. apart from
             that its linear, as it cannot guess ever-moving variables such as
             participation, better/worse weeks etc.
           </p>
