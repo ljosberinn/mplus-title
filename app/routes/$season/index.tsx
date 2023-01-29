@@ -202,13 +202,12 @@ export const loader: LoaderFunction = async ({ params, request }) => {
     });
   }
 
+  const headers: HeadersInit = {
+  };
+
   if (hasSeasonEndedForAllRegions(season.slug)) {
-    request.headers.delete(cacheControl);
     const thirtyDays = 30 * 24 * 60 * 60;
-    request.headers.append(
-      cacheControl,
-      `public, max-age=${thirtyDays}, s-maxage=${thirtyDays}, immutable`
-    );
+    headers[cacheControl] = `public, max-age=${thirtyDays}, s-maxage=${thirtyDays}, immutable`;
   }
 
   const enhancedSeason: EnhancedSeason = {
@@ -266,14 +265,10 @@ export const loader: LoaderFunction = async ({ params, request }) => {
   const mostRecentDataset = Object.values(enhancedSeason.data)
     .flat()
     .reduce((acc, dataset) => (acc > dataset.ts ? acc : dataset.ts), 0);
-  request.headers.append(
-    lastModified,
-    new Date(mostRecentDataset).toUTCString()
-  );
+  headers[lastModified] = new Date(mostRecentDataset).toUTCString();
+  headers[eTag] = `${season.slug}-${mostRecentDataset}`;
 
-  request.headers.append(eTag, `${season.slug}-${mostRecentDataset}`);
-
-  return json(enhancedSeason);
+  return json(enhancedSeason, { headers });
 };
 
 export default function Season(): JSX.Element | null {
