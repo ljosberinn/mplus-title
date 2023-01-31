@@ -185,7 +185,7 @@ const calculateZoom = (
   return [backThen ? backThen.ts : 0, zoomEnd];
 };
 
-export const loader: LoaderFunction = async ({ params, request }) => {
+export const loader: LoaderFunction = async ({ params }) => {
   if (!("season" in params) || !params.season) {
     throw new Response(undefined, {
       status: 400,
@@ -202,12 +202,13 @@ export const loader: LoaderFunction = async ({ params, request }) => {
     });
   }
 
-  const headers: HeadersInit = {
-  };
+  const headers: HeadersInit = {};
 
   if (hasSeasonEndedForAllRegions(season.slug)) {
     const thirtyDays = 30 * 24 * 60 * 60;
-    headers[cacheControl] = `public, max-age=${thirtyDays}, s-maxage=${thirtyDays}, immutable`;
+    headers[
+      cacheControl
+    ] = `public, max-age=${thirtyDays}, s-maxage=${thirtyDays}, immutable`;
   }
 
   const enhancedSeason: EnhancedSeason = {
@@ -298,7 +299,12 @@ function Graph({ season, region }: GraphProps): JSX.Element {
   const zoom = season.initialZoom[region];
 
   useEffect(() => {
-    if (!ref.current || !zoom) {
+    if (!ref.current) {
+      return;
+    }
+
+    if (!zoom) {
+      ref.current.chart.xAxis[0].setExtremes();
       return;
     }
 
