@@ -63,11 +63,14 @@ type EnhancedSeason = Season & {
   data: Record<Regions, Dataset[]>;
   extrapolation: Record<
     Regions,
-    null | {
-      from: Dataset;
-      to: Dataset;
-    }
+    | null
+    | [number, number][]
+    | {
+        from: Dataset;
+        to: Dataset;
+      }
   >;
+
   initialZoom: Record<Regions, null | [number, number]>;
 };
 
@@ -91,7 +94,7 @@ const calculateExtrapolation = (
   season: Season,
   region: Regions,
   data: Dataset[]
-) => {
+): null | [number, number][] | { from: Dataset; to: Dataset } => {
   const seasonEnding = season.endDates[region];
 
   if (seasonEnding && Date.now() >= seasonEnding) {
@@ -126,15 +129,35 @@ const calculateExtrapolation = (
     ).toFixed(1)
   );
 
-  const extrapolationTimestamp =
+  const to =
     seasonEnding ??
     lastDataset.ts + (daysUntilSeasonEndingOrTwoWeeks / 7) * oneWeekInMs;
+
+  const timeUntilExtrapolationEnd = to - lastDataset.ts;
+
+  if (timeUntilExtrapolationEnd > oneWeekInMs / 7) {
+    const interval = timeUntilExtrapolationEnd / 14;
+    const scoreIncreaseSteps = (score - lastDataset.score) / 14;
+
+    return [
+      [lastDataset.ts, lastDataset.score],
+      ...Array.from<number, [number, number]>({ length: 13 }, (_, i) => {
+        return [
+          lastDataset.ts + interval * (i + 1),
+          Number.parseFloat(
+            (lastDataset.score + scoreIncreaseSteps * (i + 1)).toFixed(1)
+          ),
+        ];
+      }),
+      [to, score],
+    ];
+  }
 
   return {
     from: lastDataset,
     to: {
       score,
-      ts: extrapolationTimestamp,
+      ts: to,
     },
   };
 };
@@ -152,7 +175,10 @@ const calculateZoom = (
       ? (seasonEnding - Date.now()) / 1000 / 60 / 60 / 24
       : null;
 
-  const zoomEnd = extrapolation?.to.ts ?? data[data.length - 1].ts;
+  const zoomEnd =
+    (Array.isArray(extrapolation)
+      ? extrapolation[extrapolation.length - 1][0]
+      : extrapolation?.to.ts) ?? data[data.length - 1].ts;
 
   if (daysUntilSeasonEnding) {
     if (daysUntilSeasonEnding < 1) {
@@ -535,13 +561,18 @@ const createSeries = (
           type: "line",
           name: "Score Extrapolated",
           color: factionColors.xFaction,
-          data: [
-            [extrapolationData.from.ts, extrapolationData.from.score],
-            [extrapolationData.to.ts, extrapolationData.to.score],
-          ],
-          dashStyle: "Dash",
+          data: Array.isArray(extrapolationData)
+            ? extrapolationData
+            : [
+                [extrapolationData.from.ts, extrapolationData.from.score],
+                [extrapolationData.to.ts, extrapolationData.to.score],
+              ],
+          dashStyle: "ShortDash",
           dataLabels: {
             formatter,
+          },
+          marker: {
+            enabled: true,
           },
         };
 
