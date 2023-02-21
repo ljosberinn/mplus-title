@@ -90,6 +90,10 @@ const determineExtrapolationStart = (
   return firstDataset ?? null;
 };
 
+const toOneDigit = (int: number) => {
+  return Number.parseFloat(int.toFixed(1));
+};
+
 const calculateExtrapolation = (
   season: Season,
   region: Regions,
@@ -117,23 +121,68 @@ const calculateExtrapolation = (
     return null;
   }
 
-  const timePassed = lastDataset.ts - firstRelevantDataset.ts;
-  const daysPassed = timePassed / 1000 / 60 / 60 / 24;
+  const weeks = seasonEnding
+    ? (seasonEnding - season.startDates[region]) / oneWeekInMs
+    : 36;
+
+  const passedWeeksDiff = Array.from({ length: weeks }, (_, index) => {
+    const from = season.startDates[region] + index * oneWeekInMs;
+    const to = from + oneWeekInMs;
+
+    const { xFactionDiff } = calculateFactionDiffForWeek(
+      data,
+      season.crossFactionSupport,
+      index === 0,
+      from,
+      to
+    );
+    return xFactionDiff;
+  })
+    .filter(Boolean)
+    .slice(4);
+
   const daysUntilSeasonEndingOrTwoWeeks = daysUntilSeasonEnding ?? 14;
-  const factor = daysUntilSeasonEndingOrTwoWeeks / daysPassed;
-
-  const score = Number.parseFloat(
-    (
-      lastDataset.score +
-      (lastDataset.score - firstRelevantDataset.score) * factor
-    ).toFixed(1)
-  );
-
   const to =
     seasonEnding ??
     lastDataset.ts + (daysUntilSeasonEndingOrTwoWeeks / 7) * oneWeekInMs;
-
   const timeUntilExtrapolationEnd = to - lastDataset.ts;
+
+  // given a couple weeks past the first four, apply weighting on older weeks
+  if (
+    passedWeeksDiff.length >= 4 &&
+    timeUntilExtrapolationEnd > oneWeekInMs / 7
+  ) {
+    const interval = timeUntilExtrapolationEnd / 14;
+    const scoreIncreaseSteps =
+      passedWeeksDiff.reduce((acc, diff, index) => {
+        // looking at week 5 in week 10 means its 5 weeks ago, applying a weight of 0.5
+        // looking at week 10 in week 10 means its the current week, applying a weight of 1
+        const factor = 1 - (passedWeeksDiff.length - index - 1) / 10;
+        return acc + diff * (factor > 0 ? factor : 0.1);
+      }) /
+      passedWeeksDiff.length /
+      7;
+
+    return [
+      [lastDataset.ts, lastDataset.score],
+      ...Array.from<number, [number, number]>({ length: 13 }, (_, i) => {
+        return [
+          lastDataset.ts + interval * (i + 1),
+          toOneDigit(lastDataset.score + scoreIncreaseSteps * (i + 1)),
+        ];
+      }),
+      [to, toOneDigit(lastDataset.score + scoreIncreaseSteps * 14)],
+    ];
+  }
+
+  const timePassed = lastDataset.ts - firstRelevantDataset.ts;
+  const daysPassed = timePassed / 1000 / 60 / 60 / 24;
+  const factor = daysUntilSeasonEndingOrTwoWeeks / daysPassed;
+
+  const score = toOneDigit(
+    lastDataset.score +
+      (lastDataset.score - firstRelevantDataset.score) * factor
+  );
 
   if (timeUntilExtrapolationEnd > oneWeekInMs / 7) {
     const interval = timeUntilExtrapolationEnd / 14;
@@ -144,9 +193,7 @@ const calculateExtrapolation = (
       ...Array.from<number, [number, number]>({ length: 13 }, (_, i) => {
         return [
           lastDataset.ts + interval * (i + 1),
-          Number.parseFloat(
-            (lastDataset.score + scoreIncreaseSteps * (i + 1)).toFixed(1)
-          ),
+          toOneDigit(lastDataset.score + scoreIncreaseSteps * (i + 1)),
         ];
       }),
       [to, score],
@@ -629,6 +676,74 @@ const createFactionCutoffPlotlines = (
   return [];
 };
 
+const calculateFactionDiffForWeek = (
+  data: Dataset[],
+  crossFactionSupport: Season["crossFactionSupport"],
+  isFirstWeek: boolean,
+  from: number,
+  to: number
+): { hordeDiff: number; allianceDiff: number; xFactionDiff: number } => {
+  const hasCompleteXFactionSupport = crossFactionSupport === "complete";
+  const thisWeeksData = data.filter(
+    (dataset) => dataset.ts >= from && dataset.ts <= to
+  );
+
+  const horde = hasCompleteXFactionSupport
+    ? []
+    : thisWeeksData.filter((dataset) => dataset.faction === Factions.horde);
+  const alliance = hasCompleteXFactionSupport
+    ? []
+    : thisWeeksData.filter((dataset) => dataset.faction === Factions.alliance);
+
+  const hordeEndMatch = hasCompleteXFactionSupport
+    ? null
+    : [...horde].reverse()[0];
+  const hordeStartMatch = hasCompleteXFactionSupport ? null : horde[0];
+
+  const allianceEndMatch = hasCompleteXFactionSupport
+    ? null
+    : [...alliance].reverse()[0];
+  const allianceStartMatch = hasCompleteXFactionSupport ? null : alliance[0];
+
+  const xFactionEndMatch = hasCompleteXFactionSupport
+    ? thisWeeksData[thisWeeksData.length - 1]
+    : crossFactionSupport === "partial"
+    ? [...thisWeeksData].reverse().find((dataset) => !dataset.faction)
+    : null;
+  const xFactionStartMatch = hasCompleteXFactionSupport
+    ? thisWeeksData[0]
+    : crossFactionSupport === "partial"
+    ? thisWeeksData.find((dataset) => !dataset.faction)
+    : null;
+
+  const hordeDiff =
+    hordeEndMatch && hordeStartMatch
+      ? hordeEndMatch.score -
+        (isFirstWeek && hordeStartMatch === data[0] ? 0 : hordeStartMatch.score)
+      : 0;
+  const allianceDiff =
+    allianceEndMatch && allianceStartMatch
+      ? allianceEndMatch.score -
+        (isFirstWeek && allianceStartMatch === data[0]
+          ? 0
+          : allianceStartMatch.score)
+      : 0;
+
+  const xFactionDiff =
+    xFactionEndMatch && xFactionStartMatch
+      ? xFactionEndMatch.score -
+        (isFirstWeek && xFactionStartMatch === data[0]
+          ? 0
+          : xFactionStartMatch.score)
+      : 0;
+
+  return {
+    hordeDiff,
+    allianceDiff,
+    xFactionDiff,
+  };
+};
+
 const createPlotBands = (
   season: EnhancedSeason,
   region: Regions
@@ -637,8 +752,6 @@ const createPlotBands = (
   const seasonEnd = season.endDates[region];
 
   const weeks = seasonEnd ? (seasonEnd - seasonStart) / oneWeekInMs : 36;
-
-  const hasCompleteXFactionSupport = season.crossFactionSupport === "complete";
 
   return Array.from({
     length: weeks,
@@ -676,64 +789,14 @@ const createPlotBands = (
       },
     };
 
-    const isFirstWeek = index === 0;
-
-    const thisWeeksData = season.data[region].filter(
-      (dataset) => dataset.ts >= from && dataset.ts <= to
-    );
-
-    const horde = hasCompleteXFactionSupport
-      ? []
-      : thisWeeksData.filter((dataset) => dataset.faction === Factions.horde);
-    const alliance = hasCompleteXFactionSupport
-      ? []
-      : thisWeeksData.filter(
-          (dataset) => dataset.faction === Factions.alliance
-        );
-
-    const hordeEndMatch = hasCompleteXFactionSupport
-      ? null
-      : [...horde].reverse()[0];
-    const hordeStartMatch = hasCompleteXFactionSupport ? null : horde[0];
-
-    const allianceEndMatch = hasCompleteXFactionSupport
-      ? null
-      : [...alliance].reverse()[0];
-    const allianceStartMatch = hasCompleteXFactionSupport ? null : alliance[0];
-
-    const xFactionEndMatch = hasCompleteXFactionSupport
-      ? thisWeeksData[thisWeeksData.length - 1]
-      : season.crossFactionSupport === "partial"
-      ? [...thisWeeksData].reverse().find((dataset) => !dataset.faction)
-      : null;
-    const xFactionStartMatch = hasCompleteXFactionSupport
-      ? thisWeeksData[0]
-      : season.crossFactionSupport === "partial"
-      ? thisWeeksData.find((dataset) => !dataset.faction)
-      : null;
-
-    const hordeDiff =
-      hordeEndMatch && hordeStartMatch
-        ? hordeEndMatch.score -
-          (isFirstWeek && hordeStartMatch === season.data[region][0]
-            ? 0
-            : hordeStartMatch.score)
-        : 0;
-    const allianceDiff =
-      allianceEndMatch && allianceStartMatch
-        ? allianceEndMatch.score -
-          (isFirstWeek && allianceStartMatch === season.data[region][0]
-            ? 0
-            : allianceStartMatch.score)
-        : 0;
-
-    const xFactionDiff =
-      xFactionEndMatch && xFactionStartMatch
-        ? xFactionEndMatch.score -
-          (isFirstWeek && xFactionStartMatch === season.data[region][0]
-            ? 0
-            : xFactionStartMatch.score)
-        : 0;
+    const { allianceDiff, hordeDiff, xFactionDiff } =
+      calculateFactionDiffForWeek(
+        season.data[region],
+        season.crossFactionSupport,
+        index === 0,
+        from,
+        to
+      );
 
     const text = [
       hordeDiff === 0
