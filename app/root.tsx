@@ -11,10 +11,10 @@ import {
 
 import { getAffixIconUrl } from "./affixes";
 import { seasons } from "./seasons";
-import styles from "./styles/app.css";
+import stylesheet from "~/tailwind.css";
 
 export const links: LinksFunction = () => {
-  return [{ rel: "stylesheet", href: styles }];
+  return [{ rel: "stylesheet", href: stylesheet }];
 };
 
 const title = "Mythic+ Estimated Title Cutoff";
