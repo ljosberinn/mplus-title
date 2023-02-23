@@ -282,7 +282,7 @@
         "project": "./tsconfig.json",
         "warnOnUnsupportedTypeScriptVersion": true
       },
-      "plugins": ["@typescript-eslint"],
+      "plugins": ["@typescript-eslint", "etc"],
       "settings": {
         "react": {
           "version": "detect"
@@ -459,6 +459,11 @@
         "@typescript-eslint/typedef": "off",
         "@typescript-eslint/unbound-method": "off",
         "@typescript-eslint/unified-signatures": "warn",
+        "etc/no-assign-mutated-array": "error",
+        "etc/no-commented-out-code": "off",
+        "etc/no-internal": "warn",
+        "etc/no-misused-generics": "warn",
+        "etc/underscore-internal": "warn",
         "@typescript-eslint/object-curly-spacing": "off"
       },
       "overrides": [
@@ -595,6 +600,7 @@
     "no-else-return": "warn",
     "no-empty-function": "error",
     "no-empty-pattern": "warn",
+    "no-empty-static-block": "warn",
     "no-eq-null": "error",
     "no-eval": "error",
     "no-extend-native": "error",
@@ -623,6 +629,7 @@
     "no-multi-str": "off",
     "no-new": "error",
     "no-new-func": "error",
+    "no-new-native-nonconstructor": "off",
     "no-new-wrappers": "error",
     "no-nonoctal-decimal-escape": "error",
     "no-octal": "warn",
@@ -806,7 +813,7 @@
     "no-mixed-spaces-and-tabs": "off",
     "no-multi-assign": "error",
     "no-multiple-empty-lines": "off",
-    "no-negated-condition": "error",
+    "no-negated-condition": "off",
     "no-nested-ternary": "off",
     "no-new-object": "error",
     "no-plusplus": "off",
@@ -929,6 +936,7 @@
     "unicorn/no-invalid-remove-event-listener": "error",
     "unicorn/no-keyword-prefix": "off",
     "unicorn/no-lonely-if": "warn",
+    "unicorn/no-negated-condition": "warn",
     "unicorn/no-nested-ternary": "off",
     "unicorn/no-new-array": "error",
     "unicorn/no-new-buffer": "error",
@@ -938,6 +946,7 @@
     "unicorn/no-static-only-class": "error",
     "unicorn/no-thenable": "warn",
     "unicorn/no-this-assignment": "warn",
+    "unicorn/no-typeof-undefined": "warn",
     "unicorn/no-unnecessary-await": "off",
     "unicorn/no-unreadable-array-destructuring": "warn",
     "unicorn/no-unreadable-iife": "warn",
@@ -991,6 +1000,7 @@
     "unicorn/prefer-reflect-apply": "error",
     "unicorn/prefer-regexp-test": "error",
     "unicorn/prefer-set-has": "error",
+    "unicorn/prefer-set-size": "warn",
     "unicorn/prefer-spread": "error",
     "unicorn/prefer-string-replace-all": "error",
     "unicorn/prefer-string-slice": "error",
@@ -1019,6 +1029,7 @@
     "promise/avoid-new": "off",
     "promise/catch-or-return": "off",
     "promise/no-callback-in-promise": "off",
+    "promise/no-multiple-resolved": "warn",
     "promise/no-native": "off",
     "promise/no-nesting": "warn",
     "promise/no-new-statics": "error",
