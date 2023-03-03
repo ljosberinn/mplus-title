@@ -28,63 +28,78 @@ export enum Affix {
   Thundering = 132,
 }
 
-export const affixes: Record<Affix, { icon: string }> = {
-  [Affix.Overflowing]: { icon: "inv_misc_volatilewater" },
+export const affixes: Record<Affix, { icon: string; name: string }> = {
+  [Affix.Overflowing]: { name: "Overflowing", icon: "inv_misc_volatilewater" },
   [Affix.Skittish]: {
+    name: "Skittish",
     icon: "spell_magic_lesserinvisibilty",
   },
-  [Affix.Volcanic]: { icon: "spell_shaman_lavasurge" },
+  [Affix.Volcanic]: { name: "Volcanic", icon: "spell_shaman_lavasurge" },
   [Affix.Necrotic]: {
+    name: "Necrotic",
     icon: "spell_deathknight_necroticplague",
   },
   [Affix.Teeming]: {
+    name: "Teeming",
     icon: "spell_nature_massteleport",
   },
-  [Affix.Raging]: { icon: "ability_warrior_focusedrage" },
+  [Affix.Raging]: { name: "Raging", icon: "ability_warrior_focusedrage" },
   [Affix.Bolstering]: {
+    name: "Bolstering",
     icon: "ability_warrior_battleshout",
   },
-  [Affix.Sanguine]: { icon: "spell_shadow_bloodboil" },
+  [Affix.Sanguine]: { name: "Sanguine", icon: "spell_shadow_bloodboil" },
   [Affix.Tyrannical]: {
+    name: "Tyrannical",
     icon: "achievement_boss_archaedas",
   },
-  [Affix.Fortified]: { icon: "ability_toughness" },
+  [Affix.Fortified]: { name: "Fortified", icon: "ability_toughness" },
   [Affix.Bursting]: {
+    name: "Bursting",
     icon: "ability_ironmaidens_whirlofblood",
   },
-  [Affix.Grievous]: { icon: "ability_backstab" },
+  [Affix.Grievous]: { name: "Grievous", icon: "ability_backstab" },
   [Affix.Explosive]: {
+    name: "Explosive",
     icon: "spell_fire_felflamering_red",
   },
-  [Affix.Quaking]: { icon: "spell_nature_earthquake" },
+  [Affix.Quaking]: { name: "Quaking", icon: "spell_nature_earthquake" },
   [Affix.Infested]: {
+    name: "Infested",
     icon: "achievement_nazmir_boss_ghuun",
   },
   [Affix.Reaping]: {
+    name: "Reaping",
     icon: "ability_racial_embraceoftheloa_bwonsomdi",
   },
-  [Affix.Beguiling]: { icon: "spell_shadow_mindshear" },
+  [Affix.Beguiling]: { name: "Beguiling", icon: "spell_shadow_mindshear" },
   [Affix.Awakened]: {
+    name: "Awakened",
     icon: "trade_archaeology_nerubian_obelisk",
   },
   [Affix.Prideful]: {
+    name: "Prideful",
     icon: "spell_animarevendreth_buff",
   },
   [Affix.Inspiring]: {
+    name: "Inspiring",
     icon: "spell_holy_prayerofspirit",
   },
   [Affix.Spiteful]: {
+    name: "Spiteful",
     icon: "spell_holy_prayerofshadowprotection",
   },
-  [Affix.Storming]: { icon: "spell_nature_cyclone" },
-  [Affix.Tormented]: { icon: "spell_animamaw_orb" },
-  [Affix.Infernal]: { icon: "inv_infernalbrimstone" },
-  [Affix.Encrypted]: { icon: "spell_progenitor_orb" },
-  [Affix.Shrouded]: { icon: "spell_shadow_nethercloak" },
+  [Affix.Storming]: { name: "Storming", icon: "spell_nature_cyclone" },
+  [Affix.Tormented]: { name: "Tormented", icon: "spell_animamaw_orb" },
+  [Affix.Infernal]: { name: "Infernal", icon: "inv_infernalbrimstone" },
+  [Affix.Encrypted]: { name: "Encrypted", icon: "spell_progenitor_orb" },
+  [Affix.Shrouded]: { name: "Shrouded", icon: "spell_shadow_nethercloak" },
   [Affix.Thundering]: {
+    name: "Thundering",
     icon: "shaman_pvp_leaderclan",
   },
 };
 
 export const getAffixIconUrl = (id: Affix): string =>
   `https://wow.zamimg.com/images/wow/icons/small/${affixes[id].icon}.jpg`;
+export const getAffixName = (id: Affix): string => affixes[id].name;

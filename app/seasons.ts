@@ -22,6 +22,31 @@ export type Season = {
 };
 
 export const seasons: Season[] = [
+  // {
+  //   name: "DF S2",
+  //   slug: "df-season-2",
+  //   rioKey: "season-df-2",
+  //   crossFactionSupport: "complete",
+  //   startDates: {
+  //     us: UNKNOWN_SEASON_ENDING,
+  //     eu: UNKNOWN_SEASON_ENDING,
+  //     kr: UNKNOWN_SEASON_ENDING,
+  //     tw: UNKNOWN_SEASON_ENDING,
+  //   },
+  //   endDates: {
+  //     us: UNKNOWN_SEASON_ENDING,
+  //     eu: UNKNOWN_SEASON_ENDING,
+  //     kr: UNKNOWN_SEASON_ENDING,
+  //     tw: UNKNOWN_SEASON_ENDING,
+  //   },
+  //   confirmedCutoffs: {
+  //     eu: { score: 0, source: null },
+  //     us: { score: 0, source: null },
+  //     kr: { score: 0, source: null },
+  //     tw: { score: 0, source: null },
+  //   },
+  //   affixes: [],
+  // },
   {
     name: "DF S1",
     slug: "df-season-1",

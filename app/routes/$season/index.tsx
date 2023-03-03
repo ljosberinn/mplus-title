@@ -14,9 +14,9 @@ import type {
 } from "highcharts";
 import Highcharts from "highcharts";
 import HighchartsReact from "highcharts-react-official";
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, Fragment } from "react";
 import { red, blue, gray } from "tailwindcss/colors";
-import { getAffixIconUrl } from "~/affixes";
+import { getAffixIconUrl, getAffixName } from "~/affixes";
 
 import type { Dataset, Season } from "../../seasons";
 import {
@@ -350,21 +350,46 @@ export default function Season(): JSX.Element | null {
 
   return (
     <div className="space-y-4 p-4">
-      {orderedRegionsBySize.map((region) => {
-        return <Graph season={season} key={region} region={region} />;
+      {orderedRegionsBySize.map((region, index) => {
+        return (
+          <Fragment key={region}>
+            <Card season={season} region={region} />
+            {index === orderedRegionsBySize.length - 1 ? null : <hr />}
+          </Fragment>
+        );
       })}
     </div>
   );
 }
 
-type GraphProps = {
+const findIndexOfCurrentWeek = (season: EnhancedSeason, region: Regions) => {
+  if (!season.startDates[region] || season.data[region].length === 0) {
+    return null;
+  }
+
+  const endDate = season.endDates[region];
+
+  if (endDate !== null && endDate <= Date.now()) {
+    return null;
+  }
+
+  const latestDataset = season.data[region][season.data[region].length - 1];
+
+  return (
+    Math.floor(
+      (latestDataset.ts - season.startDates[region]) / 1000 / 60 / 60 / 24 / 7
+    ) - season.affixes.length
+  );
+};
+
+type CardProps = {
   season: EnhancedSeason;
   region: Regions;
 };
 
 const numberFormatParts = new Intl.NumberFormat().formatToParts(1234.5);
 
-function Graph({ season, region }: GraphProps): JSX.Element {
+function Card({ season, region }: CardProps): JSX.Element {
   const ref = useRef<HighchartsReact.RefObject | null>(null);
 
   const seasonEndDate = season.endDates[region];
@@ -433,18 +458,10 @@ function Graph({ season, region }: GraphProps): JSX.Element {
       enabled: true,
     },
     title: {
-      text:
-        region && confirmedCutoffUrl
-          ? `<a target="_blank" style="text-decoration: underline;" href="${confirmedCutoffUrl}">${region.toUpperCase()} (click for daily updated bluepost)</a>`
-          : region.toUpperCase(),
-      style: {
-        color: "#fff",
-      },
-      useHTML: true,
+      text: "",
     },
     chart: {
-      backgroundColor: gray["700"],
-      borderRadius: 4,
+      backgroundColor: "transparent",
       zooming: {
         type: "x",
         resetButton: {
@@ -539,8 +556,84 @@ function Graph({ season, region }: GraphProps): JSX.Element {
     series: createSeries(season, region),
   };
 
+  const indexOfCurrentWeek = findIndexOfCurrentWeek(season, region);
+  const seasonEnd = season.endDates[region];
+
   return (
-    <HighchartsReact highcharts={Highcharts} options={options} ref={ref} />
+    <section
+      className="bg-gray-700 rounded-md"
+      aria-labelledby={`title-${region}`}
+    >
+      <h1 id={`title-${region}`} className="text-center text-lg font-bold">
+        {region.toUpperCase()}
+      </h1>
+
+      {region && confirmedCutoffUrl ? (
+        <div className="flex justify-center">
+          <a
+            href={confirmedCutoffUrl}
+            target="_blank"
+            rel="noreferrer noopener"
+            className="underline margin-auto"
+          >
+            daily updated bluepost
+          </a>
+        </div>
+      ) : null}
+
+      {!seasonEnd || seasonEnd >= Date.now() ? (
+        <div className="flex w-full justify-between mb-2">
+          {season.affixes.map((set, index) => {
+            const isCurrentWeek = index === indexOfCurrentWeek;
+
+            const isNextWeek =
+              isCurrentWeek || !indexOfCurrentWeek
+                ? false
+                : index === indexOfCurrentWeek + 1;
+
+            return (
+              <div
+                className={[
+                  "flex flex-col items-center opacity-50 hover:opacity-100 flex-1",
+                  isCurrentWeek
+                    ? "opacity-100 md:opacity-100"
+                    : "grayscale transition-opacity hover:filter-none",
+                  isNextWeek ? "opacity-75 filter-none" : null,
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
+                key={set.join("-")}
+              >
+                <span>W{index + 1}</span>
+                {set.slice(0, -1).map((affix) => {
+                  const affixName = getAffixName(affix);
+
+                  return (
+                    <div
+                      key={affix}
+                      className="flex w-full space-x-2 justify-center"
+                    >
+                      <img
+                        src={getAffixIconUrl(affix)}
+                        width={18}
+                        height={18}
+                        loading="lazy"
+                        className="w-4 h-4"
+                        title={affixName}
+                      />
+                      <span className="hidden md:inline text-sm">
+                        {affixName.slice(0, 3)}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })}
+        </div>
+      ) : null}
+      <HighchartsReact highcharts={Highcharts} options={options} ref={ref} />
+    </section>
   );
 }
 
