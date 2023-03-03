@@ -563,6 +563,7 @@ function Card({ season, region }: CardProps): JSX.Element {
     <section
       className="bg-gray-700 rounded-md"
       aria-labelledby={`title-${region}`}
+      id={region}
     >
       <h1 id={`title-${region}`} className="text-center text-lg font-bold">
         {region.toUpperCase()}
