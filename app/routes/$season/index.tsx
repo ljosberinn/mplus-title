@@ -594,11 +594,16 @@ function Card({ season, region }: CardProps): JSX.Element {
             return (
               <div
                 className={[
-                  "flex flex-col items-center opacity-50 hover:opacity-100 flex-1",
+                  "flex flex-col items-center flex-1",
                   isCurrentWeek
-                    ? "opacity-100 md:opacity-100"
+                    ? "opacity-100"
+                    : isNextWeek
+                    ? "opacity-75 hover:opacity-100"
+                    : "opacity-50 hover:opacity-100",
+                  isCurrentWeek
+                    ? null
                     : "grayscale transition-opacity hover:filter-none",
-                  isNextWeek ? "opacity-75 filter-none" : null,
+                  isNextWeek ? "filter-none" : null,
                 ]
                   .filter(Boolean)
                   .join(" ")}
