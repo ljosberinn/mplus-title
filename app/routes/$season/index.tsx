@@ -637,7 +637,9 @@ function Card({ season, region }: CardProps): JSX.Element {
           })}
         </div>
       ) : null}
-      <HighchartsReact highcharts={Highcharts} options={options} ref={ref} />
+      <div className="h-[30vh]">
+        <HighchartsReact highcharts={Highcharts} options={options} ref={ref} />
+      </div>
     </section>
   );
 }
