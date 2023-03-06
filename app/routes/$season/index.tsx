@@ -17,12 +17,12 @@ import HighchartsReact from "highcharts-react-official";
 import { useRef, useEffect, Fragment } from "react";
 import { red, blue, gray } from "tailwindcss/colors";
 import { getAffixIconUrl, getAffixName } from "~/affixes";
+import { Dataset, loadDataForRegion } from "~/load.server";
 
-import type { Dataset, Season } from "../../seasons";
+import type {  Season } from "../../seasons";
 import {
   findSeasonByName,
   hasSeasonEndedForAllRegions,
-  loadDataForRegion,
 } from "../../seasons";
 
 export const orderedRegionsBySize: Regions[] = ["eu", "us", "tw", "kr"];
@@ -346,7 +346,8 @@ export const loader: LoaderFunction = async ({ params }) => {
 };
 
 export default function Season(): JSX.Element | null {
-  const season = useLoaderData<EnhancedSeason>();
+  // is any because of a remix type bug. its EnhancedSeason...
+  const season = useLoaderData();
 
   return (
     <div className="space-y-4 p-4">

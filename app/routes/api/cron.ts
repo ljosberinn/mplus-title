@@ -4,7 +4,7 @@ import { Regions } from "@prisma/client";
 import type { ActionFunction, LoaderFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { load } from "cheerio";
-import { prisma } from "~/prisma";
+import { prisma } from "~/prisma.server";
 import type { Season } from "~/seasons";
 import { findSeasonByTimestamp } from "~/seasons";
 
