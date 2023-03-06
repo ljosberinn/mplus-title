@@ -390,7 +390,7 @@ const numberFormatParts = new Intl.NumberFormat().formatToParts(1234.5);
 
 function Card({ season, region }: CardProps): JSX.Element {
   const ref = useRef<HighchartsReact.RefObject | null>(null);
-  const containerRef = useRef<HTMLDivElement|null>(null)
+  const containerRef = useRef<HTMLDivElement | null>(null);
 
   const seasonEndDate = season.endDates[region];
   const confirmedCutoffUrl = season.confirmedCutoffs[region].source;
@@ -401,8 +401,8 @@ function Card({ season, region }: CardProps): JSX.Element {
       return;
     }
 
-    if(containerRef.current) {
-      containerRef.current.className = ''
+    if (containerRef.current) {
+      containerRef.current.className = "";
     }
 
     if (!zoom) {
@@ -430,7 +430,7 @@ function Card({ season, region }: CardProps): JSX.Element {
       : 0;
 
     return (
-      <div className="p-4 bg-gray-700 rounded-lg">
+      <div className="rounded-lg bg-gray-700 p-4">
         <h2>
           {seasonHasNotStartedForRegion ? (
             <>
@@ -565,7 +565,7 @@ function Card({ season, region }: CardProps): JSX.Element {
 
   return (
     <section
-      className="bg-gray-700 rounded-md"
+      className="rounded-md bg-gray-700"
       aria-labelledby={`title-${region}`}
       id={region}
     >
@@ -579,69 +579,89 @@ function Card({ season, region }: CardProps): JSX.Element {
             href={confirmedCutoffUrl}
             target="_blank"
             rel="noreferrer noopener"
-            className="underline margin-auto"
+            className="margin-auto underline"
           >
             daily updated bluepost
           </a>
         </div>
       ) : null}
 
-      {!seasonEnd || seasonEnd >= Date.now() ? (
-        <div className="flex w-full justify-between mb-2">
-          {season.affixes.map((set, index) => {
-            const isCurrentWeek = index === indexOfCurrentWeek;
+      <div className="mb-2 flex w-full justify-between">
+        {season.affixes.map((set, index) => {
+          const isCurrentWeek = index === indexOfCurrentWeek;
 
-            const isNextWeek =
-              isCurrentWeek || !indexOfCurrentWeek
-                ? false
-                : index === indexOfCurrentWeek + 1;
+          const isNextWeek =
+            isCurrentWeek || !indexOfCurrentWeek
+              ? false
+              : index === indexOfCurrentWeek + 1;
 
-            return (
-              <div
-                className={[
-                  "flex flex-col items-center flex-1",
-                  isCurrentWeek
-                    ? "opacity-100"
-                    : isNextWeek
-                    ? "opacity-75 hover:opacity-100"
-                    : "opacity-50 hover:opacity-100",
-                  isCurrentWeek
-                    ? null
-                    : "grayscale transition-opacity hover:filter-none",
-                  isNextWeek ? "filter-none" : null,
-                ]
-                  .filter(Boolean)
-                  .join(" ")}
-                key={set.join("-")}
-              >
+          return (
+            <div
+              className={[
+                "flex flex-1 flex-col items-center",
+                isCurrentWeek
+                  ? "opacity-100"
+                  : isNextWeek
+                  ? "opacity-75 hover:opacity-100"
+                  : "opacity-50 hover:opacity-100",
+                isCurrentWeek
+                  ? null
+                  : "grayscale transition-opacity hover:filter-none",
+                isNextWeek ? "filter-none" : null,
+              ]
+                .filter(Boolean)
+                .join(" ")}
+              key={set.join("-")}
+            >
+              {season.wcl &&
+              typeof season.wcl.weekIndexToAffixSetId[index] === "number" ? (
+                <a
+                  href={`https://www.warcraftlogs.com/zone/rankings/${
+                    season.wcl.zoneId
+                  }#affixes=${
+                    season.wcl.weekIndexToAffixSetId[index]
+                  }&leaderboards=1${
+                    season.wcl.partition
+                      ? `&partition=${season.wcl.partition}`
+                      : ""
+                  }`}
+                  rel="noopener noreferrer"
+                  target="_blank"
+                  className="italic text-blue-400 underline"
+                  title="Logs for this week"
+                >
+                  W{index + 1}
+                </a>
+              ) : (
                 <span>W{index + 1}</span>
-                {set.slice(0, -1).map((affix) => {
-                  const affixName = getAffixName(affix);
+              )}
 
-                  return (
-                    <div
-                      key={affix}
-                      className="flex w-full space-x-2 justify-center"
-                    >
-                      <img
-                        src={getAffixIconUrl(affix)}
-                        width={18}
-                        height={18}
-                        loading="lazy"
-                        className="w-4 h-4"
-                        title={affixName}
-                      />
-                      <span className="hidden md:inline text-sm">
-                        {affixName.slice(0, 3)}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            );
-          })}
-        </div>
-      ) : null}
+              {set.slice(0, -1).map((affix) => {
+                const affixName = getAffixName(affix);
+
+                return (
+                  <div
+                    key={affix}
+                    className="flex w-full justify-center space-x-2"
+                    title={affixName}
+                  >
+                    <img
+                      src={getAffixIconUrl(affix)}
+                      width={18}
+                      height={18}
+                      loading="lazy"
+                      className="h-4 w-4"
+                    />
+                    <span className="hidden text-sm md:inline">
+                      {affixName.slice(0, 3)}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })}
+      </div>
       <div className="h-[39vh] lg:h-[30vh]" ref={containerRef}>
         <HighchartsReact highcharts={Highcharts} options={options} ref={ref} />
       </div>

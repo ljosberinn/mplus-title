@@ -18,6 +18,11 @@ export type Season = {
   affixes: [Affix, Affix, Affix, Affix][];
   rioKey: string;
   crossFactionSupport: "complete" | "none" | "partial";
+  wcl?: {
+    zoneId: number;
+    partition?: number;
+    weekIndexToAffixSetId: (number | null)[];
+  };
 };
 
 export const seasons: Season[] = [
@@ -81,6 +86,10 @@ export const seasons: Season[] = [
       [Affix.Fortified, Affix.Bursting, Affix.Explosive, Affix.Thundering],
       [Affix.Tyrannical, Affix.Bolstering, Affix.Volcanic, Affix.Thundering],
     ],
+    wcl: {
+      zoneId: 32,
+      weekIndexToAffixSetId: [702, 703, 705, 707, 708, 715, 723, 727, 712, 733],
+    },
   },
   {
     name: "SL S4",
@@ -123,6 +132,12 @@ export const seasons: Season[] = [
       [Affix.Tyrannical, Affix.Bursting, Affix.Volcanic, Affix.Shrouded],
       [Affix.Fortified, Affix.Spiteful, Affix.Necrotic, Affix.Shrouded],
     ],
+    wcl: {
+      zoneId: 30,
+      weekIndexToAffixSetId: [
+        673, 666, 686, 671, 670, 694, 667, 684, 668, 665, 683, 672,
+      ],
+    },
   },
   {
     name: "SL S3",
@@ -165,6 +180,13 @@ export const seasons: Season[] = [
       [Affix.Tyrannical, Affix.Inspiring, Affix.Quaking, Affix.Encrypted],
       [Affix.Fortified, Affix.Sanguine, Affix.Grievous, Affix.Encrypted],
     ],
+    wcl: {
+      zoneId: 25,
+      partition: 3,
+      weekIndexToAffixSetId: [
+        630, 631, 632, 636, 641, 648, 622, 656, 619, 655, 628, 657,
+      ],
+    },
   },
   {
     name: "SL S2",
@@ -221,6 +243,14 @@ export const seasons: Season[] = [
       [Affix.Tyrannical, Affix.Bolstering, Affix.Explosive, Affix.Tormented],
       [Affix.Fortified, Affix.Bursting, Affix.Storming, Affix.Tormented],
     ],
+    // data is technically available but since tracking for this season started mid-season, its offset by x weeks and I cba
+    // wcl: {
+    //   zoneId: 25,
+    //   partition: 2,
+    //   weekIndexToAffixSetId: [
+    //     543, 544, 546, 548, 550, 553, 564, 568, 573, 576, 577, 570,
+    //   ],
+    // },
   },
 ];
 

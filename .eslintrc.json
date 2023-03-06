@@ -1013,7 +1013,7 @@
       }
     ],
     "unicorn/prefer-ternary": "off",
-    "unicorn/prefer-top-level-await": "off",
+    "unicorn/prefer-top-level-await": "error",
     "unicorn/prefer-type-error": "error",
     "unicorn/prevent-abbreviations": "off",
     "unicorn/relative-url-style": "warn",
