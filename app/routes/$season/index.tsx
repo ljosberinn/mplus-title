@@ -562,6 +562,7 @@ function Card({ season, region }: CardProps): JSX.Element {
 
   const indexOfCurrentWeek = findIndexOfCurrentWeek(season, region);
   const seasonEnd = season.endDates[region];
+  const isCurrentSeason = seasonEnd === null || seasonEnd > Date.now();
 
   return (
     <section
@@ -598,7 +599,7 @@ function Card({ season, region }: CardProps): JSX.Element {
           return (
             <div
               className={[
-                "flex flex-1 flex-col items-center",
+                "flex flex-1 flex-col items-center space-y-2",
                 isCurrentWeek
                   ? "opacity-100"
                   : isNextWeek
@@ -613,51 +614,78 @@ function Card({ season, region }: CardProps): JSX.Element {
                 .join(" ")}
               key={set.join("-")}
             >
-              {season.wcl &&
-              typeof season.wcl.weekIndexToAffixSetId[index] === "number" ? (
-                <a
-                  href={`https://www.warcraftlogs.com/zone/rankings/${
-                    season.wcl.zoneId
-                  }#affixes=${
-                    season.wcl.weekIndexToAffixSetId[index]
-                  }&leaderboards=1${
-                    season.wcl.partition
-                      ? `&partition=${season.wcl.partition}`
-                      : ""
-                  }`}
-                  rel="noopener noreferrer"
-                  target="_blank"
-                  className="italic text-blue-400 underline"
-                  title="Logs for this week"
-                >
-                  W{index + 1}
-                </a>
-              ) : (
-                <span>W{index + 1}</span>
-              )}
+              <span>W{index + 1}</span>
 
-              {set.slice(0, -1).map((affix) => {
-                const affixName = getAffixName(affix);
-
-                return (
-                  <div
-                    key={affix}
-                    className="flex w-full justify-center space-x-2"
-                    title={affixName}
+              <span className="flex space-x-2">
+                {typeof season.wcl?.weekIndexToAffixSetId[index] ===
+                "number" ? (
+                  <a
+                    href={`https://www.warcraftlogs.com/zone/rankings/${
+                      season.wcl.zoneId
+                    }#affixes=${
+                      season.wcl.weekIndexToAffixSetId[index]
+                    }&leaderboards=1${
+                      season.wcl.partition
+                        ? `&partition=${season.wcl.partition}`
+                        : ""
+                    }`}
+                    rel="noopener noreferrer"
+                    target="_blank"
+                    className="italic text-blue-400 underline"
+                    title="Logs for this week"
                   >
                     <img
-                      src={getAffixIconUrl(affix)}
-                      width={18}
-                      height={18}
+                      src="https://assets.rpglogs.com/img/warcraft/favicon.png?v=2"
                       loading="lazy"
+                      alt="WCL"
                       className="h-4 w-4"
                     />
-                    <span className="hidden text-sm md:inline">
-                      {affixName.slice(0, 3)}
-                    </span>
-                  </div>
-                );
-              })}
+                  </a>
+                ) : null}
+                <a
+                  href={`https://mplus.subcreation.net/${
+                    isCurrentSeason
+                      ? ""
+                      : season.slug.replace("season-", "s") + "/"
+                  }${set
+                    .map((affix) => getAffixName(affix).toLowerCase())
+                    .join("-")}.html`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title="Subcreation for this week"
+                >
+                  <img
+                    src="https://subcreation.net/favicon.ico"
+                    loading="lazy"
+                    className="h-4 w-4"
+                  />
+                </a>
+              </span>
+
+              <div>
+                {set.slice(0, -1).map((affix) => {
+                  const affixName = getAffixName(affix);
+
+                  return (
+                    <div
+                      key={affix}
+                      className="flex w-full justify-center space-x-2"
+                      title={affixName}
+                    >
+                      <img
+                        src={getAffixIconUrl(affix)}
+                        width={18}
+                        height={18}
+                        loading="lazy"
+                        className="h-4 w-4"
+                      />
+                      <span className="hidden text-sm md:inline">
+                        {affixName.slice(0, 3)}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           );
         })}
