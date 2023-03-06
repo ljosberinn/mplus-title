@@ -24,11 +24,11 @@ import { findSeasonByName, hasSeasonEndedForAllRegions } from "../../seasons";
 
 export const orderedRegionsBySize: Regions[] = ["eu", "us", "tw", "kr"];
 
-const factionColors: Record<string, string> = {
+const factionColors = {
   alliance: blue["400"],
   horde: red["400"],
   xFaction: "#B389AF",
-};
+} as const;
 
 const lastModified = "Last-Modified";
 const cacheControl = "Cache-Control";
@@ -353,7 +353,9 @@ export default function Season(): JSX.Element | null {
         return (
           <Fragment key={region}>
             <Card season={season} region={region} />
-            {index === orderedRegionsBySize.length - 1 ? null : <hr />}
+            {index === orderedRegionsBySize.length - 1 ? null : (
+              <hr className="opacity-50" />
+            )}
           </Fragment>
         );
       })}
@@ -805,9 +807,7 @@ const createFactionCutoffPlotlines = (
         label: {
           text: `Confirmed cutoff for Alliance at ${cutoffs.alliance}`,
           rotation: 0,
-          style: {
-            color: factionColors.alliance,
-          },
+          style: { color: factionColors.alliance },
         },
         value: cutoffs.alliance,
         dashStyle: "Dash",
@@ -816,9 +816,7 @@ const createFactionCutoffPlotlines = (
         label: {
           text: `Confirmed cutoff for Horde at ${cutoffs.horde}`,
           rotation: 0,
-          style: {
-            color: factionColors.horde,
-          },
+          style: { color: factionColors.horde },
         },
         value: cutoffs.horde,
         dashStyle: "Dash",
@@ -826,7 +824,21 @@ const createFactionCutoffPlotlines = (
     ];
   }
 
-  return [];
+  if (cutoffs.score === 0) {
+    return [];
+  }
+
+  return [
+    {
+      label: {
+        text: `Confirmed cutoff at ${cutoffs.score}`,
+        rotation: 0,
+        style: { color: factionColors.xFaction },
+      },
+      value: cutoffs.score,
+      dashStyle: "Dash",
+    },
+  ];
 };
 
 const calculateFactionDiffForWeek = (
