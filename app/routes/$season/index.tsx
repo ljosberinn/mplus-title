@@ -390,6 +390,7 @@ const numberFormatParts = new Intl.NumberFormat().formatToParts(1234.5);
 
 function Card({ season, region }: CardProps): JSX.Element {
   const ref = useRef<HighchartsReact.RefObject | null>(null);
+  const containerRef = useRef<HTMLDivElement|null>(null)
 
   const seasonEndDate = season.endDates[region];
   const confirmedCutoffUrl = season.confirmedCutoffs[region].source;
@@ -398,6 +399,10 @@ function Card({ season, region }: CardProps): JSX.Element {
   useEffect(() => {
     if (!ref.current) {
       return;
+    }
+
+    if(containerRef.current) {
+      containerRef.current.className = ''
     }
 
     if (!zoom) {
@@ -637,7 +642,7 @@ function Card({ season, region }: CardProps): JSX.Element {
           })}
         </div>
       ) : null}
-      <div className="h-[30vh]">
+      <div className="h-[39vh] lg:h-[30vh]" ref={containerRef}>
         <HighchartsReact highcharts={Highcharts} options={options} ref={ref} />
       </div>
     </section>
