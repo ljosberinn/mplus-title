@@ -1,4 +1,4 @@
-import { Factions, Regions } from "@prisma/client";
+import type { Regions } from "@prisma/client";
 import { json } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 import type {
@@ -19,11 +19,8 @@ import { red, blue, gray } from "tailwindcss/colors";
 import { getAffixIconUrl, getAffixName } from "~/affixes";
 import { Dataset, loadDataForRegion } from "~/load.server";
 
-import type {  Season } from "../../seasons";
-import {
-  findSeasonByName,
-  hasSeasonEndedForAllRegions,
-} from "../../seasons";
+import type { Season } from "../../seasons";
+import { findSeasonByName, hasSeasonEndedForAllRegions } from "../../seasons";
 
 export const orderedRegionsBySize: Regions[] = ["eu", "us", "tw", "kr"];
 
@@ -307,9 +304,10 @@ export const loader: LoaderFunction = async ({ params }) => {
   };
 
   const now = Date.now();
+  const regions: Regions[] = ["eu", "kr", "tw", "us"];
 
   await Promise.all(
-    Object.values(Regions).map(async (region) => {
+    Object.values(regions).map(async (region) => {
       const data = await loadDataForRegion(region, season);
       enhancedSeason.data[region] = data;
 
@@ -656,7 +654,7 @@ const createSeries = (
           name: "Score Horde",
           color: factionColors.horde,
           data: season.data[region]
-            .filter((dataset) => dataset.faction === Factions.horde)
+            .filter((dataset) => dataset.faction === "horde")
             .map((dataset) => {
               return [dataset.ts, dataset.score];
             }),
@@ -673,7 +671,7 @@ const createSeries = (
           name: "Score Alliance",
           color: factionColors.alliance,
           data: season.data[region]
-            .filter((dataset) => dataset.faction === Factions.alliance)
+            .filter((dataset) => dataset.faction === "alliance")
             .map((dataset) => {
               return [dataset.ts, dataset.score];
             }),
@@ -746,7 +744,7 @@ const createFactionCutoffPlotlines = (
 ): YAxisPlotLinesOptions[] => {
   const cutoffs = season.confirmedCutoffs[region];
 
-  if (Factions.alliance in cutoffs && Factions.horde in cutoffs) {
+  if ("alliance" in cutoffs && "horde" in cutoffs) {
     return [
       {
         label: {
@@ -790,10 +788,10 @@ const calculateFactionDiffForWeek = (
 
   const horde = hasCompleteXFactionSupport
     ? []
-    : thisWeeksData.filter((dataset) => dataset.faction === Factions.horde);
+    : thisWeeksData.filter((dataset) => dataset.faction === "horde");
   const alliance = hasCompleteXFactionSupport
     ? []
-    : thisWeeksData.filter((dataset) => dataset.faction === Factions.alliance);
+    : thisWeeksData.filter((dataset) => dataset.faction === "alliance");
 
   const hordeEndMatch = hasCompleteXFactionSupport
     ? null
