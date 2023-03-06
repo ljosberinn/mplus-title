@@ -1,4 +1,8 @@
-import type { MetaFunction, LinksFunction } from "@remix-run/node";
+import type {
+  MetaFunction,
+  LinksFunction,
+  SerializeFrom,
+} from "@remix-run/node";
 import {
   Links,
   LiveReload,
@@ -7,15 +11,31 @@ import {
   Scripts,
   ScrollRestoration,
   NavLink,
+  useLoaderData,
 } from "@remix-run/react";
 
 import { getAffixIconUrl } from "./affixes";
 import { seasons } from "./seasons";
 import stylesheet from "~/tailwind.css";
+import { Analytics } from "@vercel/analytics/react";
 
 export const links: LinksFunction = () => {
   return [{ rel: "stylesheet", href: stylesheet }];
 };
+
+export const loader = () => {
+  return {
+    ENV: {
+      VERCEL_ANALYTICS_ID: process.env.VERCEL_ANALYTICS_ID,
+    },
+  };
+};
+
+declare global {
+  interface Window {
+    ENV: SerializeFrom<typeof loader>["ENV"];
+  }
+}
 
 const title = "Mythic+ Estimated Title Cutoff";
 
@@ -51,6 +71,8 @@ export const meta: MetaFunction = () => {
 };
 
 export default function App(): JSX.Element {
+  const { ENV } = useLoaderData<typeof loader>();
+
   return (
     <html lang="en" dir="auto" className="antialiased">
       <head>
@@ -65,15 +87,22 @@ export default function App(): JSX.Element {
 
           <p className="pb-4 italic text-center">updates hourly</p>
           <p className="pb-4 italic text-center">
-            extrapolation ignores the first FOUR weeks of a season. further weeks are weighted relatively to today
+            extrapolation ignores the first FOUR weeks of a season. further
+            weeks are weighted relatively to today
           </p>
 
           <Nav />
           <Outlet />
           <ScrollRestoration />
+          <Analytics />
           <Scripts />
           <LiveReload />
           <Footer />
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `window.ENV = ${JSON.stringify(ENV)}`,
+            }}
+          />
         </main>
       </body>
     </html>

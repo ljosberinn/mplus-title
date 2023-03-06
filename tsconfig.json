@@ -16,6 +16,7 @@
     "allowSyntheticDefaultImports": true,
     "noEmit": true,
     "forceConsistentCasingInFileNames": true,
-    "allowJs": true
+    "allowJs": true,
+    "module": "esnext"
   }
 }
