@@ -3,9 +3,5 @@
     "env": {
       "ENABLE_FILE_SYSTEM_API": "1"
     }
-  },
-  "crons": [{
-    "path": "/api/cron",
-    "schedule": "*/15 * * * *"
-  }]
+  }
 }
