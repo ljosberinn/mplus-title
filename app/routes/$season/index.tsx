@@ -618,7 +618,7 @@ function Card({ season, region }: CardProps): JSX.Element {
             >
               <span>W{index + 1}</span>
 
-              <span className="flex space-x-2">
+              <span className="flex space-x-1 lg:space-x-2">
                 {typeof season.wcl?.weekIndexToAffixSetId[index] ===
                 "number" ? (
                   <a
