@@ -15,7 +15,6 @@ import type {
 import Highcharts from "highcharts";
 import HighchartsReact from "highcharts-react-official";
 import { useRef, useEffect, Fragment } from "react";
-import { red, blue, gray } from "tailwindcss/colors";
 import { getAffixIconUrl, getAffixName } from "~/affixes";
 import { Dataset, loadDataForRegion } from "~/load.server";
 
@@ -25,8 +24,8 @@ import { findSeasonByName, hasSeasonEndedForAllRegions } from "../../seasons";
 export const orderedRegionsBySize: Regions[] = ["eu", "us", "tw", "kr"];
 
 const factionColors = {
-  alliance: blue["400"],
-  horde: red["400"],
+  alliance: "#60a5fa",
+  horde: "#f87171",
   xFaction: "#B389AF",
 } as const;
 
@@ -937,7 +936,7 @@ const createPlotBands = (
   }).flatMap<XAxisPlotBandsOptions>((_, index) => {
     const from = seasonStart + index * oneWeekInMs;
     const to = from + oneWeekInMs;
-    const color = index % 2 === 0 ? gray["600"] : gray["800"];
+    const color = index % 2 === 0 ? "#4b5563" : "#1f2937";
 
     const rotation =
       season.affixes[
