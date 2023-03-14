@@ -86,7 +86,7 @@ export const loader: LoaderFunction = () => {
 
 const getMostOutdatedRegionForSeason = async (season: Season) => {
   const regionsWithSeasonStarted = Object.entries(season.startDates)
-    .filter(([, timestamp]) => timestamp < Date.now())
+    .filter(([, timestamp]) => timestamp && timestamp < Date.now())
     .map(([region]) => region)
     .filter((region): region is Regions => region in Regions);
 

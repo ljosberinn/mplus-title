@@ -1,15 +1,15 @@
 import type { Factions, Regions } from "@prisma/client";
 
-import { Affix } from "./affixes";
+import { Affix, getAffixIconUrl } from "./affixes";
 
 type CutoffSource = { score: number; source: string | null };
 
-const UNKNOWN_SEASON_ENDING = null;
+const UNKNOWN_SEASON_START_OR_ENDING = null;
 
 export type Season = {
   name: string;
   slug: string;
-  startDates: Record<Regions, number>;
+  startDates: Record<Regions, number | null>;
   endDates: Record<Regions, number | null>;
   confirmedCutoffs: Record<
     Regions,
@@ -23,34 +23,41 @@ export type Season = {
     partition?: number;
     weekIndexToAffixSetId: (number | null)[];
   };
+  seasonIcon: string;
 };
 
 export const seasons: Season[] = [
-  // {
-  //   name: "DF S2",
-  //   slug: "df-season-2",
-  //   rioKey: "season-df-2",
-  //   crossFactionSupport: "complete",
-  //   startDates: {
-  //     us: UNKNOWN_SEASON_ENDING,
-  //     eu: UNKNOWN_SEASON_ENDING,
-  //     kr: UNKNOWN_SEASON_ENDING,
-  //     tw: UNKNOWN_SEASON_ENDING,
-  //   },
-  //   endDates: {
-  //     us: UNKNOWN_SEASON_ENDING,
-  //     eu: UNKNOWN_SEASON_ENDING,
-  //     kr: UNKNOWN_SEASON_ENDING,
-  //     tw: UNKNOWN_SEASON_ENDING,
-  //   },
-  //   confirmedCutoffs: {
-  //     eu: { score: 0, source: null },
-  //     us: { score: 0, source: null },
-  //     kr: { score: 0, source: null },
-  //     tw: { score: 0, source: null },
-  //   },
-  //   affixes: [],
-  // },
+  {
+    name: "DF S2",
+    slug: "df-season-2",
+    rioKey: "season-df-2",
+    crossFactionSupport: "complete",
+    startDates: {
+      us: UNKNOWN_SEASON_START_OR_ENDING,
+      eu: UNKNOWN_SEASON_START_OR_ENDING,
+      kr: UNKNOWN_SEASON_START_OR_ENDING,
+      tw: UNKNOWN_SEASON_START_OR_ENDING,
+    },
+    endDates: {
+      us: UNKNOWN_SEASON_START_OR_ENDING,
+      eu: UNKNOWN_SEASON_START_OR_ENDING,
+      kr: UNKNOWN_SEASON_START_OR_ENDING,
+      tw: UNKNOWN_SEASON_START_OR_ENDING,
+    },
+    confirmedCutoffs: {
+      eu: { score: 0, source: null },
+      us: { score: 0, source: null },
+      kr: { score: 0, source: null },
+      tw: { score: 0, source: null },
+    },
+    affixes: [],
+    wcl: {
+      zoneId: 34,
+      weekIndexToAffixSetId: [],
+    },
+    seasonIcon:
+      "https://wow.zamimg.com/images/wow/icons/small/inv_misc_head_dragon_black_nightmare.jpg",
+  },
   {
     name: "DF S1",
     slug: "df-season-1",
@@ -63,10 +70,10 @@ export const seasons: Season[] = [
       tw: 1_671_058_800_000,
     },
     endDates: {
-      us: UNKNOWN_SEASON_ENDING,
-      eu: UNKNOWN_SEASON_ENDING,
-      kr: UNKNOWN_SEASON_ENDING,
-      tw: UNKNOWN_SEASON_ENDING,
+      us: UNKNOWN_SEASON_START_OR_ENDING,
+      eu: UNKNOWN_SEASON_START_OR_ENDING,
+      kr: UNKNOWN_SEASON_START_OR_ENDING,
+      tw: UNKNOWN_SEASON_START_OR_ENDING,
     },
     confirmedCutoffs: {
       eu: { score: 0, source: null },
@@ -90,6 +97,7 @@ export const seasons: Season[] = [
       zoneId: 32,
       weekIndexToAffixSetId: [702, 703, 705, 707, 708, 715, 723, 727, 712, 733],
     },
+    seasonIcon: getAffixIconUrl(Affix.Thundering),
   },
   {
     name: "SL S4",
@@ -138,6 +146,7 @@ export const seasons: Season[] = [
         673, 666, 686, 671, 670, 694, 667, 684, 668, 665, 683, 672,
       ],
     },
+    seasonIcon: getAffixIconUrl(Affix.Shrouded),
   },
   {
     name: "SL S3",
@@ -187,6 +196,7 @@ export const seasons: Season[] = [
         630, 631, 632, 636, 641, 648, 622, 656, 619, 655, 628, 657,
       ],
     },
+    seasonIcon: getAffixIconUrl(Affix.Encrypted),
   },
   {
     name: "SL S2",
@@ -243,6 +253,8 @@ export const seasons: Season[] = [
       [Affix.Tyrannical, Affix.Bolstering, Affix.Explosive, Affix.Tormented],
       [Affix.Fortified, Affix.Bursting, Affix.Storming, Affix.Tormented],
     ],
+    seasonIcon: getAffixIconUrl(Affix.Tormented),
+
     // data is technically available but since tracking for this season started mid-season, its offset by x weeks and I cba
     // wcl: {
     //   zoneId: 25,
@@ -263,7 +275,7 @@ export const hasSeasonEndedForAllRegions = (slug: string): boolean => {
 
   const endDates = Object.values(season.endDates);
 
-  if (endDates.includes(UNKNOWN_SEASON_ENDING)) {
+  if (endDates.includes(UNKNOWN_SEASON_START_OR_ENDING)) {
     return false;
   }
 
@@ -277,9 +289,11 @@ export const findSeasonByTimestamp = (
 ): Season | null => {
   const season = seasons.find(
     (season) =>
-      Object.values(season.startDates).some((start) => timestamp >= start) &&
+      Object.values(season.startDates).some(
+        (start) => start && timestamp >= start
+      ) &&
       Object.values(season.endDates).some(
-        (end) => end === UNKNOWN_SEASON_ENDING || end > timestamp
+        (end) => end === UNKNOWN_SEASON_START_OR_ENDING || end > timestamp
       )
   );
 
@@ -295,7 +309,8 @@ export const findSeasonByName = (slug: string): Season | null => {
     }
 
     const mostRecentlyStartedSeason = seasons.find(
-      (season) => Date.now() >= season.startDates.us
+      (season) =>
+        season.startDates.us !== null && Date.now() >= season.startDates.us
     );
 
     if (mostRecentlyStartedSeason) {

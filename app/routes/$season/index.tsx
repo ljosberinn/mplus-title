@@ -19,7 +19,7 @@ import { red, blue, gray } from "tailwindcss/colors";
 import { getAffixIconUrl, getAffixName } from "~/affixes";
 import { Dataset, loadDataForRegion } from "~/load.server";
 
-import type { Season } from "../../seasons";
+import { Season } from "../../seasons";
 import { findSeasonByName, hasSeasonEndedForAllRegions } from "../../seasons";
 
 export const orderedRegionsBySize: Regions[] = ["eu", "us", "tw", "kr"];
@@ -80,6 +80,10 @@ const determineExtrapolationStart = (
 ): Dataset | null => {
   const seasonStart = season.startDates[region];
 
+  if (!seasonStart) {
+    return null;
+  }
+
   const firstDataset = data.find((dataset) => {
     return dataset.ts >= seasonStart + 4 * oneWeekInMs;
   });
@@ -118,12 +122,16 @@ const calculateExtrapolation = (
     return null;
   }
 
-  const weeks = seasonEnding
-    ? (seasonEnding - season.startDates[region]) / oneWeekInMs
-    : 36;
+  const seasonStart = season.startDates[region];
+
+  if (!seasonStart) {
+    return null;
+  }
+
+  const weeks = seasonEnding ? (seasonEnding - seasonStart) / oneWeekInMs : 36;
 
   const passedWeeksDiff = Array.from({ length: weeks }, (_, index) => {
-    const from = season.startDates[region] + index * oneWeekInMs;
+    const from = seasonStart + index * oneWeekInMs;
     const to = from + oneWeekInMs;
 
     const { xFactionDiff } = calculateFactionDiffForWeek(
@@ -369,17 +377,17 @@ const findIndexOfCurrentWeek = (season: EnhancedSeason, region: Regions) => {
   }
 
   const endDate = season.endDates[region];
+  const startDate = season.startDates[region];
 
-  if (endDate !== null && endDate <= Date.now()) {
+  if ((endDate !== null && endDate <= Date.now()) || !startDate) {
     return null;
   }
 
   const latestDataset = season.data[region][season.data[region].length - 1];
 
   return (
-    Math.floor(
-      (latestDataset.ts - season.startDates[region]) / 1000 / 60 / 60 / 24 / 7
-    ) - season.affixes.length
+    Math.floor((latestDataset.ts - startDate) / 1000 / 60 / 60 / 24 / 7) -
+    season.affixes.length
   );
 };
 
@@ -423,13 +431,12 @@ function Card({ season, region }: CardProps): JSX.Element {
   }, [zoom]);
 
   if (season.data[region].length === 0) {
-    const seasonHasNotStartedForRegion = season.startDates[region] > Date.now();
-    const hoursUntilSeasonStart = seasonHasNotStartedForRegion
-      ? Math.max(
-          Math.round((season.startDates[region] - Date.now()) / 1000 / 60 / 60),
-          1
-        )
-      : 0;
+    const startDate = season.startDates[region];
+    const seasonHasNotStartedForRegion = !startDate || startDate > Date.now();
+    const hoursUntilSeasonStart =
+      seasonHasNotStartedForRegion && startDate
+        ? Math.max(Math.round((startDate - Date.now()) / 1000 / 60 / 60), 1)
+        : 0;
 
     return (
       <div className="rounded-lg bg-gray-700 p-4">
@@ -438,14 +445,16 @@ function Card({ season, region }: CardProps): JSX.Element {
             <>
               The season has not started in <b>{region.toUpperCase()}</b> yet.
               Data will appear as soon as possible after{" "}
-              <time
-                dateTime={new Date(season.startDates[region]).toISOString()}
-              >
-                <b suppressHydrationWarning>
-                  {new Date(season.startDates[region]).toLocaleString()} (T-
-                  {hoursUntilSeasonStart} hours)
-                </b>
-              </time>
+              {startDate ? (
+                <time dateTime={new Date(startDate).toISOString()}>
+                  <b suppressHydrationWarning>
+                    {new Date(startDate).toLocaleString()} (T-
+                    {hoursUntilSeasonStart} hours)
+                  </b>
+                </time>
+              ) : (
+                "it started"
+              )}
               .
             </>
           ) : (
@@ -914,6 +923,11 @@ const createPlotBands = (
   region: Regions
 ): XAxisPlotBandsOptions[] => {
   const seasonStart = season.startDates[region];
+
+  if (!seasonStart) {
+    return [];
+  }
+
   const seasonEnd = season.endDates[region];
 
   const weeks = seasonEnd ? (seasonEnd - seasonStart) / oneWeekInMs : 36;

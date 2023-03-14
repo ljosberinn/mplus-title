@@ -2,7 +2,15 @@ import { Factions, Regions } from "@prisma/client";
 import { prisma } from "./prisma.server";
 import { Season } from "./seasons";
 
-const getCrossFactionHistory = (region: Regions, gte: number, lte?: number) => {
+const getCrossFactionHistory = (
+  region: Regions,
+  gte: number | null,
+  lte?: number
+) => {
+  if (!gte) {
+    return [];
+  }
+
   return prisma.crossFactionHistory.findMany({
     where: {
       region,
@@ -21,7 +29,11 @@ const getCrossFactionHistory = (region: Regions, gte: number, lte?: number) => {
   });
 };
 
-const getHistory = (region: Regions, gte: number, lte?: number) => {
+const getHistory = (region: Regions, gte: number | null, lte?: number) => {
+  if (!gte) {
+    return [];
+  }
+
   return prisma.history.findMany({
     where: {
       region,

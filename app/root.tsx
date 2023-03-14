@@ -14,7 +14,6 @@ import {
   useLoaderData,
 } from "@remix-run/react";
 
-import { getAffixIconUrl } from "./affixes";
 import { seasons } from "./seasons";
 import stylesheet from "~/tailwind.css";
 import { Analytics } from "@vercel/analytics/react";
@@ -79,14 +78,14 @@ export default function App(): JSX.Element {
         <Meta />
         <Links />
       </head>
-      <body className="text-gray-200 bg-gray-900">
-        <main className="max-w-7xl m-auto">
-          <h1 className="pt-8 pb-2 text-2xl text-center text-semibold">
+      <body className="bg-gray-900 text-gray-200">
+        <main className="m-auto max-w-7xl">
+          <h1 className="text-semibold pt-8 pb-2 text-center text-2xl">
             {title}
           </h1>
 
-          <p className="pb-4 italic text-center">updates hourly</p>
-          <p className="pb-4 italic text-center">
+          <p className="pb-4 text-center italic">updates hourly</p>
+          <p className="pb-4 text-center italic">
             extrapolation ignores the first FOUR weeks of a season. further
             weeks are weighted relatively to today
           </p>
@@ -121,34 +120,26 @@ function Nav() {
   const now = Date.now();
 
   return (
-    <nav className="flex flex-col justify-between w-full md:flex-row md:px-4">
-      <ul className="flex px-4 pt-4 md:space-x-2 md:pt-0 md:px-0 md:flex-row flex-col space-y-2 md:space-y-0">
+    <nav className="flex w-full flex-col justify-between md:flex-row md:px-4">
+      <ul className="flex flex-col space-y-2 px-4 pt-4 md:flex-row md:space-x-2 md:space-y-0 md:px-0 md:pt-0">
         {seasons.map((season) => {
-          const seasonalAffixId =
-            season.affixes.length > 0 ? season.affixes[0][3] : null;
-          const icon = seasonalAffixId
-            ? getAffixIconUrl(seasonalAffixId)
-            : null;
-
           const body = (
             <>
-              {icon && (
-                <img
-                  src={icon}
-                  alt=""
-                  loading="lazy"
-                  height="24"
-                  width="24"
-                  className="w-6 h-6"
-                />
-              )}
+              <img
+                src={season.seasonIcon}
+                alt=""
+                loading="lazy"
+                height="24"
+                width="24"
+                className="h-6 w-6"
+              />
               <span>{season.name}</span>
             </>
           );
 
           return (
             <li key={season.slug}>
-              {now >= season.startDates.us ? (
+              {season.startDates.us && now >= season.startDates.us ? (
                 <NavLink className={navLinkClassNameActivity} to={season.slug}>
                   {body}
                 </NavLink>
@@ -156,7 +147,10 @@ function Nav() {
                 <span
                   className={linkClassName
                     .replace("bg-gray-700", "bg-gray-800")
-                    .replace("hover:bg-gray-500", "")}
+                    .replace(
+                      "hover:bg-gray-500",
+                      "cursor-not-allowed grayscale"
+                    )}
                 >
                   {body}
                 </span>
