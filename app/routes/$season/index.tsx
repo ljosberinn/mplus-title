@@ -19,7 +19,7 @@ import { red, blue, gray } from "tailwindcss/colors";
 import { getAffixIconUrl, getAffixName } from "~/affixes";
 import { Dataset, loadDataForRegion } from "~/load.server";
 
-import { Season } from "../../seasons";
+import type { Season as SeasonType } from "../../seasons";
 import { findSeasonByName, hasSeasonEndedForAllRegions } from "../../seasons";
 
 export const orderedRegionsBySize: Regions[] = ["eu", "us", "tw", "kr"];
@@ -56,7 +56,7 @@ export const headers: HeadersFunction = ({ loaderHeaders }) => {
   return headers;
 };
 
-type EnhancedSeason = Season & {
+type EnhancedSeason = SeasonType & {
   data: Record<Regions, Dataset[]>;
   extrapolation: Record<
     Regions,
@@ -75,7 +75,7 @@ const oneWeekInMs = 7 * 24 * 60 * 60 * 1000;
 
 const determineExtrapolationStart = (
   data: Dataset[],
-  season: Season,
+  season: SeasonType,
   region: Regions
 ): Dataset | null => {
   const seasonStart = season.startDates[region];
@@ -96,7 +96,7 @@ const toOneDigit = (int: number) => {
 };
 
 const calculateExtrapolation = (
-  season: Season,
+  season: SeasonType,
   region: Regions,
   data: Dataset[]
 ): null | [number, number][] | { from: Dataset; to: Dataset } => {
@@ -215,7 +215,7 @@ const calculateExtrapolation = (
 };
 
 const calculateZoom = (
-  season: Season,
+  season: SeasonType,
   region: Regions,
   data: Dataset[],
   extrapolation: EnhancedSeason["extrapolation"]["eu"]
@@ -852,7 +852,7 @@ const createFactionCutoffPlotlines = (
 
 const calculateFactionDiffForWeek = (
   data: Dataset[],
-  crossFactionSupport: Season["crossFactionSupport"],
+  crossFactionSupport: SeasonType["crossFactionSupport"],
   isFirstWeek: boolean,
   from: number,
   to: number
