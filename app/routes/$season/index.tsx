@@ -1,6 +1,6 @@
 import type { Regions } from "@prisma/client";
 import { json } from "@remix-run/node";
-import { useLoaderData } from "@remix-run/react";
+import { useLoaderData, useNavigation } from "@remix-run/react";
 import type {
   HeadersFunction,
   LoaderFunction,
@@ -404,6 +404,7 @@ function Card({ season, region }: CardProps): JSX.Element {
   const seasonEndDate = season.endDates[region];
   const confirmedCutoffUrl = season.confirmedCutoffs[region].source;
   const zoom = season.initialZoom[region];
+  const navigation = useNavigation();
 
   useEffect(() => {
     if (!ref.current) {
@@ -576,7 +577,7 @@ function Card({ season, region }: CardProps): JSX.Element {
 
   return (
     <section
-      className="rounded-md bg-gray-700"
+      className={`${navigation.state === 'loading' ? 'grayscale' : ''} transition-all duration-500 ease-linear motion-reduce:transition-none rounded-md bg-gray-700`}
       aria-labelledby={`title-${region}`}
       id={region}
     >
@@ -622,7 +623,7 @@ function Card({ season, region }: CardProps): JSX.Element {
               ]
                 .filter(Boolean)
                 .join(" ")}
-              key={set.join("-")}
+              key={[...set, index].join("-")}
             >
               <span>W{index + 1}</span>
 

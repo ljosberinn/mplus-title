@@ -12,11 +12,14 @@ import {
   ScrollRestoration,
   NavLink,
   useLoaderData,
+  useNavigation,
+  useNavigate,
 } from "@remix-run/react";
 
 import { seasons } from "./seasons";
 import stylesheet from "~/tailwind.css";
 import { Analytics } from "@vercel/analytics/react";
+import { MouseEvent } from "react";
 
 export const links: LinksFunction = () => {
   return [{ rel: "stylesheet", href: stylesheet }];
@@ -118,6 +121,7 @@ function navLinkClassNameActivity({ isActive }: { isActive: boolean }) {
 
 function Nav() {
   const now = Date.now();
+  const navigation = useNavigation();
 
   return (
     <nav className="flex w-full flex-col justify-between md:flex-row md:px-4">
@@ -139,7 +143,9 @@ function Nav() {
 
           return (
             <li key={season.slug}>
-              {season.startDates.us && now >= season.startDates.us ? (
+              {season.startDates.us &&
+              now >= season.startDates.us &&
+              navigation.state === "idle" ? (
                 <NavLink className={navLinkClassNameActivity} to={season.slug}>
                   {body}
                 </NavLink>
@@ -149,7 +155,11 @@ function Nav() {
                     .replace("bg-gray-700", "bg-gray-800")
                     .replace(
                       "hover:bg-gray-500",
-                      "cursor-not-allowed grayscale"
+                      `${
+                        navigation.state !== "idle"
+                          ? "cursor-wait"
+                          : "cursor-not-allowed"
+                      } grayscale`
                     )}
                 >
                   {body}
