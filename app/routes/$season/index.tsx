@@ -133,22 +133,21 @@ const calculateExtrapolation = (
     const from = seasonStart + index * oneWeekInMs;
     const to = from + oneWeekInMs;
 
-    const { xFactionDiff } = calculateFactionDiffForWeek(
+    return calculateFactionDiffForWeek(
       data,
       season.crossFactionSupport,
       index === 0,
       from,
       to
-    );
-    return xFactionDiff;
+    ).xFactionDiff;
   })
     .filter(Boolean)
     .slice(4);
 
-  const daysUntilSeasonEndingOrTwoWeeks = daysUntilSeasonEnding ?? 14;
+  const daysUntilSeasonEndingOrFourWeeks = daysUntilSeasonEnding ?? 21;
   const to =
     seasonEnding ??
-    lastDataset.ts + (daysUntilSeasonEndingOrTwoWeeks / 7) * oneWeekInMs;
+    lastDataset.ts + (daysUntilSeasonEndingOrFourWeeks / 7) * oneWeekInMs;
   const timeUntilExtrapolationEnd = to - lastDataset.ts;
 
   // given a couple weeks past the first four, apply weighting on older weeks
@@ -156,7 +155,8 @@ const calculateExtrapolation = (
     passedWeeksDiff.length >= 4 &&
     timeUntilExtrapolationEnd > oneWeekInMs / 7
   ) {
-    const interval = timeUntilExtrapolationEnd / 14;
+    const interval =
+      timeUntilExtrapolationEnd / daysUntilSeasonEndingOrFourWeeks;
     const scoreIncreaseSteps =
       passedWeeksDiff.reduce((acc, diff, index) => {
         // looking at week 5 in week 10 means its 5 weeks ago, applying a weight of 0.5
@@ -169,19 +169,28 @@ const calculateExtrapolation = (
 
     return [
       [lastDataset.ts, lastDataset.score],
-      ...Array.from<number, [number, number]>({ length: 13 }, (_, i) => {
-        return [
-          lastDataset.ts + interval * (i + 1),
-          toOneDigit(lastDataset.score + scoreIncreaseSteps * (i + 1)),
-        ];
-      }),
-      [to, toOneDigit(lastDataset.score + scoreIncreaseSteps * 14)],
+      ...Array.from<number, [number, number]>(
+        { length: daysUntilSeasonEndingOrFourWeeks - 1 },
+        (_, i) => {
+          return [
+            lastDataset.ts + interval * (i + 1),
+            toOneDigit(lastDataset.score + scoreIncreaseSteps * (i + 1)),
+          ];
+        }
+      ),
+      [
+        to,
+        toOneDigit(
+          lastDataset.score +
+            scoreIncreaseSteps * daysUntilSeasonEndingOrFourWeeks
+        ),
+      ],
     ];
   }
 
   const timePassed = lastDataset.ts - firstRelevantDataset.ts;
   const daysPassed = timePassed / 1000 / 60 / 60 / 24;
-  const factor = daysUntilSeasonEndingOrTwoWeeks / daysPassed;
+  const factor = daysUntilSeasonEndingOrFourWeeks / daysPassed;
 
   const score = toOneDigit(
     lastDataset.score +
@@ -189,17 +198,22 @@ const calculateExtrapolation = (
   );
 
   if (timeUntilExtrapolationEnd > oneWeekInMs / 7) {
-    const interval = timeUntilExtrapolationEnd / 14;
-    const scoreIncreaseSteps = (score - lastDataset.score) / 14;
+    const interval =
+      timeUntilExtrapolationEnd / daysUntilSeasonEndingOrFourWeeks;
+    const scoreIncreaseSteps =
+      (score - lastDataset.score) / daysUntilSeasonEndingOrFourWeeks;
 
     return [
       [lastDataset.ts, lastDataset.score],
-      ...Array.from<number, [number, number]>({ length: 13 }, (_, i) => {
-        return [
-          lastDataset.ts + interval * (i + 1),
-          toOneDigit(lastDataset.score + scoreIncreaseSteps * (i + 1)),
-        ];
-      }),
+      ...Array.from<number, [number, number]>(
+        { length: daysUntilSeasonEndingOrFourWeeks - 1 },
+        (_, i) => {
+          return [
+            lastDataset.ts + interval * (i + 1),
+            toOneDigit(lastDataset.score + scoreIncreaseSteps * (i + 1)),
+          ];
+        }
+      ),
       [to, score],
     ];
   }
@@ -577,7 +591,9 @@ function Card({ season, region }: CardProps): JSX.Element {
 
   return (
     <section
-      className={`${navigation.state === 'loading' ? 'grayscale' : ''} transition-all duration-500 ease-linear motion-reduce:transition-none rounded-md bg-gray-700`}
+      className={`${
+        navigation.state === "loading" ? "grayscale" : ""
+      } rounded-md bg-gray-700 transition-all duration-500 ease-linear motion-reduce:transition-none`}
       aria-labelledby={`title-${region}`}
       id={region}
     >
