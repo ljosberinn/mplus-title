@@ -194,6 +194,42 @@ function CustomExtrapolationForm({
   const routeData = useRouteLoaderData("routes/$season/index");
   const ref = useRef<HTMLInputElement | null>(null);
 
+  const customExtrapolationEndDate = (() => {
+    try {
+      const params = new URL("https://dummy.com/" + location.search)
+        .searchParams;
+      const maybeDate = params.get("extrapolationEndDate");
+
+      return maybeDate ? maybeDate : null;
+    } catch {
+      return null;
+    }
+  })();
+
+  useEffect(() => {
+    if (!customExtrapolationEndDate) {
+      if (ref.current) {
+        ref.current.value = "";
+      }
+    }
+  }, [customExtrapolationEndDate]);
+
+  const seasonHasStarted = (() => {
+    try {
+      // @ts-expect-error return type of the loader within the route
+      return Object.values(routeData.startDates).some(
+        // @ts-expect-error cba casting, its null|number
+        (maybeDate) => maybeDate !== null && maybeDate <= Date.now()
+      );
+    } catch {
+      return false;
+    }
+  })();
+
+  if (!seasonHasStarted) {
+    return null;
+  }
+
   const seasonHasEndedInEveryRegion = (() => {
     try {
       // @ts-expect-error return type of the loader within the route
@@ -209,18 +245,6 @@ function CustomExtrapolationForm({
   if (seasonHasEndedInEveryRegion) {
     return null;
   }
-
-  const customExtrapolationEndDate = (() => {
-    try {
-      const params = new URL("https://dummy.com/" + location.search)
-        .searchParams;
-      const maybeDate = params.get("extrapolationEndDate");
-
-      return maybeDate ? maybeDate : null;
-    } catch {
-      return null;
-    }
-  })();
 
   const disabled = navigationState !== "idle";
 
@@ -242,19 +266,11 @@ function CustomExtrapolationForm({
       : base;
   }
 
-  useEffect(() => {
-    if (!customExtrapolationEndDate) {
-      if (ref.current) {
-        ref.current.value = "";
-      }
-    }
-  }, [customExtrapolationEndDate]);
-
   return (
     <>
       <div className="px-4 pt-4">
         <Form
-          className="flex flex-col md:inline space-y-2 md:space-y-0 md:space-x-2"
+          className="flex flex-col space-y-2 md:inline md:space-y-0 md:space-x-2"
           action={location.pathname}
         >
           <fieldset disabled={disabled} className="inline space-x-2">
