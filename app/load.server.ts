@@ -1,6 +1,7 @@
-import { Factions, Regions } from "@prisma/client";
+import { type Factions, type Regions } from "@prisma/client";
+
 import { prisma } from "./prisma.server";
-import { Season } from "./seasons";
+import { type Season } from "./seasons";
 
 const getCrossFactionHistory = (
   region: Regions,

@@ -1,11 +1,12 @@
 /* eslint-disable no-console */
-import type { Prisma } from "@prisma/client";
+import { type Prisma } from "@prisma/client";
 import { Regions } from "@prisma/client";
-import type { ActionFunction, LoaderFunction } from "@remix-run/node";
+import { type ActionFunction, type LoaderFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { load } from "cheerio";
+
 import { prisma } from "~/prisma.server";
-import type { Season } from "~/seasons";
+import { type Season } from "~/seasons";
 import { findSeasonByTimestamp } from "~/seasons";
 
 const rioBaseUrl = "https://raider.io";
@@ -23,7 +24,7 @@ if (!String.prototype.replaceAll) {
 
     // If a string
     // @ts-expect-error required polyfill
-    return this.replace(new RegExp(str, "gu"), newStr);
+    return this.replaceAll(new RegExp(str, "gu"), newStr);
   };
 }
 

@@ -1,34 +1,35 @@
-import type {
-  MetaFunction,
-  LinksFunction,
-  SerializeFrom,
+import {
+  type LinksFunction,
+  type MetaFunction,
+  type SerializeFrom,
 } from "@remix-run/node";
 import {
+  Form,
   Links,
   LiveReload,
   Meta,
+  NavLink,
   Outlet,
   Scripts,
   ScrollRestoration,
-  NavLink,
   useLoaderData,
-  useNavigation,
-  useNavigate,
   useLocation,
-  Form,
+  useNavigate,
+  useNavigation,
   useRouteLoaderData,
 } from "@remix-run/react";
-
-import { seasons } from "./seasons";
-import stylesheet from "~/tailwind.css";
 import { Analytics } from "@vercel/analytics/react";
 import { useEffect, useRef } from "react";
+
+import stylesheet from "~/tailwind.css";
+
+import { seasons } from "./seasons";
 
 export const links: LinksFunction = () => {
   return [{ rel: "stylesheet", href: stylesheet }];
 };
 
-export const loader = () => {
+export const loader = (): Record<string, unknown> => {
   return {
     ENV: {
       VERCEL_ANALYTICS_ID: process.env.VERCEL_ANALYTICS_ID,
@@ -37,6 +38,7 @@ export const loader = () => {
 };
 
 declare global {
+  // eslint-disable-next-line @typescript-eslint/consistent-type-definitions
   interface Window {
     ENV: SerializeFrom<typeof loader>["ENV"];
   }
@@ -86,7 +88,7 @@ export default function App(): JSX.Element {
       </head>
       <body className="bg-gray-900 text-gray-200">
         <main className="m-auto max-w-7xl">
-          <h1 className="text-semibold pt-8 pb-2 text-center text-2xl">
+          <h1 className="pt-8 pb-2 text-center text-2xl font-semibold">
             {title}
           </h1>
 
@@ -104,6 +106,7 @@ export default function App(): JSX.Element {
           <LiveReload />
           <Footer />
           <script
+            // eslint-disable-next-line react/no-danger
             dangerouslySetInnerHTML={{
               __html: `window.ENV = ${JSON.stringify(ENV)}`,
             }}
@@ -163,9 +166,9 @@ function Nav() {
                       .replace(
                         "hover:bg-gray-500",
                         `${
-                          navigation.state !== "idle"
-                            ? "cursor-wait"
-                            : "cursor-not-allowed"
+                          navigation.state === "idle"
+                            ? "cursor-not-allowed"
+                            : "cursor-wait"
                         } grayscale`
                       )}
                   >
@@ -196,21 +199,19 @@ function CustomExtrapolationForm({
 
   const customExtrapolationEndDate = (() => {
     try {
-      const params = new URL("https://dummy.com/" + location.search)
+      const params = new URL(`https://dummy.com/${location.search}`)
         .searchParams;
       const maybeDate = params.get("extrapolationEndDate");
 
-      return maybeDate ? maybeDate : null;
+      return maybeDate ?? null;
     } catch {
       return null;
     }
   })();
 
   useEffect(() => {
-    if (!customExtrapolationEndDate) {
-      if (ref.current) {
-        ref.current.value = "";
-      }
+    if (!customExtrapolationEndDate && ref.current) {
+      ref.current.value = "";
     }
   }, [customExtrapolationEndDate]);
 
@@ -273,23 +274,26 @@ function CustomExtrapolationForm({
           className="flex flex-col space-y-2 md:inline md:space-y-0 md:space-x-2"
           action={location.pathname}
         >
-          <fieldset disabled={disabled} className="inline space-x-2">
-            <label className="flex w-full justify-between md:space-x-2">
-              <span>Custom Extrapolation</span>
-              <input
-                ref={ref}
-                className="rounded-md border-0 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 sm:text-sm sm:leading-6"
-                type="date"
-                min={new Date().toISOString().split("T")[0]}
-                name="extrapolationEndDate"
-                required
-                defaultValue={
-                  customExtrapolationEndDate
-                    ? customExtrapolationEndDate
-                    : undefined
-                }
-              />
+          <fieldset disabled={disabled} className="inline-flex  w-full justify-between space-x-2 md:w-auto">
+            <label
+              htmlFor="date"
+              id="date-label"
+            >
+              Custom Extrapolation
             </label>
+            <input
+              aria-labelledby="date-label"
+              id="date"
+              ref={ref}
+              className="rounded-md border-0 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 sm:text-sm sm:leading-6"
+              type="date"
+              min={new Date().toISOString().split("T")[0]}
+              name="extrapolationEndDate"
+              required
+              defaultValue={
+                customExtrapolationEndDate ?? undefined
+              }
+            />
           </fieldset>
 
           <button
@@ -316,7 +320,7 @@ function CustomExtrapolationForm({
       {customExtrapolationEndDate ? (
         <div className="px-4 pt-4 text-white">
           <div className="flex flex-col rounded-lg bg-red-500 p-2 dark:bg-red-500/40 md:flex-row">
-            <div className="flex justify-center"></div>
+            <div className="flex justify-center" />
             <div className="p-2">
               <b>Warning</b>: you are using a custom extrapolation date. Use at
               your own risk; extrapolation is not perfect and will be inaccurate

@@ -1,24 +1,26 @@
-import type { Regions } from "@prisma/client";
+import { type Regions } from "@prisma/client";
 import { json } from "@remix-run/node";
 import { useLoaderData, useNavigation } from "@remix-run/react";
-import type {
-  HeadersFunction,
-  LoaderFunction,
+import {
+  type HeadersFunction,
+  type LoaderFunction,
 } from "@remix-run/server-runtime";
-import type {
-  Options,
-  PointLabelObject,
-  SeriesLineOptions,
-  XAxisPlotBandsOptions,
-  YAxisPlotLinesOptions,
+import {
+  type Options,
+  type PointLabelObject,
+  type SeriesLineOptions,
+  type XAxisPlotBandsOptions,
+  type YAxisPlotLinesOptions,
 } from "highcharts";
 import Highcharts from "highcharts";
 import HighchartsReact from "highcharts-react-official";
-import { useRef, useEffect, Fragment } from "react";
-import { getAffixIconUrl, getAffixName } from "~/affixes";
-import { Dataset, loadDataForRegion } from "~/load.server";
+import { Fragment, useEffect, useRef } from "react";
 
-import type { Season as SeasonType } from "../../seasons";
+import { getAffixIconUrl, getAffixName } from "~/affixes";
+import { type Dataset } from "~/load.server";
+import { loadDataForRegion } from "~/load.server";
+
+import { type Season as SeasonType } from "../../seasons";
 import { findSeasonByName, hasSeasonEndedForAllRegions } from "../../seasons";
 
 export const orderedRegionsBySize: Regions[] = ["eu", "us", "tw", "kr"];
@@ -649,7 +651,7 @@ function Card({ season, region }: CardProps): JSX.Element {
             href={confirmedCutoffUrl}
             target="_blank"
             rel="noreferrer noopener"
-            className="margin-auto underline"
+            className="underline"
           >
             daily updated bluepost
           </a>
@@ -664,6 +666,11 @@ function Card({ season, region }: CardProps): JSX.Element {
             isCurrentWeek || !indexOfCurrentWeek
               ? false
               : index === indexOfCurrentWeek + 1;
+
+          const affixSetId =
+            typeof season.wcl?.weekIndexToAffixSetId[index] === "number"
+              ? season.wcl.weekIndexToAffixSetId[index]
+              : null;
 
           return (
             <div
@@ -686,14 +693,11 @@ function Card({ season, region }: CardProps): JSX.Element {
               <span>W{index + 1}</span>
 
               <span className="flex space-x-1 lg:space-x-2">
-                {typeof season.wcl?.weekIndexToAffixSetId[index] ===
-                "number" ? (
+                {affixSetId && season.wcl ? (
                   <a
                     href={`https://www.warcraftlogs.com/zone/rankings/${
                       season.wcl.zoneId
-                    }#affixes=${
-                      season.wcl.weekIndexToAffixSetId[index]
-                    }&leaderboards=1${
+                    }#affixes=${affixSetId}&leaderboards=1${
                       season.wcl.partition
                         ? `&partition=${season.wcl.partition}`
                         : ""
@@ -715,7 +719,7 @@ function Card({ season, region }: CardProps): JSX.Element {
                   href={`https://mplus.subcreation.net/${
                     isCurrentSeason
                       ? ""
-                      : season.slug.replace("season-", "s") + "/"
+                      : `${season.slug.replace("season-", "s")}/`
                   }${set
                     .map((affix) => getAffixName(affix).toLowerCase())
                     .join("-")}.html`}
@@ -727,6 +731,7 @@ function Card({ season, region }: CardProps): JSX.Element {
                     src="https://subcreation.net/favicon.ico"
                     loading="lazy"
                     className="h-4 w-4"
+                    alt=""
                   />
                 </a>
               </span>
@@ -747,6 +752,7 @@ function Card({ season, region }: CardProps): JSX.Element {
                         height={18}
                         loading="lazy"
                         className="h-4 w-4"
+                        alt={affixName.slice(0, 3)}
                       />
                       <span className="hidden text-sm md:inline">
                         {affixName.slice(0, 3)}
@@ -847,9 +853,7 @@ const createSeries = (
 
   return [horde, alliance, xFaction, extrapolation].filter(
     (series): series is SeriesLineOptions =>
-      series !== null &&
-      typeof series.data !== "undefined" &&
-      series.data.length > 0
+      series?.data !== undefined && series.data.length > 0
   );
 };
 

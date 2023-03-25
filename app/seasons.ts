@@ -1,4 +1,4 @@
-import type { Factions, Regions } from "@prisma/client";
+import { type Factions, type Regions } from "@prisma/client";
 
 import { Affix, getAffixIconUrl } from "./affixes";
 

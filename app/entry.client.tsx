@@ -5,7 +5,7 @@ import { hydrateRoot } from "react-dom/client";
 import reportWebVitals from "./reportWebVitals";
 import { sendToVercelAnalytics } from "./vitals";
 
-const hydrate = () =>
+const hydrate = () => {
   startTransition(() => {
     hydrateRoot(
       document,
@@ -14,6 +14,7 @@ const hydrate = () =>
       </StrictMode>
     );
   });
+};
 
 if (typeof requestIdleCallback === "function") {
   requestIdleCallback(hydrate);
