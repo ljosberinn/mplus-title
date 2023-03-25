@@ -14,12 +14,15 @@ import {
   useLoaderData,
   useNavigation,
   useNavigate,
+  useLocation,
+  Form,
+  useRouteLoaderData,
 } from "@remix-run/react";
 
 import { seasons } from "./seasons";
 import stylesheet from "~/tailwind.css";
 import { Analytics } from "@vercel/analytics/react";
-import { MouseEvent } from "react";
+import { useEffect, useRef } from "react";
 
 export const links: LinksFunction = () => {
   return [{ rel: "stylesheet", href: stylesheet }];
@@ -124,52 +127,189 @@ function Nav() {
   const navigation = useNavigation();
 
   return (
-    <nav className="flex w-full flex-col justify-between md:flex-row md:px-4">
-      <ul className="flex flex-col space-y-2 px-4 pt-4 md:flex-row md:space-x-2 md:space-y-0 md:px-0 md:pt-0">
-        {seasons.map((season) => {
-          const body = (
-            <>
-              <img
-                src={season.seasonIcon}
-                alt=""
-                loading="lazy"
-                height="24"
-                width="24"
-                className="h-6 w-6"
-              />
-              <span>{season.name}</span>
-            </>
-          );
+    <>
+      <nav className="flex w-full flex-col justify-between md:flex-row md:px-4">
+        <ul className="flex flex-col space-y-2 px-4 pt-4 md:flex-row md:space-x-2 md:space-y-0 md:px-0 md:pt-0">
+          {seasons.map((season) => {
+            const body = (
+              <>
+                <img
+                  src={season.seasonIcon}
+                  alt=""
+                  loading="lazy"
+                  height="24"
+                  width="24"
+                  className="h-6 w-6"
+                />
+                <span>{season.name}</span>
+              </>
+            );
 
-          return (
-            <li key={season.slug}>
-              {season.startDates.us &&
-              now >= season.startDates.us &&
-              navigation.state === "idle" ? (
-                <NavLink className={navLinkClassNameActivity} to={season.slug}>
-                  {body}
-                </NavLink>
-              ) : (
-                <span
-                  className={linkClassName
-                    .replace("bg-gray-700", "bg-gray-800")
-                    .replace(
-                      "hover:bg-gray-500",
-                      `${
-                        navigation.state !== "idle"
-                          ? "cursor-wait"
-                          : "cursor-not-allowed"
-                      } grayscale`
-                    )}
-                >
-                  {body}
-                </span>
-              )}
-            </li>
-          );
-        })}
-      </ul>
-    </nav>
+            return (
+              <li key={season.slug}>
+                {season.startDates.us &&
+                now >= season.startDates.us &&
+                navigation.state === "idle" ? (
+                  <NavLink
+                    className={navLinkClassNameActivity}
+                    to={season.slug}
+                  >
+                    {body}
+                  </NavLink>
+                ) : (
+                  <span
+                    className={linkClassName
+                      .replace("bg-gray-700", "bg-gray-800")
+                      .replace(
+                        "hover:bg-gray-500",
+                        `${
+                          navigation.state !== "idle"
+                            ? "cursor-wait"
+                            : "cursor-not-allowed"
+                        } grayscale`
+                      )}
+                  >
+                    {body}
+                  </span>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      </nav>
+      <CustomExtrapolationForm navigationState={navigation.state} />
+    </>
+  );
+}
+
+type CustomExtrapolationFormProps = {
+  navigationState: ReturnType<typeof useNavigation>["state"];
+};
+
+function CustomExtrapolationForm({
+  navigationState,
+}: CustomExtrapolationFormProps) {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const routeData = useRouteLoaderData("routes/$season/index");
+  const ref = useRef<HTMLInputElement | null>(null);
+
+  const seasonHasEndedInEveryRegion = (() => {
+    try {
+      // @ts-expect-error return type of the loader within the route
+      return Object.values(routeData.endDates).every(
+        // @ts-expect-error cba casting, its null|number
+        (maybeDate) => maybeDate !== null && maybeDate <= Date.now()
+      );
+    } catch {
+      return false;
+    }
+  })();
+
+  if (seasonHasEndedInEveryRegion) {
+    return null;
+  }
+
+  const customExtrapolationEndDate = (() => {
+    try {
+      const params = new URL("https://dummy.com/" + location.search)
+        .searchParams;
+      const maybeDate = params.get("extrapolationEndDate");
+
+      return maybeDate ? maybeDate : null;
+    } catch {
+      return null;
+    }
+  })();
+
+  const disabled = navigationState !== "idle";
+
+  function createExtrapolationFormButtonClassName(disabled: boolean) {
+    const base = linkClassName.replace("flex", "");
+
+    return disabled
+      ? linkClassName
+          .replace("flex", "")
+          .replace("bg-gray-700", "bg-gray-800")
+          .replace(
+            "hover:bg-gray-500",
+            `${
+              navigationState === "loading"
+                ? "cursor-wait"
+                : "cursor-not-allowed"
+            } grayscale`
+          )
+      : base;
+  }
+
+  useEffect(() => {
+    if (!customExtrapolationEndDate) {
+      if (ref.current) {
+        ref.current.value = "";
+      }
+    }
+  }, [customExtrapolationEndDate]);
+
+  return (
+    <>
+      <div className="px-4 pt-4">
+        <Form
+          className="flex flex-col md:inline space-y-2 md:space-y-0 md:space-x-2"
+          action={location.pathname}
+        >
+          <fieldset disabled={disabled} className="inline space-x-2">
+            <label className="flex w-full justify-between md:space-x-2">
+              <span>Custom Extrapolation</span>
+              <input
+                ref={ref}
+                className="rounded-md border-0 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 sm:text-sm sm:leading-6"
+                type="date"
+                min={new Date().toISOString().split("T")[0]}
+                name="extrapolationEndDate"
+                required
+                defaultValue={
+                  customExtrapolationEndDate
+                    ? customExtrapolationEndDate
+                    : undefined
+                }
+              />
+            </label>
+          </fieldset>
+
+          <button
+            disabled={disabled}
+            type="submit"
+            className={createExtrapolationFormButtonClassName(disabled)}
+          >
+            Extrapolate
+          </button>
+          <button
+            disabled={disabled}
+            className={createExtrapolationFormButtonClassName(
+              disabled || !customExtrapolationEndDate
+            )}
+            type="reset"
+            onClick={() => {
+              navigate(window.location.pathname);
+            }}
+          >
+            Reset
+          </button>
+        </Form>
+      </div>
+      {customExtrapolationEndDate ? (
+        <div className="px-4 pt-4 text-white">
+          <div className="flex flex-col rounded-lg bg-red-500 p-2 dark:bg-red-500/40 md:flex-row">
+            <div className="flex justify-center"></div>
+            <div className="p-2">
+              <b>Warning</b>: you are using a custom extrapolation date. Use at
+              your own risk; extrapolation is not perfect and will be inaccurate
+              the further the date lies in the future.
+            </div>
+          </div>
+        </div>
+      ) : null}
+    </>
   );
 }
 

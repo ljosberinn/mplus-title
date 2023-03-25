@@ -97,18 +97,35 @@ const toOneDigit = (int: number) => {
 const calculateExtrapolation = (
   season: SeasonType,
   region: Regions,
-  data: Dataset[]
+  data: Dataset[],
+  endOverride: number | null
 ): null | [number, number][] | { from: Dataset; to: Dataset } => {
-  const seasonEnding = season.endDates[region];
+  let seasonEnding = season.endDates[region];
 
   if (seasonEnding && Date.now() >= seasonEnding) {
     return null;
   }
 
-  const daysUntilSeasonEnding =
-    seasonEnding && seasonEnding > Date.now()
-      ? (seasonEnding - Date.now()) / 1000 / 60 / 60 / 24
-      : null;
+  const seasonStart = season.startDates[region];
+
+  if (!seasonStart) {
+    return null;
+  }
+
+  if (!seasonEnding && endOverride) {
+    // the date is unaware of hours, so adjust based on start time regionally
+    const endOverrideDate = new Date(endOverride);
+    endOverrideDate.setHours(new Date(seasonStart).getUTCHours());
+    seasonEnding = endOverrideDate.getTime();
+  }
+
+  const daysUntilSeasonEnding = (() => {
+    if (seasonEnding && seasonEnding > Date.now()) {
+      return (seasonEnding - Date.now()) / 1000 / 60 / 60 / 24;
+    }
+
+    return null;
+  })();
 
   const lastDataset = data[data.length - 1];
   const firstRelevantDataset = determineExtrapolationStart(
@@ -118,12 +135,6 @@ const calculateExtrapolation = (
   );
 
   if (!firstRelevantDataset) {
-    return null;
-  }
-
-  const seasonStart = season.startDates[region];
-
-  if (!seasonStart) {
     return null;
   }
 
@@ -276,7 +287,29 @@ const calculateZoom = (
   return [backThen ? backThen.ts : 0, zoomEnd];
 };
 
-export const loader: LoaderFunction = async ({ params }) => {
+const determineExtrapolationEnd = (url: string): number | null => {
+  const params = new URL(url).searchParams;
+
+  const maybeDate = params.get("extrapolationEndDate");
+
+  if (!maybeDate) {
+    return null;
+  }
+
+  try {
+    const date = new Date(maybeDate).getTime();
+
+    if (date < Date.now()) {
+      return null;
+    }
+
+    return date;
+  } catch {
+    return null;
+  }
+};
+
+export const loader: LoaderFunction = async ({ params, request }) => {
   if (!("season" in params) || !params.season) {
     throw new Response(undefined, {
       status: 400,
@@ -301,6 +334,8 @@ export const loader: LoaderFunction = async ({ params }) => {
       cacheControl
     ] = `public, max-age=${thirtyDays}, s-maxage=${thirtyDays}, immutable`;
   }
+
+  const extrapolationEnd = determineExtrapolationEnd(request.url);
 
   const enhancedSeason: EnhancedSeason = {
     ...season,
@@ -343,7 +378,12 @@ export const loader: LoaderFunction = async ({ params }) => {
         return;
       }
 
-      const extrapolation = calculateExtrapolation(season, region, data);
+      const extrapolation = calculateExtrapolation(
+        season,
+        region,
+        data,
+        extrapolationEnd
+      );
       enhancedSeason.extrapolation[region] = extrapolation;
 
       enhancedSeason.initialZoom[region] = calculateZoom(
@@ -359,7 +399,9 @@ export const loader: LoaderFunction = async ({ params }) => {
     .flat()
     .reduce((acc, dataset) => (acc > dataset.ts ? acc : dataset.ts), 0);
   headers[lastModified] = new Date(mostRecentDataset).toUTCString();
-  headers[eTag] = `${season.slug}-${mostRecentDataset}`;
+  headers[eTag] = [season.slug, mostRecentDataset, extrapolationEnd]
+    .filter(Boolean)
+    .join("-");
 
   return json(enhancedSeason, { headers });
 };
