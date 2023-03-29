@@ -26,6 +26,9 @@ export enum Affix {
   Encrypted = 130,
   Shrouded = 131,
   Thundering = 132,
+  Entangling = 134,
+  Afflicted = 135,
+  Incorporeal = 136,
 }
 
 export const affixes: Record<Affix, { icon: string; name: string }> = {
@@ -98,6 +101,15 @@ export const affixes: Record<Affix, { icon: string; name: string }> = {
     name: "Thundering",
     icon: "shaman_pvp_leaderclan",
   },
+  [Affix.Entangling]: {
+    name: 'Entangling', icon: 'inv_misc_root_01'
+  },
+  [Affix.Afflicted]: {
+    name: 'Entangling', icon: 'spell_misc_emotionsad'
+  },
+  [Affix.Incorporeal]: {
+    name: 'Entangling', icon: 'achievement_boss_anomalus'
+  }
 };
 
 export const getAffixIconUrl = (id: Affix): string =>
