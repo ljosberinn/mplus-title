@@ -122,7 +122,7 @@ export const seasons: Season[] = [
         source:
           "https://eu.forums.blizzard.com/en/wow/t/m-shrouded-hero-title-november-16-update/395176/19",
       },
-      us: { score: 0, source: null },
+      us: { score: 3087, source: "https://www.bluetracker.gg/wow/topic/us-en/1374207-m-shrouded-hero-title-updated-november-16/" },
       kr: { score: 0, source: null },
       tw: { score: 0, source: null },
     },
