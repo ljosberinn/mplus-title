@@ -231,7 +231,8 @@ function CustomExtrapolationForm({
     return null;
   }
 
-  const seasonHasEndedInEveryRegion = (() => {
+  
+  const seasonHasEndedInEveryRegion =  (() => {
     try {
       // @ts-expect-error return type of the loader within the route
       return Object.values(routeData.endDates).every(
@@ -243,11 +244,23 @@ function CustomExtrapolationForm({
     }
   })();
 
+  const seasonHasEndingDate = seasonHasEndedInEveryRegion ? false : (() => {
+    try {
+      // @ts-expect-error return type of the loader within the route
+      return Object.values(routeData.endDates).every(
+        (maybeDate) => maybeDate !== null 
+      );
+    } catch {
+      return false;
+    }
+  })()
+
+
   if (seasonHasEndedInEveryRegion) {
     return null;
   }
 
-  const disabled = navigationState !== "idle";
+  const disabled = seasonHasEndingDate || navigationState !== "idle";
 
   function createExtrapolationFormButtonClassName(disabled: boolean) {
     const base = linkClassName.replace("flex", "");
@@ -279,7 +292,7 @@ function CustomExtrapolationForm({
               htmlFor="date"
               id="date-label"
             >
-              Custom Extrapolation
+              Custom Extrapolation {seasonHasEndingDate ? 'returns next season.' : null}
             </label>
             <input
               aria-labelledby="date-label"
@@ -290,6 +303,7 @@ function CustomExtrapolationForm({
               min={new Date().toISOString().split("T")[0]}
               name="extrapolationEndDate"
               required
+              disabled={seasonHasEndingDate}
               defaultValue={
                 customExtrapolationEndDate ?? undefined
               }
