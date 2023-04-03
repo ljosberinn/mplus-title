@@ -33,10 +33,10 @@ export const seasons: Season[] = [
     rioKey: "season-df-2",
     crossFactionSupport: "complete",
     startDates: {
-      us: 1_671_548_400_000,
-      eu: 1_671_595_200_000,
-      kr: 1_652_220_000_000,
-      tw: 1_652_220_000_000,
+      us: UNKNOWN_SEASON_START_OR_ENDING,
+      eu: UNKNOWN_SEASON_START_OR_ENDING,
+      kr: UNKNOWN_SEASON_START_OR_ENDING,
+      tw: UNKNOWN_SEASON_START_OR_ENDING,
     },
     endDates: {
       us: UNKNOWN_SEASON_START_OR_ENDING,
