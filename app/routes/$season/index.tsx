@@ -992,7 +992,7 @@ const createPlotBands = (
 
   const seasonEnd = season.endDates[region];
 
-  const weeks = seasonEnd ? (seasonEnd - seasonStart) / oneWeekInMs : 36;
+  const weeks = seasonEnd ? ((seasonEnd - seasonStart) / oneWeekInMs) + 1 : 36;
 
   return Array.from({
     length: weeks,
