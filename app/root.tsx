@@ -98,6 +98,17 @@ export default function App(): JSX.Element {
             weeks are weighted relatively to today
           </p>
 
+          <div className="pb-4 text-center">
+            <a
+              className="cursor-pointer pb-4 underline"
+              target="_blank"
+              rel="noreferrer noopener"
+              href="https://forms.gle/xWwPFGJ5DKyntRgq9"
+            >
+              help improving the site by answering a couple questions
+            </a>
+          </div>
+
           <Nav />
           <Outlet />
           <ScrollRestoration />
@@ -231,8 +242,7 @@ function CustomExtrapolationForm({
     return null;
   }
 
-  
-  const seasonHasEndedInEveryRegion =  (() => {
+  const seasonHasEndedInEveryRegion = (() => {
     try {
       // @ts-expect-error return type of the loader within the route
       return Object.values(routeData.endDates).every(
@@ -244,17 +254,18 @@ function CustomExtrapolationForm({
     }
   })();
 
-  const seasonHasEndingDate = seasonHasEndedInEveryRegion ? false : (() => {
-    try {
-      // @ts-expect-error return type of the loader within the route
-      return Object.values(routeData.endDates).every(
-        (maybeDate) => maybeDate !== null 
-      );
-    } catch {
-      return false;
-    }
-  })()
-
+  const seasonHasEndingDate = seasonHasEndedInEveryRegion
+    ? false
+    : (() => {
+        try {
+          // @ts-expect-error return type of the loader within the route
+          return Object.values(routeData.endDates).every(
+            (maybeDate) => maybeDate !== null
+          );
+        } catch {
+          return false;
+        }
+      })();
 
   if (seasonHasEndedInEveryRegion) {
     return null;
@@ -287,12 +298,13 @@ function CustomExtrapolationForm({
           className="flex flex-col space-y-2 md:inline md:space-y-0 md:space-x-2"
           action={location.pathname}
         >
-          <fieldset disabled={disabled} className="inline-flex  w-full justify-between space-x-2 md:w-auto">
-            <label
-              htmlFor="date"
-              id="date-label"
-            >
-              Custom Extrapolation {seasonHasEndingDate ? 'returns next season.' : null}
+          <fieldset
+            disabled={disabled}
+            className="inline-flex  w-full justify-between space-x-2 md:w-auto"
+          >
+            <label htmlFor="date" id="date-label">
+              Custom Extrapolation{" "}
+              {seasonHasEndingDate ? "returns next season." : null}
             </label>
             <input
               aria-labelledby="date-label"
@@ -304,9 +316,7 @@ function CustomExtrapolationForm({
               name="extrapolationEndDate"
               required
               disabled={seasonHasEndingDate}
-              defaultValue={
-                customExtrapolationEndDate ?? undefined
-              }
+              defaultValue={customExtrapolationEndDate ?? undefined}
             />
           </fieldset>
 
