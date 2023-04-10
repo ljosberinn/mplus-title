@@ -5,6 +5,7 @@ import {
   type HeadersFunction,
   type LoaderFunction,
 } from "@remix-run/server-runtime";
+import { type XAxisPlotLinesOptions } from "highcharts";
 import {
   type Options,
   type PointLabelObject,
@@ -68,7 +69,6 @@ type EnhancedSeason = SeasonType & {
         to: Dataset;
       }
   >;
-
   initialZoom: Record<Regions, null | [number, number]>;
 };
 
@@ -448,6 +448,74 @@ const findIndexOfCurrentWeek = (season: EnhancedSeason, region: Regions) => {
   );
 };
 
+const createXAxisPotLines = (
+  season: EnhancedSeason,
+  region: Regions,
+  endDate: number | null
+): XAxisPlotLinesOptions[] => {
+  const lines = Object.entries(season.patches).map<XAxisPlotLinesOptions>(
+    ([description, regionalData]) => {
+      const timestamp = regionalData[region];
+
+      return {
+        zIndex: 100,
+        label: {
+          text: description,
+          rotation: 0,
+          y: 75,
+          style: {
+            color: "orange",
+          },
+        },
+        value: timestamp,
+        dashStyle: "Dash",
+        color: "orange",
+      };
+    }
+  );
+
+  Object.entries(season.dungeonHotfixes).forEach(
+    ([description, regionalData]) => {
+      const timestamp = regionalData[region];
+
+      lines.push({
+        zIndex: 100,
+        label: {
+          text: description,
+          rotation: 0,
+          y: 75,
+          style: {
+            color: "yellow",
+          },
+        },
+        value: timestamp,
+        dashStyle: "Dash",
+        color: "yellow",
+      });
+    }
+  );
+
+  if (endDate) {
+    lines.push({
+      zIndex: 100,
+      label: {
+        text: "Season End",
+        rotation: 0,
+        x: -75,
+        y: 15,
+        style: {
+          color: "red",
+        },
+      },
+      value: endDate,
+      color: "red",
+      dashStyle: "Dash",
+    });
+  }
+
+  return lines;
+};
+
 type CardProps = {
   season: EnhancedSeason;
   region: Regions;
@@ -579,21 +647,7 @@ function Card({ season, region }: CardProps): JSX.Element {
       },
       type: "datetime",
       plotBands: createPlotBands(season, region),
-      plotLines: seasonEndDate
-        ? [
-            {
-              label: {
-                text: `Season End`,
-                rotation: 0,
-                style: {
-                  color: "#fff",
-                },
-              },
-              value: seasonEndDate,
-              dashStyle: "Dash",
-            },
-          ]
-        : undefined,
+      plotLines: createXAxisPotLines(season, region, seasonEndDate),
     },
     yAxis: {
       title: {
@@ -992,7 +1046,7 @@ const createPlotBands = (
 
   const seasonEnd = season.endDates[region];
 
-  const weeks = seasonEnd ? ((seasonEnd - seasonStart) / oneWeekInMs) + 1 : 36;
+  const weeks = seasonEnd ? (seasonEnd - seasonStart) / oneWeekInMs + 1 : 36;
 
   return Array.from({
     length: weeks,

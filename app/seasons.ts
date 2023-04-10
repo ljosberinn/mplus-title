@@ -24,6 +24,8 @@ export type Season = {
     weekIndexToAffixSetId: (number | null)[];
   };
   seasonIcon: string;
+  dungeonHotfixes: Record<string, Record<Regions, number>>;
+  patches: Record<string, Record<Regions, number>>;
 };
 
 export const seasons: Season[] = [
@@ -57,6 +59,8 @@ export const seasons: Season[] = [
     },
     seasonIcon:
       "https://wow.zamimg.com/images/wow/icons/small/inv_misc_head_dragon_black_nightmare.jpg",
+    dungeonHotfixes: {},
+    patches: {},
   },
   {
     name: "DF S1",
@@ -98,6 +102,22 @@ export const seasons: Season[] = [
       weekIndexToAffixSetId: [702, 703, 705, 707, 708, 715, 723, 727, 712, 733],
     },
     seasonIcon: getAffixIconUrl(Affix.Thundering),
+    dungeonHotfixes: {
+      "Azure Vault +1.5 Minutes": {
+        eu: 1_678_852_800_000,
+        us: 1_678_798_800_000,
+        kr: 1_678_921_200_000,
+        tw: 1_678_921_200_000,
+      },
+    },
+    patches: {
+      "10.0.7": {
+        eu: 1_679_457_600_000,
+        us: 1_679_410_800_000,
+        kr: 1_679_526_000_000,
+        tw: 1_679_526_000_000,
+      },
+    },
   },
   {
     name: "SL S4",
@@ -122,7 +142,11 @@ export const seasons: Season[] = [
         source:
           "https://eu.forums.blizzard.com/en/wow/t/m-shrouded-hero-title-november-16-update/395176/19",
       },
-      us: { score: 3087, source: "https://www.bluetracker.gg/wow/topic/us-en/1374207-m-shrouded-hero-title-updated-november-16/" },
+      us: {
+        score: 3087,
+        source:
+          "https://www.bluetracker.gg/wow/topic/us-en/1374207-m-shrouded-hero-title-updated-november-16/",
+      },
       kr: { score: 0, source: null },
       tw: { score: 0, source: null },
     },
@@ -147,6 +171,8 @@ export const seasons: Season[] = [
       ],
     },
     seasonIcon: getAffixIconUrl(Affix.Shrouded),
+    dungeonHotfixes: {},
+    patches: {},
   },
   {
     name: "SL S3",
@@ -197,6 +223,8 @@ export const seasons: Season[] = [
       ],
     },
     seasonIcon: getAffixIconUrl(Affix.Encrypted),
+    dungeonHotfixes: {},
+    patches: {},
   },
   {
     name: "SL S2",
@@ -254,7 +282,8 @@ export const seasons: Season[] = [
       [Affix.Fortified, Affix.Bursting, Affix.Storming, Affix.Tormented],
     ],
     seasonIcon: getAffixIconUrl(Affix.Tormented),
-
+    dungeonHotfixes: {},
+    patches: {},
     // data is technically available but since tracking for this season started mid-season, its offset by x weeks and I cba
     // wcl: {
     //   zoneId: 25,
