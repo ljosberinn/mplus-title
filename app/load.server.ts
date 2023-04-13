@@ -424,7 +424,7 @@ export const calculateXAxisPlotLines = (
     season.crossFactionSupport === "complete" &&
     (season.wcl?.zoneId ?? 0) >= 32
   ) {
-    for (let level = 20; level <= 35; level++) {
+    for (let level = 16; level <= 35; level++) {
       const base = 25;
       const levelPoints = 5 * level + (level - 10) * 2;
       const affixPoints = 25;
