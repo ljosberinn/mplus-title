@@ -1,4 +1,5 @@
 import { type Factions, type Regions } from "@prisma/client";
+import { type XAxisPlotLinesOptions } from "highcharts";
 
 import { prisma } from "./prisma.server";
 import { type Season } from "./seasons";
@@ -276,6 +277,7 @@ export type EnhancedSeason = Season & {
       }
   >;
   initialZoom: Record<Regions, null | [number, number]>;
+  xAxisPlotLines: Record<Regions, XAxisPlotLinesOptions[]>;
 };
 
 const determineExtrapolationStart = (
@@ -347,4 +349,128 @@ export const calculateZoom = (
     .find((dataset) => dataset.ts < zoomEnd - offset);
 
   return [backThen ? backThen.ts : 0, zoomEnd];
+};
+
+export const calculateXAxisPlotLines = (
+  season: Season,
+  region: Regions,
+  data: Dataset[],
+  extrapolation: ReturnType<typeof calculateExtrapolation>
+): XAxisPlotLinesOptions[] => {
+  const endDate = season.endDates[region];
+
+  const lines = Object.entries(season.patches).map<XAxisPlotLinesOptions>(
+    ([description, regionalData]) => {
+      const timestamp = regionalData[region];
+
+      return {
+        zIndex: 100,
+        label: {
+          text: description,
+          rotation: 0,
+          y: 100,
+          style: {
+            color: "orange",
+          },
+        },
+        value: timestamp,
+        dashStyle: "Dash",
+        color: "orange",
+      };
+    }
+  );
+
+  Object.entries(season.dungeonHotfixes).forEach(
+    ([description, regionalData]) => {
+      const timestamp = regionalData[region];
+
+      lines.push({
+        zIndex: 100,
+        label: {
+          text: description,
+          rotation: 0,
+          y: 75,
+          style: {
+            color: "yellow",
+          },
+        },
+        value: timestamp,
+        dashStyle: "Dash",
+        color: "yellow",
+      });
+    }
+  );
+
+  if (endDate) {
+    lines.push({
+      zIndex: 100,
+      label: {
+        text: "Season End",
+        rotation: 0,
+        x: -75,
+        y: 225,
+        style: {
+          color: "red",
+        },
+      },
+      value: endDate,
+      color: "red",
+      dashStyle: "Dash",
+    });
+  }
+
+  // since the score computation is partially season dependant, dont bother for older seasons
+  if (
+    season.crossFactionSupport === "complete" &&
+    (season.wcl?.zoneId ?? 0) >= 32
+  ) {
+    for (let level = 20; level <= 35; level++) {
+      const base = 25;
+      const levelPoints = 5 * level + (level - 10) * 2;
+      const affixPoints = 25;
+
+      const total = base + levelPoints + affixPoints;
+
+      const tyrannicalAndFortified = total * 1.5 + total * 0.5;
+      const allDungeons = tyrannicalAndFortified * season.dungeons;
+
+      let match = data.find((dataset) => {
+        return dataset.score >= allDungeons;
+      });
+
+      // if we have an extrapolation, check whether a key level threshold is
+      // reached during the extrapolation window
+      if (!match && Array.isArray(extrapolation)) {
+        const extrapolationMatch = extrapolation.find(
+          ([, score]) => score >= allDungeons
+        );
+
+        if (extrapolationMatch) {
+          match = {
+            ts: extrapolationMatch[0],
+            score: extrapolationMatch[1],
+          };
+        }
+      }
+
+      if (match) {
+        lines.push({
+          zIndex: 100,
+          label: {
+            text: `All ${level}`,
+            rotation: 0,
+            y: 200,
+            style: {
+              color: "white",
+            },
+          },
+          value: match.ts,
+          dashStyle: "Dash",
+          color: "white",
+        });
+      }
+    }
+  }
+
+  return lines;
 };

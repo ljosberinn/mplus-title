@@ -26,6 +26,7 @@ export type Season = {
   seasonIcon: string;
   dungeonHotfixes: Record<string, Record<Regions, number>>;
   patches: Record<string, Record<Regions, number>>;
+  dungeons: number;
 };
 
 export const seasons: Season[] = [
@@ -61,6 +62,7 @@ export const seasons: Season[] = [
       "https://wow.zamimg.com/images/wow/icons/small/inv_misc_head_dragon_black_nightmare.jpg",
     dungeonHotfixes: {},
     patches: {},
+    dungeons: 8
   },
   {
     name: "DF S1",
@@ -124,6 +126,7 @@ export const seasons: Season[] = [
         tw: 1_675_292_400_000,
       },
     },
+    dungeons: 8
   },
   {
     name: "SL S4",
@@ -179,6 +182,7 @@ export const seasons: Season[] = [
     seasonIcon: getAffixIconUrl(Affix.Shrouded),
     dungeonHotfixes: {},
     patches: {},
+    dungeons: 8
   },
   {
     name: "SL S3",
@@ -231,6 +235,7 @@ export const seasons: Season[] = [
     seasonIcon: getAffixIconUrl(Affix.Encrypted),
     dungeonHotfixes: {},
     patches: {},
+    dungeons: 10
   },
   {
     name: "SL S2",
@@ -298,6 +303,7 @@ export const seasons: Season[] = [
     //     543, 544, 546, 548, 550, 553, 564, 568, 573, 576, 577, 570,
     //   ],
     // },
+    dungeons: 8,
   },
 ];
 

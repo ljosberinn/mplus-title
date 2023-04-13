@@ -5,7 +5,6 @@ import {
   type HeadersFunction,
   type LoaderFunction,
 } from "@remix-run/server-runtime";
-import { type XAxisPlotLinesOptions } from "highcharts";
 import {
   type Options,
   type PointLabelObject,
@@ -18,17 +17,15 @@ import HighchartsReact from "highcharts-react-official";
 import { Fragment, useEffect, useRef } from "react";
 
 import { getAffixIconUrl, getAffixName } from "~/affixes";
-import { type EnhancedSeason } from "~/load.server";
+import { calculateXAxisPlotLines, type EnhancedSeason } from "~/load.server";
 import {
   calculateExtrapolation,
   calculateZoom,
-  type Dataset,
   determineExtrapolationEnd,
 } from "~/load.server";
 import { loadDataForRegion } from "~/load.server";
 import { calculateFactionDiffForWeek } from "~/utils";
 
-import { type Season as SeasonType } from "../../seasons";
 import { findSeasonByName, hasSeasonEndedForAllRegions } from "../../seasons";
 
 export const orderedRegionsBySize: Regions[] = ["eu", "us", "tw", "kr"];
@@ -115,6 +112,12 @@ export const loader: LoaderFunction = async ({ params, request }) => {
       tw: null,
       us: null,
     },
+    xAxisPlotLines: {
+      eu: [],
+      us: [],
+      kr: [],
+      tw: [],
+    },
   };
 
   const now = Date.now();
@@ -129,6 +132,20 @@ export const loader: LoaderFunction = async ({ params, request }) => {
         return;
       }
 
+      const extrapolation = calculateExtrapolation(
+        season,
+        region,
+        data,
+        extrapolationEnd
+      );
+
+      enhancedSeason.xAxisPlotLines[region] = calculateXAxisPlotLines(
+        season,
+        region,
+        data,
+        extrapolation
+      );
+
       const seasonEnding = season.endDates[region];
 
       // season ended, no need for zoomies or extrapolation
@@ -136,12 +153,6 @@ export const loader: LoaderFunction = async ({ params, request }) => {
         return;
       }
 
-      const extrapolation = calculateExtrapolation(
-        season,
-        region,
-        data,
-        extrapolationEnd
-      );
       enhancedSeason.extrapolation[region] = extrapolation;
 
       enhancedSeason.initialZoom[region] = calculateZoom(
@@ -202,74 +213,6 @@ const findIndexOfCurrentWeek = (season: EnhancedSeason, region: Regions) => {
     Math.floor((latestDataset.ts - startDate) / 1000 / 60 / 60 / 24 / 7) -
     season.affixes.length
   );
-};
-
-const createXAxisPotLines = (
-  season: EnhancedSeason,
-  region: Regions,
-  endDate: number | null
-): XAxisPlotLinesOptions[] => {
-  const lines = Object.entries(season.patches).map<XAxisPlotLinesOptions>(
-    ([description, regionalData]) => {
-      const timestamp = regionalData[region];
-
-      return {
-        zIndex: 100,
-        label: {
-          text: description,
-          rotation: 0,
-          y: 75,
-          style: {
-            color: "orange",
-          },
-        },
-        value: timestamp,
-        dashStyle: "Dash",
-        color: "orange",
-      };
-    }
-  );
-
-  Object.entries(season.dungeonHotfixes).forEach(
-    ([description, regionalData]) => {
-      const timestamp = regionalData[region];
-
-      lines.push({
-        zIndex: 100,
-        label: {
-          text: description,
-          rotation: 0,
-          y: 75,
-          style: {
-            color: "yellow",
-          },
-        },
-        value: timestamp,
-        dashStyle: "Dash",
-        color: "yellow",
-      });
-    }
-  );
-
-  if (endDate) {
-    lines.push({
-      zIndex: 100,
-      label: {
-        text: "Season End",
-        rotation: 0,
-        x: -75,
-        y: 15,
-        style: {
-          color: "red",
-        },
-      },
-      value: endDate,
-      color: "red",
-      dashStyle: "Dash",
-    });
-  }
-
-  return lines;
 };
 
 type CardProps = {
@@ -403,7 +346,7 @@ function Card({ season, region }: CardProps): JSX.Element {
       },
       type: "datetime",
       plotBands: createPlotBands(season, region),
-      plotLines: createXAxisPotLines(season, region, seasonEndDate),
+      plotLines: season.xAxisPlotLines[region],
     },
     yAxis: {
       title: {
