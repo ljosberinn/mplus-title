@@ -2,6 +2,9 @@ import { type Factions, type Regions } from "@prisma/client";
 
 import { prisma } from "./prisma.server";
 import { type Season } from "./seasons";
+import { calculateFactionDiffForWeek } from "./utils";
+
+const oneWeekInMs = 7 * 24 * 60 * 60 * 1000;
 
 const getCrossFactionHistory = (
   region: Regions,
@@ -93,4 +96,255 @@ export const loadDataForRegion = async (
       return dataset.score > 0;
     })
     .sort((a, b) => a.ts - b.ts);
+};
+
+export const determineExtrapolationEnd = (url: string): number | null => {
+  const params = new URL(url).searchParams;
+
+  const maybeDate = params.get("extrapolationEndDate");
+
+  if (!maybeDate) {
+    return null;
+  }
+
+  try {
+    const date = new Date(maybeDate).getTime();
+
+    if (date < Date.now()) {
+      return null;
+    }
+
+    return date;
+  } catch {
+    return null;
+  }
+};
+
+export const calculateExtrapolation = (
+  season: Season,
+  region: Regions,
+  data: Dataset[],
+  endOverride: number | null
+): null | [number, number][] | { from: Dataset; to: Dataset } => {
+  let seasonEnding = season.endDates[region];
+
+  if (seasonEnding && Date.now() >= seasonEnding) {
+    return null;
+  }
+
+  const seasonStart = season.startDates[region];
+
+  if (!seasonStart) {
+    return null;
+  }
+
+  if (!seasonEnding && endOverride) {
+    // the date is unaware of hours, so adjust based on start time regionally
+    const endOverrideDate = new Date(endOverride);
+    endOverrideDate.setHours(new Date(seasonStart).getUTCHours());
+    seasonEnding = endOverrideDate.getTime();
+  }
+
+  const daysUntilSeasonEnding = (() => {
+    if (seasonEnding && seasonEnding > Date.now()) {
+      return (seasonEnding - Date.now()) / 1000 / 60 / 60 / 24;
+    }
+
+    return null;
+  })();
+
+  const lastDataset = data[data.length - 1];
+  const firstRelevantDataset = determineExtrapolationStart(
+    data,
+    season,
+    region
+  );
+
+  if (!firstRelevantDataset) {
+    return null;
+  }
+
+  const weeks = seasonEnding ? (seasonEnding - seasonStart) / oneWeekInMs : 36;
+
+  const passedWeeksDiff = Array.from({ length: weeks }, (_, index) => {
+    const from = seasonStart + index * oneWeekInMs;
+    const to = from + oneWeekInMs;
+
+    return calculateFactionDiffForWeek(
+      data,
+      season.crossFactionSupport,
+      index === 0,
+      from,
+      to
+    ).xFactionDiff;
+  })
+    .filter(Boolean)
+    .slice(4);
+
+  const daysUntilSeasonEndingOrFourWeeks = daysUntilSeasonEnding ?? 21;
+  const to =
+    seasonEnding ??
+    lastDataset.ts + (daysUntilSeasonEndingOrFourWeeks / 7) * oneWeekInMs;
+  const timeUntilExtrapolationEnd = to - lastDataset.ts;
+
+  // given a couple weeks past the first four, apply weighting on older weeks
+  if (
+    passedWeeksDiff.length >= 4 &&
+    timeUntilExtrapolationEnd > oneWeekInMs / 7
+  ) {
+    const interval =
+      timeUntilExtrapolationEnd / daysUntilSeasonEndingOrFourWeeks;
+    const scoreIncreaseSteps =
+      passedWeeksDiff.reduce((acc, diff, index) => {
+        // looking at week 5 in week 10 means its 5 weeks ago, applying a weight of 0.5
+        // looking at week 10 in week 10 means its the current week, applying a weight of 1
+        const factor = 1 - (passedWeeksDiff.length - index - 1) / 10;
+        return acc + diff * (factor > 0 ? factor : 0.1);
+      }) /
+      passedWeeksDiff.length /
+      7;
+
+    return [
+      [lastDataset.ts, lastDataset.score],
+      ...Array.from<number, [number, number]>(
+        { length: daysUntilSeasonEndingOrFourWeeks - 1 },
+        (_, i) => {
+          return [
+            lastDataset.ts + interval * (i + 1),
+            toOneDigit(lastDataset.score + scoreIncreaseSteps * (i + 1)),
+          ];
+        }
+      ),
+      [
+        to,
+        toOneDigit(
+          lastDataset.score +
+            scoreIncreaseSteps * daysUntilSeasonEndingOrFourWeeks
+        ),
+      ],
+    ];
+  }
+
+  const timePassed = lastDataset.ts - firstRelevantDataset.ts;
+  const daysPassed = timePassed / 1000 / 60 / 60 / 24;
+  const factor = daysUntilSeasonEndingOrFourWeeks / daysPassed;
+
+  const score = toOneDigit(
+    lastDataset.score +
+      (lastDataset.score - firstRelevantDataset.score) * factor
+  );
+
+  if (timeUntilExtrapolationEnd > oneWeekInMs / 7) {
+    const interval =
+      timeUntilExtrapolationEnd / daysUntilSeasonEndingOrFourWeeks;
+    const scoreIncreaseSteps =
+      (score - lastDataset.score) / daysUntilSeasonEndingOrFourWeeks;
+
+    return [
+      [lastDataset.ts, lastDataset.score],
+      ...Array.from<number, [number, number]>(
+        { length: daysUntilSeasonEndingOrFourWeeks - 1 },
+        (_, i) => {
+          return [
+            lastDataset.ts + interval * (i + 1),
+            toOneDigit(lastDataset.score + scoreIncreaseSteps * (i + 1)),
+          ];
+        }
+      ),
+      [to, score],
+    ];
+  }
+
+  return {
+    from: lastDataset,
+    to: {
+      score,
+      ts: to,
+    },
+  };
+};
+
+export type EnhancedSeason = Season & {
+  data: Record<Regions, Dataset[]>;
+  extrapolation: Record<
+    Regions,
+    | null
+    | [number, number][]
+    | {
+        from: Dataset;
+        to: Dataset;
+      }
+  >;
+  initialZoom: Record<Regions, null | [number, number]>;
+};
+
+const determineExtrapolationStart = (
+  data: Dataset[],
+  season: Season,
+  region: Regions
+): Dataset | null => {
+  const seasonStart = season.startDates[region];
+
+  if (!seasonStart) {
+    return null;
+  }
+
+  const firstDataset = data.find((dataset) => {
+    return dataset.ts >= seasonStart + 4 * oneWeekInMs;
+  });
+
+  return firstDataset ?? null;
+};
+
+const toOneDigit = (int: number) => {
+  return Number.parseFloat(int.toFixed(1));
+};
+
+export const calculateZoom = (
+  season: Season,
+  region: Regions,
+  data: Dataset[],
+  extrapolation: EnhancedSeason["extrapolation"]["eu"]
+): [number, number] => {
+  const seasonEnding = season.endDates[region];
+
+  const daysUntilSeasonEnding =
+    seasonEnding && seasonEnding > Date.now()
+      ? (seasonEnding - Date.now()) / 1000 / 60 / 60 / 24
+      : null;
+
+  const zoomEnd =
+    (Array.isArray(extrapolation)
+      ? extrapolation[extrapolation.length - 1][0]
+      : extrapolation?.to.ts) ?? data[data.length - 1].ts;
+
+  if (daysUntilSeasonEnding) {
+    if (daysUntilSeasonEnding < 1) {
+      const offset = (1 + 1 / 7) * oneWeekInMs;
+      const backThen = [...data]
+        .reverse()
+        .find((dataset) => dataset.ts < zoomEnd - offset);
+
+      return [backThen ? backThen.ts : 0, zoomEnd];
+    }
+
+    if (daysUntilSeasonEnding < 7) {
+      const offset = (extrapolation ? 3 : 2) * oneWeekInMs;
+
+      const backThen = [...data]
+        .reverse()
+        .find((dataset) => dataset.ts < zoomEnd - offset);
+
+      return [backThen ? backThen.ts : 0, zoomEnd];
+    }
+  }
+
+  // offset by +2 weeks since extrapolation is at least tw into the future
+  const offset = (extrapolation ? 6 : 4) * oneWeekInMs;
+
+  const backThen = [...data]
+    .reverse()
+    .find((dataset) => dataset.ts < zoomEnd - offset);
+
+  return [backThen ? backThen.ts : 0, zoomEnd];
 };
