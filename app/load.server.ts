@@ -441,15 +441,29 @@ export const calculateXAxisPlotLines = (
       // if we have an extrapolation, check whether a key level threshold is
       // reached during the extrapolation window
       if (!match && Array.isArray(extrapolation)) {
-        const extrapolationMatch = extrapolation.find(
+        const extrapolationMatchIndex = extrapolation.findIndex(
           ([, score]) => score >= allDungeons
         );
 
-        if (extrapolationMatch) {
-          match = {
-            ts: extrapolationMatch[0],
-            score: extrapolationMatch[1],
-          };
+        if (extrapolationMatchIndex > -1) {
+          const last = data[data.length - 1];
+          const extrapolationMatch = extrapolation[extrapolationMatchIndex];
+
+          const timeDiff = extrapolationMatch[0] - last.ts;
+          const scoreDiff = extrapolationMatch[1] - last.score;
+
+          const step = scoreDiff / timeDiff;
+
+          // expensive, but a lot more precise than just picking next match
+          for (let i = 1; i < timeDiff; i++) {
+            if (last.score + step * i > allDungeons) {
+              match = {
+                ts: last.ts + i,
+                score: allDungeons,
+              };
+              break;
+            }
+          }
         }
       }
 
