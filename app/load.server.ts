@@ -446,24 +446,15 @@ export const calculateXAxisPlotLines = (
         );
 
         if (extrapolationMatchIndex > -1) {
-          const last = data[data.length - 1];
+          
           const extrapolationMatch = extrapolation[extrapolationMatchIndex];
 
-          const timeDiff = extrapolationMatch[0] - last.ts;
-          const scoreDiff = extrapolationMatch[1] - last.score;
-
-          const step = scoreDiff / timeDiff;
-
-          // expensive, but a lot more precise than just picking next match
-          for (let i = 1; i < timeDiff; i++) {
-            if (last.score + step * i > allDungeons) {
               match = {
-                ts: last.ts + i,
+                ts: extrapolationMatch[0],
                 score: allDungeons,
               };
-              break;
-            }
-          }
+
+          
         }
       }
 
