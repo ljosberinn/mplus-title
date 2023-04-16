@@ -1,9 +1,10 @@
-import { type Factions, type Regions } from "@prisma/client";
+import { Regions } from "@prisma/client";
 import { type XAxisPlotLinesOptions } from "highcharts";
 
 import { prisma } from "./prisma.server";
+import { type Dataset, type EnhancedSeason } from "./seasons";
 import { type Season } from "./seasons";
-import { calculateFactionDiffForWeek } from "./utils";
+import { calculateFactionDiffForWeek, orderedRegionsBySize } from "./utils";
 
 const oneWeekInMs = 7 * 24 * 60 * 60 * 1000;
 
@@ -58,12 +59,6 @@ const getHistory = (region: Regions, gte: number | null, lte?: number) => {
   });
 };
 
-export type Dataset = {
-  ts: number;
-  score: number;
-  faction?: Factions;
-};
-
 export const loadDataForRegion = async (
   region: Regions,
   season: Season
@@ -97,6 +92,37 @@ export const loadDataForRegion = async (
       return dataset.score > 0;
     })
     .sort((a, b) => a.ts - b.ts);
+};
+
+export const determineRegionsToDisplay = (
+  cookies: string | null
+): Regions[] => {
+  if (!cookies) {
+    return orderedRegionsBySize;
+  }
+
+  const rows = cookies.split("; ");
+  const matchingRow = rows.find((row) => row.includes("regions="));
+
+  if (!matchingRow) {
+    return orderedRegionsBySize;
+  }
+
+  const [, maybeRegionsString = ""] = matchingRow.split("=");
+
+  if (!maybeRegionsString) {
+    return orderedRegionsBySize;
+  }
+
+  const maybeRegions = maybeRegionsString
+    .split(",")
+    .filter((maybeRegion): maybeRegion is Regions => maybeRegion in Regions);
+
+  if (maybeRegions.length === 0) {
+    return orderedRegionsBySize;
+  }
+
+  return maybeRegions;
 };
 
 export const determineExtrapolationEnd = (url: string): number | null => {
@@ -263,21 +289,6 @@ export const calculateExtrapolation = (
       ts: to,
     },
   };
-};
-
-export type EnhancedSeason = Season & {
-  data: Record<Regions, Dataset[]>;
-  extrapolation: Record<
-    Regions,
-    | null
-    | [number, number][]
-    | {
-        from: Dataset;
-        to: Dataset;
-      }
-  >;
-  initialZoom: Record<Regions, null | [number, number]>;
-  xAxisPlotLines: Record<Regions, XAxisPlotLinesOptions[]>;
 };
 
 const determineExtrapolationStart = (

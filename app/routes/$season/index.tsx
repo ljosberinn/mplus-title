@@ -17,18 +17,18 @@ import HighchartsReact from "highcharts-react-official";
 import { Fragment, useEffect, useRef } from "react";
 
 import { getAffixIconUrl, getAffixName } from "~/affixes";
-import { calculateXAxisPlotLines, type EnhancedSeason } from "~/load.server";
+import { calculateXAxisPlotLines } from "~/load.server";
 import {
   calculateExtrapolation,
   calculateZoom,
   determineExtrapolationEnd,
+  determineRegionsToDisplay,
 } from "~/load.server";
 import { loadDataForRegion } from "~/load.server";
 import { calculateFactionDiffForWeek } from "~/utils";
 
+import { type EnhancedSeason } from "../../seasons";
 import { findSeasonByName, hasSeasonEndedForAllRegions } from "../../seasons";
-
-export const orderedRegionsBySize: Regions[] = ["eu", "us", "tw", "kr"];
 
 const factionColors = {
   alliance: "#60a5fa",
@@ -91,9 +91,11 @@ export const loader: LoaderFunction = async ({ params, request }) => {
   }
 
   const extrapolationEnd = determineExtrapolationEnd(request.url);
+  const regions = determineRegionsToDisplay(request.headers.get("Cookie"));
 
   const enhancedSeason: EnhancedSeason = {
     ...season,
+    regionsToDisplay: regions,
     data: {
       eu: [],
       us: [],
@@ -121,7 +123,6 @@ export const loader: LoaderFunction = async ({ params, request }) => {
   };
 
   const now = Date.now();
-  const regions: Regions[] = ["eu", "kr", "tw", "us"];
 
   await Promise.all(
     Object.values(regions).map(async (region) => {
@@ -168,26 +169,30 @@ export const loader: LoaderFunction = async ({ params, request }) => {
     .flat()
     .reduce((acc, dataset) => (acc > dataset.ts ? acc : dataset.ts), 0);
   headers[lastModified] = new Date(mostRecentDataset).toUTCString();
-  headers[eTag] = [season.slug, mostRecentDataset, extrapolationEnd]
+  headers[eTag] = [
+    season.slug,
+    mostRecentDataset,
+    extrapolationEnd,
+    // eslint-disable-next-line @typescript-eslint/require-array-sort-compare
+    ...[...regions].sort(), // in order to always have the same order for caching
+  ]
     .filter(Boolean)
     .join("-");
+  headers["Set-Cookie"] = `regions=${regions.join(",")}`;
 
   return json(enhancedSeason, { headers });
 };
 
 export default function Season(): JSX.Element | null {
-  // is any because of a remix type bug. its EnhancedSeason...
-  const season = useLoaderData();
+  const season = useLoaderData() as unknown as EnhancedSeason;
 
   return (
     <div className="space-y-4 p-4">
-      {orderedRegionsBySize.map((region, index) => {
+      {season.regionsToDisplay.map((region, index, arr) => {
         return (
           <Fragment key={region}>
             <Card season={season} region={region} />
-            {index === orderedRegionsBySize.length - 1 ? null : (
-              <hr className="opacity-50" />
-            )}
+            {index === arr.length - 1 ? null : <hr className="opacity-50" />}
           </Fragment>
         );
       })}
@@ -226,7 +231,6 @@ function Card({ season, region }: CardProps): JSX.Element {
   const ref = useRef<HighchartsReact.RefObject | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
 
-  const seasonEndDate = season.endDates[region];
   const confirmedCutoffUrl = season.confirmedCutoffs[region].source;
   const zoom = season.initialZoom[region];
   const navigation = useNavigation();

@@ -24,6 +24,7 @@ import { useEffect, useRef } from "react";
 import stylesheet from "~/tailwind.css";
 
 import { seasons } from "./seasons";
+import { orderedRegionsBySize } from "./utils";
 
 export const links: LinksFunction = () => {
   return [{ rel: "stylesheet", href: stylesheet }];
@@ -76,6 +77,8 @@ export const meta: MetaFunction = () => {
     distribution: "global",
   };
 };
+
+const notAllowed = "cursor-not-allowed";
 
 export default function App(): JSX.Element {
   const { ENV } = useLoaderData<typeof loader>();
@@ -178,7 +181,7 @@ function Nav() {
                         "hover:bg-gray-500",
                         `${
                           navigation.state === "idle"
-                            ? "cursor-not-allowed"
+                            ? notAllowed
                             : "cursor-wait"
                         } grayscale`
                       )}
@@ -190,9 +193,73 @@ function Nav() {
             );
           })}
         </ul>
+        <RegionToggle />
       </nav>
       <CustomExtrapolationForm navigationState={navigation.state} />
     </>
+  );
+}
+
+function RegionToggle() {
+  const routeData = useRouteLoaderData("routes/$season/index");
+
+  return (
+    <ul className="flex flex-col space-y-2 px-4 pt-4 md:flex-row md:space-x-2 md:space-y-0 md:px-0 md:pt-0">
+      {orderedRegionsBySize.map((region) => {
+        // @ts-expect-error type EnhancedSeason
+        const checked = routeData.regionsToDisplay.includes(region);
+        // @ts-expect-error type EnhancedSeason
+        const disabled = routeData.regionsToDisplay.length === 1 && checked;
+
+        return (
+          <li key={region} className={`${linkClassName}`}>
+            <label
+              className={disabled ? notAllowed : "cursor-pointer"}
+              htmlFor={`toggle-${region}`}
+            >
+              {region.toUpperCase()}
+            </label>
+
+            <input
+              disabled={disabled}
+              type="checkbox"
+              className={disabled ? notAllowed : "cursor-pointer"}
+              id={`toggle-${region}`}
+              checked={checked}
+              aria-labelledby={`toggle-${region}`}
+              onChange={() => {
+                const activeRegions =
+                  document.cookie
+                    .split("; ")
+                    .find((row) => row.startsWith("regions"))
+                    ?.split("=")[1]
+                    ?.split(",") ?? [];
+
+                const next = activeRegions?.includes(region)
+                  ? activeRegions.filter((r) => r !== region)
+                  : [...activeRegions, region];
+
+                new Promise((resolve) => {
+                  if ("cookieStore" in window) {
+                    // @ts-expect-error experimental, not all browsers support it
+                    window.cookieStore
+                      .set("regions", next.join(","))
+                      .then(resolve);
+                  } else {
+                    // eslint-disable-next-line unicorn/no-document-cookie
+                    document.cookie = `regions=${next.join(",")}`;
+                  }
+                })
+                  .then(() => {
+                    window.location.reload();
+                  })
+                  .catch(console.error);
+              }}
+            />
+          </li>
+        );
+      })}
+    </ul>
   );
 }
 
@@ -283,9 +350,7 @@ function CustomExtrapolationForm({
           .replace(
             "hover:bg-gray-500",
             `${
-              navigationState === "loading"
-                ? "cursor-wait"
-                : "cursor-not-allowed"
+              navigationState === "loading" ? "cursor-wait" : notAllowed
             } grayscale`
           )
       : base;
@@ -302,7 +367,15 @@ function CustomExtrapolationForm({
             disabled={disabled}
             className="inline-flex  w-full justify-between space-x-2 md:w-auto"
           >
-            <label htmlFor="date" id="date-label">
+            <label
+              className={
+                seasonHasEndingDate
+                  ? "w-full text-center italic md:text-left"
+                  : ""
+              }
+              htmlFor="date"
+              id="date-label"
+            >
               Custom Extrapolation{" "}
               {seasonHasEndingDate ? "returns next season." : null}
             </label>
@@ -310,7 +383,9 @@ function CustomExtrapolationForm({
               aria-labelledby="date-label"
               id="date"
               ref={ref}
-              className="rounded-md border-0 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 sm:text-sm sm:leading-6"
+              className={`rounded-md border-0 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 sm:text-sm sm:leading-6 ${
+                seasonHasEndingDate ? "hidden md:inline-block" : ""
+              }`}
               type="date"
               min={new Date().toISOString().split("T")[0]}
               name="extrapolationEndDate"

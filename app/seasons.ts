@@ -1,4 +1,5 @@
 import { type Factions, type Regions } from "@prisma/client";
+import  { type XAxisPlotLinesOptions } from "highcharts";
 
 import { Affix, getAffixIconUrl } from "./affixes";
 
@@ -27,6 +28,28 @@ export type Season = {
   dungeonHotfixes: Record<string, Record<Regions, number>>;
   patches: Record<string, Record<Regions, number>>;
   dungeons: number;
+};
+
+export type EnhancedSeason = Season & {
+  data: Record<Regions, Dataset[]>;
+  extrapolation: Record<
+    Regions,
+    | null
+    | [number, number][]
+    | {
+        from: Dataset;
+        to: Dataset;
+      }
+  >;
+  initialZoom: Record<Regions, null | [number, number]>;
+  xAxisPlotLines: Record<Regions, XAxisPlotLinesOptions[]>;
+  regionsToDisplay: Regions[];
+};
+
+export type Dataset = {
+  ts: number;
+  score: number;
+  faction?: Factions;
 };
 
 export const seasons: Season[] = [
