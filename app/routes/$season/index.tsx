@@ -98,7 +98,7 @@ export const loader: LoaderFunction = async ({ params, request }) => {
   }
 
   const extrapolationEnd = determineExtrapolationEnd(request.url);
-  const regions = determineRegionsToDisplay(request.headers.get("Cookie"));
+  const regions = determineRegionsToDisplay(request.headers.get("Cookie") ?? request.headers.get('cookie'));
 
   const enhancedSeason: EnhancedSeason = {
     ...season,
