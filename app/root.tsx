@@ -91,7 +91,7 @@ export default function App(): JSX.Element {
       </head>
       <body className="bg-gray-900 text-gray-200">
         <main className="m-auto max-w-7xl">
-          <h1 className="pt-8 pb-2 text-center text-2xl font-semibold">
+          <h1 className="pb-2 pt-8 text-center text-2xl font-semibold">
             {title}
           </h1>
 
@@ -225,9 +225,9 @@ function RegionToggle() {
               type="checkbox"
               className={disabled ? notAllowed : "cursor-pointer"}
               id={`toggle-${region}`}
-              checked={checked}
+              defaultChecked={checked}
               aria-labelledby={`toggle-${region}`}
-              onChange={() => {
+              onClick={() => {
                 const activeRegions =
                   document.cookie
                     .split("; ")
@@ -248,6 +248,7 @@ function RegionToggle() {
                   } else {
                     // eslint-disable-next-line unicorn/no-document-cookie
                     document.cookie = `regions=${next.join(",")}`;
+                    resolve(undefined);
                   }
                 })
                   .then(() => {
@@ -360,7 +361,7 @@ function CustomExtrapolationForm({
     <>
       <div className="px-4 pt-4">
         <Form
-          className="flex flex-col space-y-2 md:inline md:space-y-0 md:space-x-2"
+          className="flex flex-col space-y-2 md:inline md:space-x-2 md:space-y-0"
           action={location.pathname}
         >
           <fieldset
