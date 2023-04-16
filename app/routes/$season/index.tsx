@@ -181,8 +181,8 @@ export const loader: LoaderFunction = async ({ params, request }) => {
     season.slug,
     mostRecentDataset,
     extrapolationEnd,
-    // eslint-disable-next-line @typescript-eslint/require-array-sort-compare
-    ...[...regions].sort(), // in order to always have the same order for caching
+     
+    // ...[...regions].sort(), // in order to always have the same order for caching
   ]
     .filter(Boolean)
     .join("-");
