@@ -39,6 +39,7 @@ const factionColors = {
 const lastModified = "Last-Modified";
 const cacheControl = "Cache-Control";
 const eTag = "ETag";
+const setCookie = "Set-Cookie";
 
 export const headers: HeadersFunction = ({ loaderHeaders }) => {
   const loaderCache = loaderHeaders.get(cacheControl);
@@ -57,6 +58,12 @@ export const headers: HeadersFunction = ({ loaderHeaders }) => {
 
   if (maybeETag) {
     headers[eTag] = maybeETag;
+  }
+
+  const maybeSetCookie = loaderHeaders.get(setCookie);
+
+  if (maybeSetCookie) {
+    headers[setCookie] = maybeSetCookie;
   }
 
   return headers;
@@ -168,6 +175,7 @@ export const loader: LoaderFunction = async ({ params, request }) => {
   const mostRecentDataset = Object.values(enhancedSeason.data)
     .flat()
     .reduce((acc, dataset) => (acc > dataset.ts ? acc : dataset.ts), 0);
+
   headers[lastModified] = new Date(mostRecentDataset).toUTCString();
   headers[eTag] = [
     season.slug,
@@ -178,7 +186,7 @@ export const loader: LoaderFunction = async ({ params, request }) => {
   ]
     .filter(Boolean)
     .join("-");
-  headers["Set-Cookie"] = `regions=${regions.join(",")}`;
+  headers[setCookie] = `regions=${regions.join(",")}`;
 
   return json(enhancedSeason, { headers });
 };
