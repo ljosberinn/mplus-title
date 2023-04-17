@@ -1,6 +1,6 @@
-import  { type Regions } from "@prisma/client";
+import { type Regions } from "@prisma/client";
 
-import  { type Dataset} from "./seasons";
+import { type Dataset } from "./seasons";
 import { type Season } from "./seasons";
 
 export const calculateFactionDiffForWeek = (
@@ -72,3 +72,6 @@ export const calculateFactionDiffForWeek = (
 };
 
 export const orderedRegionsBySize: Regions[] = ["eu", "us", "tw", "kr"];
+
+export const isNotNull = <T>(something: T | null): something is T =>
+  something !== null;
