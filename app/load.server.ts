@@ -4,7 +4,12 @@ import { type XAxisPlotLinesOptions } from "highcharts";
 import { prisma } from "./prisma.server";
 import { type Dataset, type EnhancedSeason } from "./seasons";
 import { type Season } from "./seasons";
-import { calculateFactionDiffForWeek, orderedRegionsBySize } from "./utils";
+import {
+  calculateFactionDiffForWeek,
+  overlays,
+  Overlay,
+  orderedRegionsBySize,
+} from "./utils";
 
 const oneWeekInMs = 7 * 24 * 60 * 60 * 1000;
 
@@ -362,19 +367,38 @@ export const calculateZoom = (
   return [backThen ? backThen.ts : 0, zoomEnd];
 };
 
+export const determineOverlays = (url: string): Overlay[] => {
+  const params = new URL(url).searchParams;
+
+  const maybeOverlays = params.get("overlays");
+
+  if (!maybeOverlays) {
+    return [...overlays];
+  }
+  const fromSearchParams = maybeOverlays.split("~");
+
+  return overlays.filter((plotline) => fromSearchParams.includes(plotline));
+};
+
+export const determineOverlaysFromFormData = (formData: FormData) =>
+  overlays.filter((plotline) => formData.get(plotline) === "on");
+
 export const calculateXAxisPlotLines = (
   season: Season,
   region: Regions,
   data: Dataset[],
-  extrapolation: ReturnType<typeof calculateExtrapolation>
+  extrapolation: ReturnType<typeof calculateExtrapolation>,
+  overlays: readonly Overlay[]
 ): XAxisPlotLinesOptions[] => {
   const endDate = season.endDates[region];
 
-  const lines = Object.entries(season.patches).map<XAxisPlotLinesOptions>(
-    ([description, regionalData]) => {
+  const lines: XAxisPlotLinesOptions[] = [];
+
+  if (overlays.includes("patches")) {
+    Object.entries(season.patches).forEach(([description, regionalData]) => {
       const timestamp = regionalData[region];
 
-      return {
+      lines.push({
         zIndex: 100,
         label: {
           text: description,
@@ -387,30 +411,32 @@ export const calculateXAxisPlotLines = (
         value: timestamp,
         dashStyle: "Dash",
         color: "orange",
-      };
-    }
-  );
-
-  Object.entries(season.dungeonHotfixes).forEach(
-    ([description, regionalData]) => {
-      const timestamp = regionalData[region];
-
-      lines.push({
-        zIndex: 100,
-        label: {
-          text: description,
-          rotation: 0,
-          y: 75,
-          style: {
-            color: "yellow",
-          },
-        },
-        value: timestamp,
-        dashStyle: "Dash",
-        color: "yellow",
       });
-    }
-  );
+    });
+  }
+
+  if (overlays.includes("dungeonHotfixes")) {
+    Object.entries(season.dungeonHotfixes).forEach(
+      ([description, regionalData]) => {
+        const timestamp = regionalData[region];
+
+        lines.push({
+          zIndex: 100,
+          label: {
+            text: description,
+            rotation: 0,
+            y: 75,
+            style: {
+              color: "yellow",
+            },
+          },
+          value: timestamp,
+          dashStyle: "Dash",
+          color: "yellow",
+        });
+      }
+    );
+  }
 
   if (endDate) {
     lines.push({
@@ -432,6 +458,7 @@ export const calculateXAxisPlotLines = (
 
   // since the score computation is partially season dependant, dont bother for older seasons
   if (
+    overlays.includes("levelCompletion") &&
     season.crossFactionSupport === "complete" &&
     (season.wcl?.zoneId ?? 0) >= 32
   ) {

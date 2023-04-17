@@ -2,6 +2,7 @@ import { type Factions, type Regions } from "@prisma/client";
 import  { type XAxisPlotLinesOptions } from "highcharts";
 
 import { Affix, getAffixIconUrl } from "./affixes";
+import { Overlay } from "~/utils";
 
 type CutoffSource = { score: number; source: string | null };
 
@@ -44,6 +45,7 @@ export type EnhancedSeason = Season & {
   initialZoom: Record<Regions, null | [number, number]>;
   xAxisPlotLines: Record<Regions, XAxisPlotLinesOptions[]>;
   regionsToDisplay: Regions[];
+  overlaysToDisplay: Overlay[];
 };
 
 export type Dataset = {
