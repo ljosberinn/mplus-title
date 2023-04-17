@@ -17,9 +17,10 @@ import {
   useNavigate,
   useNavigation,
   useRouteLoaderData,
+  useSubmit,
 } from "@remix-run/react";
 import { Analytics } from "@vercel/analytics/react";
-import { useEffect, useRef } from "react";
+import { FormEventHandler, useEffect, useRef } from "react";
 
 import stylesheet from "~/tailwind.css";
 
@@ -201,66 +202,45 @@ function Nav() {
 }
 
 function RegionToggle() {
+  const submit = useSubmit();
   const routeData = useRouteLoaderData("routes/$season/index");
 
+  const handleChange: FormEventHandler<HTMLFormElement> = (event) => {
+    submit(event.currentTarget, { replace: true });
+  };
+
   return (
-    <ul className="flex flex-col space-y-2 px-4 pt-4 md:flex-row md:space-x-2 md:space-y-0 md:px-0 md:pt-0">
-      {orderedRegionsBySize.map((region) => {
-        // @ts-expect-error type EnhancedSeason
-        const checked = routeData.regionsToDisplay.includes(region);
-        // @ts-expect-error type EnhancedSeason
-        const disabled = routeData.regionsToDisplay.length === 1 && checked;
+    <Form action="/regions" method="post" onChange={handleChange}>
+      <ul className="flex flex-col space-y-2 px-4 pt-4 md:flex-row md:space-x-2 md:space-y-0 md:px-0 md:pt-0">
+        {orderedRegionsBySize.map((region) => {
+          // @ts-expect-error type EnhancedSeason
+          const checked = routeData.regionsToDisplay.includes(region);
+          // @ts-expect-error type EnhancedSeason
+          const disabled = routeData.regionsToDisplay.length === 1 && checked;
 
-        return (
-          <li key={region} className={`${linkClassName}`}>
-            <label
-              className={disabled ? notAllowed : "cursor-pointer"}
-              htmlFor={`toggle-${region}`}
-            >
-              {region.toUpperCase()}
-            </label>
+          return (
+            <li key={region} className={`${linkClassName}`}>
+              <label
+                className={disabled ? notAllowed : "cursor-pointer"}
+                htmlFor={`toggle-${region}`}
+              >
+                {region.toUpperCase()}
+              </label>
 
-            <input
-              disabled={disabled}
-              type="checkbox"
-              className={disabled ? notAllowed : "cursor-pointer"}
-              id={`toggle-${region}`}
-              defaultChecked={checked}
-              aria-labelledby={`toggle-${region}`}
-              onClick={() => {
-                const activeRegions =
-                  document.cookie
-                    .split("; ")
-                    .find((row) => row.startsWith("regions"))
-                    ?.split("=")[1]
-                    ?.split(",") ?? [];
-
-                const next = activeRegions?.includes(region)
-                  ? activeRegions.filter((r) => r !== region)
-                  : [...activeRegions, region];
-
-                new Promise((resolve) => {
-                  if ("cookieStore" in window) {
-                    // @ts-expect-error experimental, not all browsers support it
-                    window.cookieStore
-                      .set("regions", next.join(","))
-                      .then(resolve);
-                  } else {
-                    // eslint-disable-next-line unicorn/no-document-cookie
-                    document.cookie = `regions=${next.join(",")}`;
-                    resolve(undefined);
-                  }
-                })
-                  .then(() => {
-                    window.location.reload();
-                  })
-                  .catch(console.error);
-              }}
-            />
-          </li>
-        );
-      })}
-    </ul>
+              <input
+                disabled={disabled}
+                type="checkbox"
+                className={disabled ? notAllowed : "cursor-pointer"}
+                id={`toggle-${region}`}
+                defaultChecked={checked}
+                aria-labelledby={`toggle-${region}`}
+                name={region}
+              />
+            </li>
+          );
+        })}
+      </ul>
+    </Form>
   );
 }
 
