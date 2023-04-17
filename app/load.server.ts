@@ -113,11 +113,6 @@ export const determineRegionsToDisplay = async (
 
   return maybeRegions;
 };
-export const determineRegionsFromFormData = async (
-  formData: FormData
-): Promise<Regions[]> => {
-  return orderedRegionsBySize.filter((region) => formData.get(region) === "on");
-};
 
 export const determineExtrapolationEnd = (url: string): number | null => {
   const params = new URL(url).searchParams;
