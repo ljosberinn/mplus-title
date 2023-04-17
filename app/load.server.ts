@@ -124,7 +124,12 @@ export const loadDataForRegion = async (
     } else {
       const threshold = 60 * 60 * 1000;
       const timeSinceUpdate = Date.now() - latestDataset.ts;
-      expiry = Math.round((threshold - timeSinceUpdate) / 1000 / 60);
+      const remaining =
+        Math.round((threshold - timeSinceUpdate) / 1000 / 60) * 60;
+
+      if (remaining > 0) {
+        expiry = remaining;
+      }
     }
   }
 
