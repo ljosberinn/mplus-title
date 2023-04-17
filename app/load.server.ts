@@ -1,4 +1,5 @@
 import { Regions } from "@prisma/client";
+import { Redis } from "@upstash/redis";
 import { type XAxisPlotLinesOptions } from "highcharts";
 
 import { prisma } from "./prisma.server";
@@ -70,6 +71,21 @@ export const loadDataForRegion = async (
   const gte = season.startDates[region];
   const lte = season.endDates[region] ?? undefined;
 
+  const redis = new Redis({
+    url: process.env.UPSTASH_REDIS_REST_URL,
+    token: process.env.UPSTASH_REDIS_REST_TOKEN,
+  });
+
+  const key = [season.slug, region, gte ?? "1", lte ?? "0"].join(
+    searchParamSeparator
+  );
+
+  const cached = await redis.get<Dataset[] | null>(key);
+
+  if (cached) {
+    return cached;
+  }
+
   const [rawHistory, rawCrossFactionHistory] = await Promise.all([
     season.crossFactionSupport === "complete"
       ? []
@@ -79,7 +95,7 @@ export const loadDataForRegion = async (
       : getCrossFactionHistory(region, gte, lte),
   ]);
 
-  return [...rawHistory, ...rawCrossFactionHistory]
+  const datasets = [...rawHistory, ...rawCrossFactionHistory]
     .map((dataset) => {
       const next: Dataset = {
         ts: Number(dataset.timestamp) * 1000,
@@ -96,6 +112,18 @@ export const loadDataForRegion = async (
       return dataset.score > 0;
     })
     .sort((a, b) => a.ts - b.ts);
+
+  const latestDataset =
+    datasets.length > 0 ? datasets[datasets.length - 1] : null;
+  const expiry = latestDataset
+    ? Math.round(60 - (Date.now() - latestDataset.ts) / 1000 / 60)
+    : 5 * 60;
+
+  await redis.set(key, datasets, {
+    ex: expiry,
+  });
+
+  return datasets;
 };
 
 export const determineRegionsToDisplayFromSearchParams = (
