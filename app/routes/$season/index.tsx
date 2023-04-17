@@ -130,7 +130,7 @@ export const loader: LoaderFunction = async ({ params, request }) => {
       params.append("regions", cookieRegions.join(searchParamSeparator));
     }
 
-    return redirect(`/?${params.toString()}`, 307);
+    return redirect(`/${season.slug}?${params.toString()}`, 307);
   }
 
   const regions = searchParamRegions ?? orderedRegionsBySize;

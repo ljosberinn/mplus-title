@@ -143,8 +143,7 @@ export const loadDataForRegion = async (
 export const determineRegionsToDisplayFromSearchParams = (
   request: Request
 ): Regions[] | null => {
-  const params = new URL(request.url).searchParams;
-  const possiblyRegions = params.get("regions");
+  const possiblyRegions = new URL(request.url).searchParams.get("regions");
 
   if (!possiblyRegions) {
     return null;
