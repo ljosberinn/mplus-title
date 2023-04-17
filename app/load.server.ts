@@ -76,9 +76,7 @@ export const loadDataForRegion = async (
     token: process.env.UPSTASH_REDIS_REST_TOKEN,
   });
 
-  const key = [season.slug, region, gte ?? "1", lte ?? "0"].join(
-    searchParamSeparator
-  );
+  const key = [season.slug, region].join(searchParamSeparator);
 
   const cached = await redis.get<Dataset[] | null>(key);
 
@@ -115,9 +113,17 @@ export const loadDataForRegion = async (
 
   const latestDataset =
     datasets.length > 0 ? datasets[datasets.length - 1] : null;
-  const expiry = latestDataset
-    ? Math.round(60 - (Date.now() - latestDataset.ts) / 1000 / 60)
-    : 5 * 60;
+
+  let expiry = 5 * 60;
+
+  if (latestDataset) {
+    const endDate = season.endDates[region];
+    if (endDate && endDate < Date.now()) {
+      expiry = 30 * 24 * 60 * 60;
+    } else {
+      expiry = Math.round(60 - (Date.now() - latestDataset.ts) / 1000 / 60);
+    }
+  }
 
   await redis.set(key, datasets, {
     ex: expiry,
