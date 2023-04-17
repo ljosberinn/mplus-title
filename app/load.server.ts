@@ -603,3 +603,11 @@ export const calculateXAxisPlotLines = (
 
   return lines;
 };
+
+export const setCookie = (
+  key: string,
+  value?: string | null,
+  maxAge?: number
+): string => {
+  return `${key}=${value ?? ""}; Max-Age=${maxAge ?? 0}`;
+};

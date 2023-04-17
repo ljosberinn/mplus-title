@@ -2,6 +2,7 @@ import { type Regions } from "@prisma/client";
 import { type ActionFunction } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
 
+import { setCookie } from "~/load.server";
 import { orderedRegionsBySize, searchParamSeparator } from "~/utils";
 
 const addRegionsToReferrerOrBaseUrl = (
@@ -25,11 +26,11 @@ const addRegionsToReferrerOrBaseUrl = (
 
     const nextValue = refererAsUrl.searchParams.get("regions");
 
-    if (nextValue) {
-      headers["Set-Cookie"] = `regions=${nextValue}`;
-    } else {
-      headers["Set-Cookie"] = `regions=; Expires=${new Date(0).toUTCString()}`;
-    }
+    headers["Set-Cookie"] = setCookie(
+      "regions",
+      nextValue,
+      nextValue ? 365 * 24 * 60 * 60 * 1000 : 0
+    );
 
     return {
       url: refererAsUrl.toString(),
@@ -46,11 +47,11 @@ const addRegionsToReferrerOrBaseUrl = (
 
   const nextValue = searchParams.get("regions");
 
-  if (nextValue) {
-    headers["Set-Cookie"] = `regions=${nextValue}`;
-  } else {
-    headers["Set-Cookie"] = `regions=; Expires=${new Date(0).toUTCString()}`;
-  }
+  headers["Set-Cookie"] = setCookie(
+    "regions",
+    nextValue,
+    nextValue ? 365 * 24 * 60 * 60 * 1000 : 0
+  );
 
   return {
     headers,

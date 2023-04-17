@@ -1,6 +1,7 @@
 import { type ActionFunction } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
 
+import { setCookie } from "~/load.server";
 import { type Overlay, overlays, searchParamSeparator } from "~/utils";
 
 const addOverlaysToReferrerOrBaseUrl = (
@@ -24,11 +25,11 @@ const addOverlaysToReferrerOrBaseUrl = (
 
     const nextValue = refererAsUrl.searchParams.get("overlays");
 
-    if (nextValue) {
-      headers["Set-Cookie"] = `overlays=${nextValue}`;
-    } else {
-      headers["Set-Cookie"] = `overlays=; Expires=${new Date(0).toUTCString()}`;
-    }
+    headers["Set-Cookie"] = setCookie(
+      "overlays",
+      nextValue,
+      nextValue ? 365 * 24 * 60 * 60 * 1000 : 0
+    );
 
     return {
       url: refererAsUrl.toString(),
@@ -47,11 +48,11 @@ const addOverlaysToReferrerOrBaseUrl = (
 
   const nextValue = searchParams.get("overlays");
 
-  if (nextValue) {
-    headers["Set-Cookie"] = `overlays=${nextValue}`;
-  } else {
-    headers["Set-Cookie"] = `overlays=; Expires=${new Date(0).toUTCString()}`;
-  }
+  headers["Set-Cookie"] = setCookie(
+    "overlays",
+    nextValue,
+    nextValue ? 365 * 24 * 60 * 60 * 1000 : 0
+  );
 
   return {
     url: paramsAsString ? `/?${paramsAsString}` : "/",
