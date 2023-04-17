@@ -17,6 +17,7 @@ import {
   useNavigate,
   useNavigation,
   useRouteLoaderData,
+  useSearchParams,
   useSubmit,
 } from "@remix-run/react";
 import { Analytics } from "@vercel/analytics/react";
@@ -151,6 +152,9 @@ function navLinkClassNameActivity({ isActive }: { isActive: boolean }) {
 function Nav() {
   const now = Date.now();
   const navigation = useNavigation();
+  const [params] = useSearchParams()
+
+  const paramsAsString = params ? `?${params.toString()}` : ''
 
   return (
     <>
@@ -178,7 +182,7 @@ function Nav() {
                 navigation.state === "idle" ? (
                   <NavLink
                     className={navLinkClassNameActivity}
-                    to={season.slug}
+                    to={`${season.slug}${paramsAsString}`}
                   >
                     {body}
                   </NavLink>
