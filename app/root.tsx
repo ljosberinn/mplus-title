@@ -541,7 +541,7 @@ function Footer() {
               className="underline"
               target="_blank"
             >
-              repo
+              github
             </a>
           </li>
           <li>
@@ -556,6 +556,26 @@ function Footer() {
           </li>
           <li>
             <a
+              href="https://www.patreon.com/warcraftlogs"
+              rel="noopener noreferrer"
+              className="underline"
+              target="_blank"
+            >
+              patreon (Warcraft Logs)
+            </a>
+          </li>
+          <li>
+            <a
+              href="https://www.patreon.com/RaiderIO"
+              rel="noopener noreferrer"
+              className="underline"
+              target="_blank"
+            >
+              patreon (RaiderIO)
+            </a>
+          </li>
+          <li>
+            <a
               href="https://raider.io/characters/eu/twisting-nether/Xepheris"
               rel="noopener noreferrer"
               className="underline"
@@ -563,6 +583,9 @@ function Footer() {
             >
               rio
             </a>
+          </li>
+          <li>
+            <span title="discord">Xepheris#6539</span>
           </li>
         </ul>
       </nav>
