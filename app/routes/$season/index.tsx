@@ -120,7 +120,6 @@ export const loader: LoaderFunction = async ({ params, request }) => {
     : determineOverlaysToDisplayFromCookies(request);
 
   if (cookieRegions || cookieOverlays) {
-    console.log(request.url);
     const params = new URLSearchParams();
 
     if (cookieOverlays) {
