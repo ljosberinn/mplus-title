@@ -118,10 +118,11 @@ export const loadDataForRegion = async (
 
   if (latestDataset) {
     const endDate = season.endDates[region];
+
     if (endDate && endDate < Date.now()) {
       expiry = 30 * 24 * 60 * 60;
     } else {
-      expiry = Math.round(60 - (Date.now() - latestDataset.ts) / 1000 / 60);
+      expiry = Math.round((Date.now() - latestDataset.ts) / 1000 / 60) * 60;
     }
   }
 
