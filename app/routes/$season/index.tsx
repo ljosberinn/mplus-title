@@ -5,30 +5,32 @@ import {
   type HeadersFunction,
   type LoaderFunction,
 } from "@remix-run/server-runtime";
-import {
+import Highcharts, {
   type Options,
   type PointLabelObject,
   type SeriesLineOptions,
   type XAxisPlotBandsOptions,
   type YAxisPlotLinesOptions,
 } from "highcharts";
-import Highcharts from "highcharts";
 import HighchartsReact from "highcharts-react-official";
 import { Fragment, useEffect, useRef } from "react";
 
 import { getAffixIconUrl, getAffixName } from "~/affixes";
-import { calculateXAxisPlotLines } from "~/load.server";
 import {
   calculateExtrapolation,
+  calculateXAxisPlotLines,
   calculateZoom,
   determineExtrapolationEnd,
   determineRegionsToDisplay,
+  loadDataForRegion,
 } from "~/load.server";
-import { loadDataForRegion } from "~/load.server";
 import { calculateFactionDiffForWeek } from "~/utils";
 
-import { type EnhancedSeason } from "../../seasons";
-import { findSeasonByName, hasSeasonEndedForAllRegions } from "../../seasons";
+import {
+  type EnhancedSeason,
+  findSeasonByName,
+  hasSeasonEndedForAllRegions,
+} from "../../seasons";
 
 const factionColors = {
   alliance: "#60a5fa",
@@ -98,7 +100,7 @@ export const loader: LoaderFunction = async ({ params, request }) => {
   }
 
   const extrapolationEnd = determineExtrapolationEnd(request.url);
-  const regions = determineRegionsToDisplay(request.headers.get("Cookie") ?? request.headers.get('cookie'));
+  const regions = await determineRegionsToDisplay(request);
 
   const enhancedSeason: EnhancedSeason = {
     ...season,
@@ -186,7 +188,6 @@ export const loader: LoaderFunction = async ({ params, request }) => {
   ]
     .filter(Boolean)
     .join("-");
-  headers[setCookie] = `regions=${regions.join(",")}`;
 
   return json(enhancedSeason, { headers });
 };

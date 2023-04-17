@@ -2,8 +2,7 @@ import { Regions } from "@prisma/client";
 import { type XAxisPlotLinesOptions } from "highcharts";
 
 import { prisma } from "./prisma.server";
-import { type Dataset, type EnhancedSeason } from "./seasons";
-import { type Season } from "./seasons";
+import { type Dataset, type EnhancedSeason, type Season } from "./seasons";
 import { calculateFactionDiffForWeek, orderedRegionsBySize } from "./utils";
 
 const oneWeekInMs = 7 * 24 * 60 * 60 * 1000;
@@ -94,28 +93,18 @@ export const loadDataForRegion = async (
     .sort((a, b) => a.ts - b.ts);
 };
 
-export const determineRegionsToDisplay = (
-  cookies: string | null
-): Regions[] => {
-  if (!cookies) {
+export const determineRegionsToDisplay = async (
+  request: Request
+): Promise<Regions[]> => {
+  const params = new URL(request.url).searchParams;
+  const possiblyRegions = params.get("regions");
+
+  if (!possiblyRegions) {
     return orderedRegionsBySize;
   }
 
-  const rows = cookies.split("; ");
-  const matchingRow = rows.find((row) => row.includes("regions="));
-
-  if (!matchingRow) {
-    return orderedRegionsBySize;
-  }
-
-  const [, maybeRegionsString = ""] = matchingRow.split("=");
-
-  if (!maybeRegionsString) {
-    return orderedRegionsBySize;
-  }
-
-  const maybeRegions = maybeRegionsString
-    .split(",")
+  const maybeRegions = possiblyRegions
+    .split("~")
     .filter((maybeRegion): maybeRegion is Regions => maybeRegion in Regions);
 
   if (maybeRegions.length === 0) {
@@ -123,6 +112,11 @@ export const determineRegionsToDisplay = (
   }
 
   return maybeRegions;
+};
+export const determineRegionsFromFormData = async (
+  formData: FormData
+): Promise<Regions[]> => {
+  return orderedRegionsBySize.filter((region) => formData.get(region) === "on");
 };
 
 export const determineExtrapolationEnd = (url: string): number | null => {
