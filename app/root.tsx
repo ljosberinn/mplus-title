@@ -1,3 +1,4 @@
+/* eslint-disable sonarjs/no-duplicate-string */
 import {
   type LinksFunction,
   type MetaFunction,
@@ -86,10 +87,6 @@ export const meta: MetaFunction = () => {
   };
 };
 
-const notAllowed = "cursor-not-allowed";
-const pointer = "cursor-pointer";
-const subRouteName = "routes/$season/index";
-
 export default function App(): JSX.Element {
   const { ENV } = useLoaderData<typeof loader>();
 
@@ -152,9 +149,9 @@ function navLinkClassNameActivity({ isActive }: { isActive: boolean }) {
 function Nav() {
   const now = Date.now();
   const navigation = useNavigation();
-  const [params] = useSearchParams()
+  const [params] = useSearchParams();
 
-  const paramsAsString = params ? `?${params.toString()}` : ''
+  const paramsAsString = params ? `?${params.toString()}` : "";
 
   return (
     <>
@@ -194,7 +191,7 @@ function Nav() {
                         "hover:bg-gray-500",
                         `${
                           navigation.state === "idle"
-                            ? notAllowed
+                            ? "cursor-not-allowed"
                             : "cursor-wait"
                         } grayscale`
                       )}
@@ -206,17 +203,19 @@ function Nav() {
             );
           })}
         </ul>
-        <RegionToggle />
-        <OverlaysToggle />
+        <RegionToggle navigationState={navigation.state} />
+        <OverlaysToggle navigationState={navigation.state} />
       </nav>
       <CustomExtrapolationForm navigationState={navigation.state} />
     </>
   );
 }
 
-function RegionToggle() {
+type RegionToggleProps = CustomExtrapolationFormProps;
+
+function RegionToggle({ navigationState }: RegionToggleProps) {
   const submit = useSubmit();
-  const routeData = useRouteLoaderData(subRouteName);
+  const routeData = useRouteLoaderData("routes/$season/index");
 
   const ref = useRef<(HTMLInputElement | null)[]>([]);
 
@@ -235,45 +234,61 @@ function RegionToggle() {
   };
 
   return (
-    <ul className="flex flex-col space-y-2 px-4 pt-4 md:flex-row md:space-x-2 md:space-y-0 md:px-0 md:pt-0">
-      {orderedRegionsBySize.map((region, index) => {
-        // @ts-expect-error type EnhancedSeason
-        const checked = routeData.regionsToDisplay.includes(region);
-        // @ts-expect-error type EnhancedSeason
-        const disabled = routeData.regionsToDisplay.length === 1 && checked;
+    <fieldset disabled={navigationState !== "idle"}>
+      <ul className="flex flex-col space-y-2 px-4 pt-4 md:flex-row md:space-x-2 md:space-y-0 md:px-0 md:pt-0">
+        {orderedRegionsBySize.map((region, index) => {
+          // @ts-expect-error type EnhancedSeason
+          const checked = routeData.regionsToDisplay.includes(region);
+          // @ts-expect-error type EnhancedSeason
+          const disabled = routeData.regionsToDisplay.length === 1 && checked;
 
-        return (
-          <li key={region} className={`${linkClassName}`}>
-            <label
-              className={disabled ? notAllowed : pointer}
-              htmlFor={`toggle-${region}`}
+          return (
+            <li
+              key={region}
+              className={`${
+                disabled
+                  ? linkClassName
+                      .replace("bg-gray-700", "bg-gray-800")
+                      .replace(
+                        "hover:bg-gray-500",
+                        "cursor-not-allowed grayscale"
+                      )
+                  : linkClassName
+              }`}
             >
-              {region.toUpperCase()}
-            </label>
+              <label
+                className={disabled ? "cursor-not-allowed" : "cursor-pointer"}
+                htmlFor={`toggle-${region}`}
+              >
+                {region.toUpperCase()}
+              </label>
 
-            <input
-              disabled={disabled}
-              type="checkbox"
-              className={disabled ? notAllowed : pointer}
-              id={`toggle-${region}`}
-              defaultChecked={checked}
-              aria-labelledby={`toggle-${region}`}
-              name={region}
-              ref={(node) => {
-                ref.current[index] = node;
-              }}
-              onChange={handleChange}
-            />
-          </li>
-        );
-      })}
-    </ul>
+              <input
+                disabled={disabled}
+                type="checkbox"
+                className={disabled ? "cursor-not-allowed" : "cursor-pointer"}
+                id={`toggle-${region}`}
+                defaultChecked={checked}
+                aria-labelledby={`toggle-${region}`}
+                name={region}
+                ref={(node) => {
+                  ref.current[index] = node;
+                }}
+                onChange={handleChange}
+              />
+            </li>
+          );
+        })}
+      </ul>
+    </fieldset>
   );
 }
 
-function OverlaysToggle() {
+type OverlaysToggleProps = CustomExtrapolationFormProps;
+
+function OverlaysToggle({ navigationState }: OverlaysToggleProps) {
   const submit = useSubmit();
-  const routeData = useRouteLoaderData(subRouteName);
+  const routeData = useRouteLoaderData("routes/$season/index");
 
   const ref = useRef<(HTMLInputElement | null)[]>([]);
 
@@ -292,40 +307,54 @@ function OverlaysToggle() {
   };
 
   return (
-    <ul className="flex flex-col space-y-2 px-4 pt-4 md:flex-row md:space-x-2 md:space-y-0 md:px-0 md:pt-0">
-      {overlays.map((overlay, index) => {
-        // @ts-expect-error type EnhancedSeason
-        const checked = routeData.overlaysToDisplay.includes(overlay);
-        const disabled =
+    <fieldset disabled={navigationState !== "idle"}>
+      <ul className="flex flex-col space-y-2 px-4 pt-4 md:flex-row md:space-x-2 md:space-y-0 md:px-0 md:pt-0">
+        {overlays.map((overlay, index) => {
           // @ts-expect-error type EnhancedSeason
-          checked && routeData.overlaysToDisplay.length === 1;
+          const checked = routeData.overlaysToDisplay.includes(overlay);
+          const disabled =
+            // @ts-expect-error type EnhancedSeason
+            checked && routeData.overlaysToDisplay.length === 1;
 
-        return (
-          <li key={overlay} className={`${linkClassName}`}>
-            <label
-              className={disabled ? notAllowed : pointer}
-              htmlFor={`toggle-${overlay}`}
+          return (
+            <li
+              key={overlay}
+              className={`${
+                disabled
+                  ? linkClassName
+                      .replace("bg-gray-700", "bg-gray-800")
+                      .replace(
+                        "hover:bg-gray-500",
+                        "cursor-not-allowed grayscale"
+                      )
+                  : linkClassName
+              }`}
             >
-              {extraOverlayNames[overlay]}
-            </label>
+              <label
+                className={disabled ? "cursor-not-allowed" : "cursor-pointer"}
+                htmlFor={`toggle-${overlay}`}
+              >
+                {extraOverlayNames[overlay]}
+              </label>
 
-            <input
-              disabled={disabled}
-              type="checkbox"
-              className={disabled ? notAllowed : pointer}
-              id={`toggle-${overlay}`}
-              defaultChecked={checked}
-              aria-labelledby={`toggle-${overlay}`}
-              name={overlay}
-              ref={(node) => {
-                ref.current[index] = node;
-              }}
-              onChange={handleChange}
-            />
-          </li>
-        );
-      })}
-    </ul>
+              <input
+                disabled={disabled}
+                type="checkbox"
+                className={disabled ? "cursor-not-allowed" : "cursor-pointer"}
+                id={`toggle-${overlay}`}
+                defaultChecked={checked}
+                aria-labelledby={`toggle-${overlay}`}
+                name={overlay}
+                ref={(node) => {
+                  ref.current[index] = node;
+                }}
+                onChange={handleChange}
+              />
+            </li>
+          );
+        })}
+      </ul>
+    </fieldset>
   );
 }
 
@@ -338,7 +367,7 @@ function CustomExtrapolationForm({
 }: CustomExtrapolationFormProps) {
   const location = useLocation();
   const navigate = useNavigate();
-  const routeData = useRouteLoaderData(subRouteName);
+  const routeData = useRouteLoaderData("routes/$season/index");
   const ref = useRef<HTMLInputElement | null>(null);
 
   const customExtrapolationEndDate = (() => {
@@ -416,7 +445,9 @@ function CustomExtrapolationForm({
           .replace(
             "hover:bg-gray-500",
             `${
-              navigationState === "loading" ? "cursor-wait" : notAllowed
+              navigationState === "loading"
+                ? "cursor-wait"
+                : "cursor-not-allowed"
             } grayscale`
           )
       : base;
