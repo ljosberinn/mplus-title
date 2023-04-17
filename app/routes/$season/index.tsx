@@ -5,26 +5,27 @@ import {
   type HeadersFunction,
   type LoaderFunction,
 } from "@remix-run/server-runtime";
-import {
+import Highcharts, {
   type Options,
   type PointLabelObject,
   type SeriesLineOptions,
   type XAxisPlotBandsOptions,
   type YAxisPlotLinesOptions,
 } from "highcharts";
-import Highcharts from "highcharts";
+
 import HighchartsReact from "highcharts-react-official";
 import { Fragment, useEffect, useRef } from "react";
 
 import { getAffixIconUrl, getAffixName } from "~/affixes";
-import { calculateXAxisPlotLines, determineOverlays } from "~/load.server";
 import {
   calculateExtrapolation,
   calculateZoom,
   determineExtrapolationEnd,
   determineRegionsToDisplay,
+  loadDataForRegion,
+  calculateXAxisPlotLines,
+  determineOverlays,
 } from "~/load.server";
-import { loadDataForRegion } from "~/load.server";
 import { calculateFactionDiffForWeek, Overlay, overlays } from "~/utils";
 
 import { type EnhancedSeason } from "../../seasons";
@@ -98,10 +99,8 @@ export const loader: LoaderFunction = async ({ params, request }) => {
   }
 
   const extrapolationEnd = determineExtrapolationEnd(request.url);
-  const regions = determineRegionsToDisplay(
-    request.headers.get("Cookie") ?? request.headers.get("cookie")
-  );
   const overlays = determineOverlays(request.url);
+  const regions = await determineRegionsToDisplay(request);
 
   const enhancedSeason: EnhancedSeason = {
     ...season,
@@ -191,7 +190,6 @@ export const loader: LoaderFunction = async ({ params, request }) => {
   ]
     .filter(Boolean)
     .join("-");
-  headers[setCookie] = `regions=${regions.join(",")}`;
 
   return json(enhancedSeason, { headers });
 };
@@ -204,11 +202,7 @@ export default function Season(): JSX.Element | null {
       {season.regionsToDisplay.map((region, index, arr) => {
         return (
           <Fragment key={region}>
-            <Card
-              season={season}
-              region={region}
-              overlays={season.overlaysToDisplay}
-            />
+            <Card season={season} region={region} />
             {index === arr.length - 1 ? null : <hr className="opacity-50" />}
           </Fragment>
         );
@@ -240,12 +234,11 @@ const findIndexOfCurrentWeek = (season: EnhancedSeason, region: Regions) => {
 type CardProps = {
   season: EnhancedSeason;
   region: Regions;
-  overlays: Overlay[];
 };
 
 const numberFormatParts = new Intl.NumberFormat().formatToParts(1234.5);
 
-function Card({ season, region, overlays }: CardProps): JSX.Element {
+function Card({ season, region }: CardProps): JSX.Element {
   const ref = useRef<HighchartsReact.RefObject | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
 
@@ -367,7 +360,7 @@ function Card({ season, region, overlays }: CardProps): JSX.Element {
         },
       },
       type: "datetime",
-      plotBands: createPlotBands(season, region, overlays),
+      plotBands: createPlotBands(season, region),
       plotLines: season.xAxisPlotLines[region],
     },
     yAxis: {
@@ -689,8 +682,7 @@ const createFactionCutoffPlotlines = (
 
 const createPlotBands = (
   season: EnhancedSeason,
-  region: Regions,
-  overlays: Overlay[]
+  region: Regions
 ): XAxisPlotBandsOptions[] => {
   const seasonStart = season.startDates[region];
 
@@ -723,7 +715,7 @@ const createPlotBands = (
         style: {
           display: "flex",
         },
-        text: overlays.includes("affixes") ? rotation
+        text: season.overlays.includes("affixes") ? rotation
           .slice(0, 3)
           .map((affix) => {
             return `<img width="18" height="18" style="transform: rotate(-90deg); opacity: 0.75;" src="${getAffixIconUrl(

@@ -208,11 +208,28 @@ function Nav() {
 }
 
 function RegionToggle() {
+  const submit = useSubmit();
   const routeData = useRouteLoaderData("routes/$season/index");
+
+  const ref = useRef<(HTMLInputElement | null)[]>([]);
+
+  const handleChange: FormEventHandler<HTMLInputElement> = (event) => {
+    // By default, "disabled" checkboxes won't have their values sent along when submitting a form. We're getting
+    // around that by using refs to get the values. :BearWicked:
+    const formData = ref.current
+      .filter(isNotNull)
+      .filter((ref) => ref.checked)
+      .reduce((acc, ref) => {
+        acc.set(ref.name, "on");
+        return acc;
+      }, new FormData());
+
+    submit(formData, { action: "/regions", method: "post", replace: true });
+  };
 
   return (
     <ul className="flex flex-col space-y-2 px-4 pt-4 md:flex-row md:space-x-2 md:space-y-0 md:px-0 md:pt-0">
-      {orderedRegionsBySize.map((region) => {
+      {orderedRegionsBySize.map((region, index) => {
         // @ts-expect-error type EnhancedSeason
         const checked = routeData.regionsToDisplay.includes(region);
         // @ts-expect-error type EnhancedSeason
@@ -234,35 +251,11 @@ function RegionToggle() {
               id={`toggle-${region}`}
               defaultChecked={checked}
               aria-labelledby={`toggle-${region}`}
-              onClick={() => {
-                const activeRegions =
-                  document.cookie
-                    .split("; ")
-                    .find((row) => row.startsWith("regions"))
-                    ?.split("=")[1]
-                    ?.split(",") ?? [];
-
-                const next = activeRegions?.includes(region)
-                  ? activeRegions.filter((r) => r !== region)
-                  : [...activeRegions, region];
-
-                new Promise((resolve) => {
-                  if ("cookieStore" in window) {
-                    // @ts-expect-error experimental, not all browsers support it
-                    window.cookieStore
-                      .set("regions", next.join(","))
-                      .then(resolve);
-                  } else {
-                    // eslint-disable-next-line unicorn/no-document-cookie
-                    document.cookie = `regions=${next.join(",")}`;
-                    resolve(undefined);
-                  }
-                })
-                  .then(() => {
-                    window.location.reload();
-                  })
-                  .catch(console.error);
+              name={region}
+              ref={(node) => {
+                ref.current[index] = node;
               }}
+              onChange={handleChange}
             />
           </li>
         );

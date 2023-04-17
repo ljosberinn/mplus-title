@@ -2,8 +2,7 @@ import { Regions } from "@prisma/client";
 import { type XAxisPlotLinesOptions } from "highcharts";
 
 import { prisma } from "./prisma.server";
-import { type Dataset, type EnhancedSeason } from "./seasons";
-import { type Season } from "./seasons";
+import { type Dataset, type EnhancedSeason, type Season } from "./seasons";
 import {
   calculateFactionDiffForWeek,
   overlays,
@@ -99,28 +98,18 @@ export const loadDataForRegion = async (
     .sort((a, b) => a.ts - b.ts);
 };
 
-export const determineRegionsToDisplay = (
-  cookies: string | null
-): Regions[] => {
-  if (!cookies) {
+export const determineRegionsToDisplay = async (
+  request: Request
+): Promise<Regions[]> => {
+  const params = new URL(request.url).searchParams;
+  const possiblyRegions = params.get("regions");
+
+  if (!possiblyRegions) {
     return orderedRegionsBySize;
   }
 
-  const rows = cookies.split("; ");
-  const matchingRow = rows.find((row) => row.includes("regions="));
-
-  if (!matchingRow) {
-    return orderedRegionsBySize;
-  }
-
-  const [, maybeRegionsString = ""] = matchingRow.split("=");
-
-  if (!maybeRegionsString) {
-    return orderedRegionsBySize;
-  }
-
-  const maybeRegions = maybeRegionsString
-    .split(",")
+  const maybeRegions = possiblyRegions
+    .split("~")
     .filter((maybeRegion): maybeRegion is Regions => maybeRegion in Regions);
 
   if (maybeRegions.length === 0) {

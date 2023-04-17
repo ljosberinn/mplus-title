@@ -73,6 +73,7 @@ export const calculateFactionDiffForWeek = (
 
 export const orderedRegionsBySize: Regions[] = ["eu", "us", "tw", "kr"];
 
+
 export const overlays = [
   "patches",
   "dungeonHotfixes",
