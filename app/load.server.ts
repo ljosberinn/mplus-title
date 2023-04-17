@@ -3,8 +3,7 @@ import { type XAxisPlotLinesOptions } from "highcharts";
 
 import { prisma } from "./prisma.server";
 import { type Dataset, type EnhancedSeason, type Season } from "./seasons";
-import  {
-  type Overlay} from "./utils";
+import { type Overlay, searchParamSeparator } from "./utils";
 import {
   calculateFactionDiffForWeek,
   orderedRegionsBySize,
@@ -99,29 +98,29 @@ export const loadDataForRegion = async (
     .sort((a, b) => a.ts - b.ts);
 };
 
-export const determineRegionsToDisplay = async (
+export const determineRegionsToDisplayFromSearchParams = (
   request: Request
-): Promise<Regions[]> => {
+): Regions[] | null => {
   const params = new URL(request.url).searchParams;
   const possiblyRegions = params.get("regions");
 
   if (!possiblyRegions) {
-    return orderedRegionsBySize;
+    return null;
   }
 
   const maybeRegions = possiblyRegions
-    .split("~")
+    .split(searchParamSeparator)
     .filter((maybeRegion): maybeRegion is Regions => maybeRegion in Regions);
 
   if (maybeRegions.length === 0) {
-    return orderedRegionsBySize;
+    return null;
   }
 
   return maybeRegions;
 };
 
-export const determineExtrapolationEnd = (url: string): number | null => {
-  const params = new URL(url).searchParams;
+export const determineExtrapolationEnd = (request: Request): number | null => {
+  const params = new URL(request.url).searchParams;
 
   const maybeDate = params.get("extrapolationEndDate");
 
@@ -357,21 +356,67 @@ export const calculateZoom = (
   return [backThen ? backThen.ts : 0, zoomEnd];
 };
 
-export const determineOverlays = (url: string): Overlay[] => {
-  const params = new URL(url).searchParams;
+export const determineOverlaysToDisplayFromSearchParams = (
+  request: Request
+): Overlay[] | null => {
+  const params = new URL(request.url).searchParams;
 
   const maybeOverlays = params.get("overlays");
 
   if (!maybeOverlays) {
-    return [...overlays];
+    return null;
   }
-  const fromSearchParams = maybeOverlays.split("~");
+
+  const fromSearchParams = maybeOverlays.split(searchParamSeparator);
 
   return overlays.filter((plotline) => fromSearchParams.includes(plotline));
 };
 
-export const determineOverlaysFromFormData = (formData: FormData): Overlay[] =>
-  overlays.filter((plotline) => formData.get(plotline) === "on");
+export const determineOverlaysToDisplayFromCookies = (
+  request: Request
+): Overlay[] | null => {
+  const cookie = request.headers.get("Cookie") ?? request.headers.get("cookie");
+
+  if (!cookie) {
+    return null;
+  }
+
+  const raw = cookie.split("; ").find((row) => row.includes("overlays"));
+
+  if (!raw) {
+    return null;
+  }
+
+  try {
+    const values = raw.split("=")[1]?.split(searchParamSeparator);
+    return overlays.filter((overlay) => values.includes(overlay));
+  } catch {
+    return null;
+  }
+};
+
+export const determineRegionsToDisplayFromCookies = (
+  request: Request
+): Regions[] | null => {
+  const cookie = request.headers.get("Cookie") ?? request.headers.get("cookie");
+
+  if (!cookie) {
+    return null;
+  }
+
+  const raw = cookie.split("; ").find((row) => row.includes("regions"));
+
+  if (!raw) {
+    return null;
+  }
+
+  try {
+    const values = raw.split("=")[1]?.split(searchParamSeparator);
+    return orderedRegionsBySize.filter((region) => values.includes(region));
+  } catch {
+    return null;
+  }
+};
 
 export const calculateXAxisPlotLines = (
   season: Season,

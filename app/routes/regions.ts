@@ -2,16 +2,13 @@ import { type Regions } from "@prisma/client";
 import { type ActionFunction } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
 
-import { orderedRegionsBySize } from "~/utils";
-
-const determineRegionsFromFormData = (formData: FormData): Regions[] => {
-  return orderedRegionsBySize.filter((region) => formData.get(region) === "on");
-};
+import { orderedRegionsBySize, searchParamSeparator } from "~/utils";
 
 const addRegionsToReferrerOrBaseUrl = (
   request: Request,
   regions: Regions[]
-) => {
+): { url: string; headers: HeadersInit } => {
+  const headers: HeadersInit = {};
   const referer = request.headers.get("Referer");
 
   if (referer) {
@@ -20,23 +17,57 @@ const addRegionsToReferrerOrBaseUrl = (
     if (regions.length === orderedRegionsBySize.length) {
       refererAsUrl.searchParams.delete("regions");
     } else {
-      refererAsUrl.searchParams.set("regions", regions.join("~"));
+      refererAsUrl.searchParams.set(
+        "regions",
+        regions.join(searchParamSeparator)
+      );
     }
 
-    return refererAsUrl.toString();
+    const nextValue = refererAsUrl.searchParams.get("regions");
+
+    if (nextValue) {
+      headers["Set-Cookie"] = `regions=${nextValue}`;
+    } else {
+      headers["Set-Cookie"] = `regions=; Expires=${new Date(0).toUTCString()}`;
+    }
+
+    return {
+      url: refererAsUrl.toString(),
+      headers,
+    };
   }
 
   const searchParams = new URLSearchParams(
     regions.length === orderedRegionsBySize.length
       ? undefined
-      : { regions: regions.join("~") }
+      : { regions: regions.join(searchParamSeparator) }
   );
-  return `/?${searchParams.toString()}`;
+  const paramsAsString = searchParams.toString();
+
+  const nextValue = searchParams.get("regions");
+
+  if (nextValue) {
+    headers["Set-Cookie"] = `regions=${nextValue}`;
+  } else {
+    headers["Set-Cookie"] = `regions=; Expires=${new Date(0).toUTCString()}`;
+  }
+
+  return {
+    headers,
+    url: paramsAsString ? `/?${paramsAsString}` : "/",
+  };
 };
 
 export const action: ActionFunction = async ({ request }) => {
   const bodyData = await request.formData();
-  const regions = determineRegionsFromFormData(bodyData);
+  const activeRegions = orderedRegionsBySize.filter(
+    (region) => bodyData.get(region) === "on"
+  );
 
-  return redirect(addRegionsToReferrerOrBaseUrl(request, regions));
+  const { url, headers } = addRegionsToReferrerOrBaseUrl(
+    request,
+    activeRegions
+  );
+
+  return redirect(url, { headers });
 };

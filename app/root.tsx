@@ -1,4 +1,3 @@
-/* eslint-disable sonarjs/no-duplicate-string */
 import {
   type LinksFunction,
   type MetaFunction,

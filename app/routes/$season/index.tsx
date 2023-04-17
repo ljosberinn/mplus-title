@@ -4,6 +4,7 @@ import { useLoaderData, useNavigation } from "@remix-run/react";
 import {
   type HeadersFunction,
   type LoaderFunction,
+  redirect,
 } from "@remix-run/server-runtime";
 import Highcharts, {
   type Options,
@@ -21,11 +22,18 @@ import {
   calculateXAxisPlotLines,
   calculateZoom,
   determineExtrapolationEnd,
-  determineOverlays,
-  determineRegionsToDisplay,
+  determineOverlaysToDisplayFromCookies,
+  determineOverlaysToDisplayFromSearchParams,
+  determineRegionsToDisplayFromCookies,
+  determineRegionsToDisplayFromSearchParams,
   loadDataForRegion,
 } from "~/load.server";
-import { calculateFactionDiffForWeek } from "~/utils";
+import {
+  calculateFactionDiffForWeek,
+  orderedRegionsBySize,
+  overlays as defaultOverlays,
+  searchParamSeparator,
+} from "~/utils";
 
 import { type EnhancedSeason } from "../../seasons";
 import { findSeasonByName, hasSeasonEndedForAllRegions } from "../../seasons";
@@ -97,9 +105,34 @@ export const loader: LoaderFunction = async ({ params, request }) => {
     ] = `public, max-age=${thirtyDays}, s-maxage=${thirtyDays}, immutable`;
   }
 
-  const extrapolationEnd = determineExtrapolationEnd(request.url);
-  const overlays = determineOverlays(request.url);
-  const regions = await determineRegionsToDisplay(request);
+  const extrapolationEnd = determineExtrapolationEnd(request);
+  const searchParamOverlays =
+    determineOverlaysToDisplayFromSearchParams(request);
+  const searchParamRegions = determineRegionsToDisplayFromSearchParams(request);
+
+  const cookieRegions = searchParamRegions
+    ? null
+    : determineRegionsToDisplayFromCookies(request);
+  const cookieOverlays = searchParamOverlays
+    ? null
+    : determineOverlaysToDisplayFromCookies(request);
+
+  if (cookieRegions || cookieOverlays) {
+    const params = new URLSearchParams();
+
+    if (cookieOverlays) {
+      params.append("overlays", cookieOverlays.join(searchParamSeparator));
+    }
+
+    if (cookieRegions) {
+      params.append("regions", cookieRegions.join(searchParamSeparator));
+    }
+
+    return redirect(`/?${params.toString()}`, 307);
+  }
+
+  const regions = searchParamRegions ?? orderedRegionsBySize;
+  const overlays = searchParamOverlays ?? defaultOverlays;
 
   const enhancedSeason: EnhancedSeason = {
     ...season,

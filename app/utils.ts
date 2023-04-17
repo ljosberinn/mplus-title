@@ -3,6 +3,8 @@ import { type Regions } from "@prisma/client";
 import { type Dataset } from "./seasons";
 import { type Season } from "./seasons";
 
+export const searchParamSeparator = "~";
+
 export const calculateFactionDiffForWeek = (
   data: Dataset[],
   crossFactionSupport: Season["crossFactionSupport"],
