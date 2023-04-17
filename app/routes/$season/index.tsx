@@ -12,25 +12,24 @@ import Highcharts, {
   type XAxisPlotBandsOptions,
   type YAxisPlotLinesOptions,
 } from "highcharts";
+
 import HighchartsReact from "highcharts-react-official";
 import { Fragment, useEffect, useRef } from "react";
 
 import { getAffixIconUrl, getAffixName } from "~/affixes";
 import {
   calculateExtrapolation,
-  calculateXAxisPlotLines,
   calculateZoom,
   determineExtrapolationEnd,
   determineRegionsToDisplay,
   loadDataForRegion,
+  calculateXAxisPlotLines,
+  determineOverlays,
 } from "~/load.server";
-import { calculateFactionDiffForWeek } from "~/utils";
+import { calculateFactionDiffForWeek, Overlay, overlays } from "~/utils";
 
-import {
-  type EnhancedSeason,
-  findSeasonByName,
-  hasSeasonEndedForAllRegions,
-} from "../../seasons";
+import { type EnhancedSeason } from "../../seasons";
+import { findSeasonByName, hasSeasonEndedForAllRegions } from "../../seasons";
 
 const factionColors = {
   alliance: "#60a5fa",
@@ -100,11 +99,13 @@ export const loader: LoaderFunction = async ({ params, request }) => {
   }
 
   const extrapolationEnd = determineExtrapolationEnd(request.url);
+  const overlays = determineOverlays(request.url);
   const regions = await determineRegionsToDisplay(request);
 
   const enhancedSeason: EnhancedSeason = {
     ...season,
     regionsToDisplay: regions,
+    overlaysToDisplay: [...overlays],
     data: {
       eu: [],
       us: [],
@@ -153,7 +154,8 @@ export const loader: LoaderFunction = async ({ params, request }) => {
         season,
         region,
         data,
-        extrapolation
+        extrapolation,
+        overlays
       );
 
       const seasonEnding = season.endDates[region];
@@ -713,14 +715,14 @@ const createPlotBands = (
         style: {
           display: "flex",
         },
-        text: rotation
+        text: season.overlays.includes("affixes") ? rotation
           .slice(0, 3)
           .map((affix) => {
             return `<img width="18" height="18" style="transform: rotate(-90deg); opacity: 0.75;" src="${getAffixIconUrl(
               affix
             )}" />`;
           })
-          .join(""),
+          .join("") : undefined,
         rotation: 90,
         align: "left",
         x: 5,
