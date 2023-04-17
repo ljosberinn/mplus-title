@@ -52,9 +52,11 @@ const setCookie = "Set-Cookie";
 export const headers: HeadersFunction = ({ loaderHeaders }) => {
   const loaderCache = loaderHeaders.get(cacheControl);
 
-  const headers: HeadersInit = {
-    [cacheControl]: loaderCache ?? "max-age=1800, s-maxage=3600",
-  };
+  const headers: HeadersInit = {};
+
+  if (loaderCache) {
+    headers[cacheControl] = loaderCache;
+  }
 
   const lastModifiedDate = loaderHeaders.get(lastModified);
 
@@ -118,6 +120,7 @@ export const loader: LoaderFunction = async ({ params, request }) => {
     : determineOverlaysToDisplayFromCookies(request);
 
   if (cookieRegions || cookieOverlays) {
+    console.log(request.url);
     const params = new URLSearchParams();
 
     if (cookieOverlays) {
