@@ -1,8 +1,9 @@
 import { type Factions, type Regions } from "@prisma/client";
 import  { type XAxisPlotLinesOptions } from "highcharts";
 
+import  { type Overlay } from "~/utils";
+
 import { Affix, getAffixIconUrl } from "./affixes";
-import { Overlay } from "~/utils";
 
 type CutoffSource = { score: number; source: string | null };
 

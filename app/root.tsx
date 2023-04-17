@@ -20,16 +20,17 @@ import {
   useSubmit,
 } from "@remix-run/react";
 import { Analytics } from "@vercel/analytics/react";
-import { createRef, FormEventHandler, useEffect, useMemo, useRef } from "react";
+import { type FormEventHandler } from "react";
+import { useEffect, useRef } from "react";
 
 import stylesheet from "~/tailwind.css";
 
 import { seasons } from "./seasons";
 import {
   extraOverlayNames,
-  overlays,
   isNotNull,
   orderedRegionsBySize,
+  overlays,
 } from "./utils";
 
 export const links: LinksFunction = () => {
@@ -85,6 +86,8 @@ export const meta: MetaFunction = () => {
 };
 
 const notAllowed = "cursor-not-allowed";
+const pointer = "cursor-pointer";
+const subRouteName = "routes/$season/index";
 
 export default function App(): JSX.Element {
   const { ENV } = useLoaderData<typeof loader>();
@@ -151,7 +154,7 @@ function Nav() {
 
   return (
     <>
-      <nav className="flex w-full flex-col flex-wrap justify-between md:flex-row md:px-4 gap-3">
+      <nav className="flex w-full flex-col flex-wrap justify-between gap-3 md:flex-row md:px-4">
         <ul className="flex flex-col space-y-2 px-4 pt-4 md:flex-row md:space-x-2 md:space-y-0 md:px-0 md:pt-0">
           {seasons.map((season) => {
             const body = (
@@ -209,11 +212,11 @@ function Nav() {
 
 function RegionToggle() {
   const submit = useSubmit();
-  const routeData = useRouteLoaderData("routes/$season/index");
+  const routeData = useRouteLoaderData(subRouteName);
 
   const ref = useRef<(HTMLInputElement | null)[]>([]);
 
-  const handleChange: FormEventHandler<HTMLInputElement> = (event) => {
+  const handleChange: FormEventHandler<HTMLInputElement> = () => {
     // By default, "disabled" checkboxes won't have their values sent along when submitting a form. We're getting
     // around that by using refs to get the values. :BearWicked:
     const formData = ref.current
@@ -238,7 +241,7 @@ function RegionToggle() {
         return (
           <li key={region} className={`${linkClassName}`}>
             <label
-              className={disabled ? notAllowed : "cursor-pointer"}
+              className={disabled ? notAllowed : pointer}
               htmlFor={`toggle-${region}`}
             >
               {region.toUpperCase()}
@@ -247,7 +250,7 @@ function RegionToggle() {
             <input
               disabled={disabled}
               type="checkbox"
-              className={disabled ? notAllowed : "cursor-pointer"}
+              className={disabled ? notAllowed : pointer}
               id={`toggle-${region}`}
               defaultChecked={checked}
               aria-labelledby={`toggle-${region}`}
@@ -266,40 +269,37 @@ function RegionToggle() {
 
 function OverlaysToggle() {
   const submit = useSubmit();
-  const routeData = useRouteLoaderData("routes/$season/index");
+  const routeData = useRouteLoaderData(subRouteName);
 
-  const refsToOverlays = useMemo(
-    () => overlays.map(() => createRef<HTMLInputElement>()),
-    []
-  );
+  const ref = useRef<(HTMLInputElement | null)[]>([]);
 
-  const handleChange: FormEventHandler<HTMLInputElement> = (event) => {
+  const handleChange: FormEventHandler<HTMLInputElement> = () => {
     // By default, "disabled" checkboxes won't have their values sent along when submitting a form. We're getting
     // around that by using refs to get the values. :BearWicked:
-    const formData = refsToOverlays
-      .map((ref) => ref.current)
+    const formData = ref.current
       .filter(isNotNull)
       .filter((ref) => ref.checked)
       .reduce((acc, ref) => {
         acc.set(ref.name, "on");
         return acc;
       }, new FormData());
+
     submit(formData, { action: "/overlays", method: "post", replace: true });
   };
 
   return (
     <ul className="flex flex-col space-y-2 px-4 pt-4 md:flex-row md:space-x-2 md:space-y-0 md:px-0 md:pt-0">
-      {overlays.map((overlay, idx) => {
+      {overlays.map((overlay, index) => {
         // @ts-expect-error type EnhancedSeason
         const checked = routeData.overlaysToDisplay.includes(overlay);
         const disabled =
           // @ts-expect-error type EnhancedSeason
-          routeData.overlaysToDisplay.length === 1 && checked;
+          checked && routeData.overlaysToDisplay.length === 1;
 
         return (
           <li key={overlay} className={`${linkClassName}`}>
             <label
-              className={disabled ? notAllowed : "cursor-pointer"}
+              className={disabled ? notAllowed : pointer}
               htmlFor={`toggle-${overlay}`}
             >
               {extraOverlayNames[overlay]}
@@ -308,12 +308,14 @@ function OverlaysToggle() {
             <input
               disabled={disabled}
               type="checkbox"
-              className={disabled ? notAllowed : "cursor-pointer"}
+              className={disabled ? notAllowed : pointer}
               id={`toggle-${overlay}`}
               defaultChecked={checked}
               aria-labelledby={`toggle-${overlay}`}
               name={overlay}
-              ref={refsToOverlays[idx]}
+              ref={(node) => {
+                ref.current[index] = node;
+              }}
               onChange={handleChange}
             />
           </li>
@@ -332,7 +334,7 @@ function CustomExtrapolationForm({
 }: CustomExtrapolationFormProps) {
   const location = useLocation();
   const navigate = useNavigate();
-  const routeData = useRouteLoaderData("routes/$season/index");
+  const routeData = useRouteLoaderData(subRouteName);
   const ref = useRef<HTMLInputElement | null>(null);
 
   const customExtrapolationEndDate = (() => {

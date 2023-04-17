@@ -12,21 +12,20 @@ import Highcharts, {
   type XAxisPlotBandsOptions,
   type YAxisPlotLinesOptions,
 } from "highcharts";
-
 import HighchartsReact from "highcharts-react-official";
 import { Fragment, useEffect, useRef } from "react";
 
 import { getAffixIconUrl, getAffixName } from "~/affixes";
 import {
   calculateExtrapolation,
+  calculateXAxisPlotLines,
   calculateZoom,
   determineExtrapolationEnd,
+  determineOverlays,
   determineRegionsToDisplay,
   loadDataForRegion,
-  calculateXAxisPlotLines,
-  determineOverlays,
 } from "~/load.server";
-import { calculateFactionDiffForWeek, Overlay, overlays } from "~/utils";
+import { calculateFactionDiffForWeek } from "~/utils";
 
 import { type EnhancedSeason } from "../../seasons";
 import { findSeasonByName, hasSeasonEndedForAllRegions } from "../../seasons";
@@ -697,6 +696,8 @@ const createPlotBands = (
   return Array.from({
     length: weeks,
   }).flatMap<XAxisPlotBandsOptions>((_, index) => {
+    const options: XAxisPlotBandsOptions[] = [];
+
     const from = seasonStart + index * oneWeekInMs;
     const to = from + oneWeekInMs;
     const color = index % 2 === 0 ? "#4b5563" : "#1f2937";
@@ -706,7 +707,7 @@ const createPlotBands = (
         index >= season.affixes.length ? index % season.affixes.length : index
       ] ?? [];
 
-    const affixDisplay: XAxisPlotBandsOptions = {
+    options.push({
       from,
       to,
       color,
@@ -715,20 +716,22 @@ const createPlotBands = (
         style: {
           display: "flex",
         },
-        text: season.overlays.includes("affixes") ? rotation
-          .slice(0, 3)
-          .map((affix) => {
-            return `<img width="18" height="18" style="transform: rotate(-90deg); opacity: 0.75;" src="${getAffixIconUrl(
-              affix
-            )}" />`;
-          })
-          .join("") : undefined,
+        text: season.overlaysToDisplay.includes("affixes")
+          ? rotation
+              .slice(0, 3)
+              .map((affix) => {
+                return `<img width="18" height="18" style="transform: rotate(-90deg); opacity: 0.75;" src="${getAffixIconUrl(
+                  affix
+                )}" />`;
+              })
+              .join("")
+          : undefined,
         rotation: 90,
         align: "left",
         x: 5,
         y: 5,
       },
-    };
+    });
 
     const { allianceDiff, hordeDiff, xFactionDiff } =
       calculateFactionDiffForWeek(
@@ -757,7 +760,7 @@ const createPlotBands = (
           }${xFactionDiff.toFixed(1)}</span>`,
     ].filter(Boolean);
 
-    const weeklyGainDisplay: XAxisPlotBandsOptions = {
+    options.push({
       from,
       to,
       color: "transparent",
@@ -767,9 +770,9 @@ const createPlotBands = (
         useHTML: true,
         y: text.length * -15,
       },
-    };
+    });
 
-    return [affixDisplay, weeklyGainDisplay].filter(
+    return options.filter(
       (options): options is XAxisPlotBandsOptions => options !== null
     );
   });

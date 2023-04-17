@@ -73,14 +73,15 @@ export const calculateFactionDiffForWeek = (
 
 export const orderedRegionsBySize: Regions[] = ["eu", "us", "tw", "kr"];
 
-
 export const overlays = [
   "patches",
   "dungeonHotfixes",
   "levelCompletion",
   "affixes",
 ] as const;
+
 export type Overlay = typeof overlays[number];
+
 export const extraOverlayNames: Record<Overlay, string> = {
   dungeonHotfixes: "Dungeon Hotfixes",
   levelCompletion: "Level Completion",

@@ -1,5 +1,7 @@
-import { ActionFunction, redirect } from "@remix-run/node";
-import type { Regions } from "@prisma/client";
+import  { type Regions } from "@prisma/client";
+import  { type ActionFunction} from "@remix-run/node";
+import { redirect } from "@remix-run/node";
+
 import { orderedRegionsBySize } from "~/utils";
 
 const determineRegionsFromFormData =  (

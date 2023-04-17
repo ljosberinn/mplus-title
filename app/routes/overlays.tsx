@@ -1,6 +1,8 @@
-import { ActionFunction, redirect } from "@remix-run/node";
+import  { type ActionFunction} from "@remix-run/node";
+import { redirect } from "@remix-run/node";
+
 import { determineOverlaysFromFormData } from "~/load.server";
-import { Overlay } from "~/utils";
+import  { type Overlay } from "~/utils";
 
 const addOverlaysToReferrerOrBaseUrl = (
   request: Request,
@@ -11,12 +13,12 @@ const addOverlaysToReferrerOrBaseUrl = (
     const refererAsUrl = new URL(referer);
     refererAsUrl.searchParams.set("overlays", plotlines.join("~"));
     return refererAsUrl.toString();
-  } else {
+  } 
     const searchParams = new URLSearchParams({
       overlays: plotlines.join(","),
     });
     return `/?${searchParams.toString()}`;
-  }
+  
 };
 
 export const action: ActionFunction = async ({ request }) => {

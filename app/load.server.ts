@@ -3,11 +3,12 @@ import { type XAxisPlotLinesOptions } from "highcharts";
 
 import { prisma } from "./prisma.server";
 import { type Dataset, type EnhancedSeason, type Season } from "./seasons";
+import  {
+  type Overlay} from "./utils";
 import {
   calculateFactionDiffForWeek,
-  overlays,
-  Overlay,
   orderedRegionsBySize,
+  overlays,
 } from "./utils";
 
 const oneWeekInMs = 7 * 24 * 60 * 60 * 1000;
@@ -369,7 +370,7 @@ export const determineOverlays = (url: string): Overlay[] => {
   return overlays.filter((plotline) => fromSearchParams.includes(plotline));
 };
 
-export const determineOverlaysFromFormData = (formData: FormData) =>
+export const determineOverlaysFromFormData = (formData: FormData): Overlay[] =>
   overlays.filter((plotline) => formData.get(plotline) === "on");
 
 export const calculateXAxisPlotLines = (
