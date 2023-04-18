@@ -1,7 +1,6 @@
 import { Regions } from "@prisma/client";
 import { Redis } from "@upstash/redis";
 import { type XAxisPlotLinesOptions } from "highcharts";
-import IoRedis from "ioredis";
 
 import { prisma } from "./prisma.server";
 import { type Dataset, type EnhancedSeason, type Season } from "./seasons";
@@ -71,38 +70,18 @@ const setupRedisProviders = () => {
     token: process.env.UPSTASH_REDIS_REST_TOKEN,
   });
 
-  const aiven = new IoRedis(process.env.AIVEN_REDIS_URL ?? "");
-
   const persist = (data: Dataset[], key: string, expiry: number) => {
     if (process.env.NODE_ENV === "development") {
       return;
     }
 
-    return Promise.all([
-      aiven.set(key, JSON.stringify(data)),
-      aiven.expire(key, expiry),
-      upstash.set(key, data, {
-        ex: expiry,
-      }),
-    ]);
+    return upstash.set(key, data, {
+      ex: expiry,
+    });
   };
 
   const load = async (key: string): Promise<Dataset[] | null> => {
     if (process.env.NODE_ENV === "development") {
-      return null;
-    }
-
-    if (Math.random() >= 0.5) {
-      const response = await aiven.get(key);
-
-      if (response === null) {
-        return null;
-      }
-
-      if (typeof response === "string") {
-        return JSON.parse(response);
-      }
-
       return null;
     }
 
