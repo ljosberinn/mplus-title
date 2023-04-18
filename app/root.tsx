@@ -245,12 +245,14 @@ function RegionToggle({ navigationState }: RegionToggleProps) {
             <li
               key={region}
               className={`${
-                disabled
+                disabled || navigationState !== "idle"
                   ? linkClassName
                       .replace("bg-gray-700", "bg-gray-800")
                       .replace(
                         "hover:bg-gray-500",
-                        "cursor-not-allowed grayscale"
+                        `${
+                          disabled ? "cursor-not-allowed" : "cursor-wait"
+                        } grayscale`
                       )
                   : linkClassName
               }`}
@@ -311,35 +313,25 @@ function OverlaysToggle({ navigationState }: OverlaysToggleProps) {
         {overlays.map((overlay, index) => {
           // @ts-expect-error type EnhancedSeason
           const checked = routeData.overlaysToDisplay.includes(overlay);
-          const disabled =
-            // @ts-expect-error type EnhancedSeason
-            checked && routeData.overlaysToDisplay.length === 1;
 
           return (
             <li
               key={overlay}
               className={`${
-                disabled
+                navigationState === "idle"
                   ? linkClassName
-                      .replace("bg-gray-700", "bg-gray-800")
-                      .replace(
-                        "hover:bg-gray-500",
-                        "cursor-not-allowed grayscale"
-                      )
                   : linkClassName
+                      .replace("bg-gray-700", "bg-gray-800")
+                      .replace("hover:bg-gray-500", "cursor-wait grayscale")
               }`}
             >
-              <label
-                className={disabled ? "cursor-not-allowed" : "cursor-pointer"}
-                htmlFor={`toggle-${overlay}`}
-              >
+              <label className="cursor-pointer" htmlFor={`toggle-${overlay}`}>
                 {extraOverlayNames[overlay]}
               </label>
 
               <input
-                disabled={disabled}
                 type="checkbox"
-                className={disabled ? "cursor-not-allowed" : "cursor-pointer"}
+                className="cursor-pointer"
                 id={`toggle-${overlay}`}
                 defaultChecked={checked}
                 aria-labelledby={`toggle-${overlay}`}

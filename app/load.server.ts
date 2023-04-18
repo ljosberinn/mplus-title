@@ -78,7 +78,10 @@ export const loadDataForRegion = async (
 
   const key = [season.slug, region].join(searchParamSeparator);
 
-  const cached = await redis.get<Dataset[] | null>(key);
+  const cached =
+    process.env.NODE_ENV === "development"
+      ? null
+      : await redis.get<Dataset[] | null>(key);
 
   if (cached) {
     return cached;
@@ -111,33 +114,42 @@ export const loadDataForRegion = async (
     })
     .sort((a, b) => a.ts - b.ts);
 
+  if (process.env.NODE_ENV !== "development") {
+    const expiry = determineExpirationTimestamp(season, region, datasets);
+
+    await redis.set(key, datasets, {
+      ex: expiry,
+    });
+  }
+
+  return datasets;
+};
+
+export const determineExpirationTimestamp = (
+  season: Season,
+  region: Regions,
+  datasets: Dataset[]
+): number => {
   const latestDataset =
     datasets.length > 0 ? datasets[datasets.length - 1] : null;
 
-  let expiry = 5 * 60;
+  const expiry = 5 * 60;
 
-  if (latestDataset) {
-    const endDate = season.endDates[region];
-
-    if (endDate && endDate < Date.now()) {
-      expiry = 30 * 24 * 60 * 60;
-    } else {
-      const threshold = 60 * 60 * 1000;
-      const timeSinceUpdate = Date.now() - latestDataset.ts;
-      const remaining =
-        Math.round((threshold - timeSinceUpdate) / 1000 / 60) * 60;
-
-      if (remaining > 0) {
-        expiry = remaining;
-      }
-    }
+  if (!latestDataset) {
+    return expiry;
   }
 
-  await redis.set(key, datasets, {
-    ex: expiry,
-  });
+  const endDate = season.endDates[region];
 
-  return datasets;
+  if (endDate && endDate < Date.now()) {
+    return 30 * 24 * 60 * 60;
+  }
+
+  const threshold = 60 * 60 * 1000;
+  const timeSinceUpdate = Date.now() - latestDataset.ts;
+  const remaining = Math.round((threshold - timeSinceUpdate) / 1000 / 60) * 60;
+
+  return remaining > 0 ? remaining : expiry;
 };
 
 export const determineRegionsToDisplayFromSearchParams = (
