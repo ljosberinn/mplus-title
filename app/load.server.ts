@@ -114,7 +114,7 @@ export const loadDataForRegion = async (
     })
     .sort((a, b) => a.ts - b.ts);
 
-  if (process.env.NODE_ENV === "development") {
+  if (process.env.NODE_ENV !== "development") {
     const expiry = determineExpirationTimestamp(season, region, datasets);
 
     await redis.set(key, datasets, {
