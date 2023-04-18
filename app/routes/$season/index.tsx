@@ -56,7 +56,9 @@ export const headers: HeadersFunction = ({ loaderHeaders }) => {
   const loaderCache = loaderHeaders.get(cacheControl);
   const expiresDate = loaderHeaders.get(expires);
 
-  const headers: HeadersInit = {};
+  const headers: HeadersInit = {
+    [cacheControl]: 'public'
+  };
 
   if (loaderCache) {
     headers[cacheControl] = loaderCache;
