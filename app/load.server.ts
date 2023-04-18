@@ -1,6 +1,7 @@
 import { Regions } from "@prisma/client";
 import { Redis } from "@upstash/redis";
 import { type XAxisPlotLinesOptions } from "highcharts";
+import IoRedis from "ioredis";
 
 import { prisma } from "./prisma.server";
 import { type Dataset, type EnhancedSeason, type Season } from "./seasons";
@@ -64,24 +65,67 @@ const getHistory = (region: Regions, gte: number | null, lte?: number) => {
   });
 };
 
+const setupRedisProviders = () => {
+  const upstash = new Redis({
+    url: process.env.UPSTASH_REDIS_REST_URL,
+    token: process.env.UPSTASH_REDIS_REST_TOKEN,
+  });
+
+  const aiven = new IoRedis(process.env.AIVEN_REDIS_URL ?? "");
+
+  const persist = (data: Dataset[], key: string, expiry: number) => {
+    if (process.env.NODE_ENV === "development") {
+      return;
+    }
+
+    return Promise.all([
+      aiven.set(key, JSON.stringify(data)),
+      aiven.expire(key, expiry),
+      upstash.set(key, data, {
+        ex: expiry,
+      }),
+    ]);
+  };
+
+  const load = async (key: string): Promise<Dataset[] | null> => {
+    if (process.env.NODE_ENV === "development") {
+      return null;
+    }
+
+    if (Math.random() >= 0.5) {
+      const response = await aiven.get(key);
+
+      if (response === null) {
+        return null;
+      }
+
+      if (typeof response === "string") {
+        return JSON.parse(response);
+      }
+
+      return null;
+    }
+
+    return upstash.get(key);
+  };
+
+  return {
+    persist,
+    load,
+  };
+};
+
 export const loadDataForRegion = async (
   region: Regions,
   season: Season
 ): Promise<Dataset[]> => {
   const gte = season.startDates[region];
   const lte = season.endDates[region] ?? undefined;
-
-  const redis = new Redis({
-    url: process.env.UPSTASH_REDIS_REST_URL,
-    token: process.env.UPSTASH_REDIS_REST_TOKEN,
-  });
-
   const key = [season.slug, region].join(searchParamSeparator);
 
-  const cached =
-    process.env.NODE_ENV === "development"
-      ? null
-      : await redis.get<Dataset[] | null>(key);
+  const { persist, load } = setupRedisProviders();
+
+  const cached = await load(key);
 
   if (cached) {
     return cached;
@@ -114,13 +158,11 @@ export const loadDataForRegion = async (
     })
     .sort((a, b) => a.ts - b.ts);
 
-  if (process.env.NODE_ENV !== "development") {
-    const expiry = determineExpirationTimestamp(season, region, datasets);
-
-    await redis.set(key, datasets, {
-      ex: expiry,
-    });
-  }
+  await persist(
+    datasets,
+    key,
+    determineExpirationTimestamp(season, region, datasets)
+  );
 
   return datasets;
 };
