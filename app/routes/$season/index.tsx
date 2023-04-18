@@ -54,15 +54,12 @@ const expires = "Expires";
 
 export const headers: HeadersFunction = ({ loaderHeaders }) => {
   const loaderCache = loaderHeaders.get(cacheControl);
-  const expiresDate = loaderHeaders.get(expires);
 
   const headers: HeadersInit = {
-    [cacheControl]: 'public'
+    [cacheControl]: loaderCache ?? 'public'
   };
 
-  if (loaderCache) {
-    headers[cacheControl] = loaderCache;
-  }
+  const expiresDate = loaderHeaders.get(expires);
 
   if (expiresDate) { // gets overwritten by cacheControl if present anyways
     headers.Expires = expiresDate;
