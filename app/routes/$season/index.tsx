@@ -21,6 +21,7 @@ import {
   calculateExtrapolation,
   calculateXAxisPlotLines,
   calculateZoom,
+  determineExpirationTimestamp,
   determineExtrapolationEnd,
   determineOverlaysToDisplayFromCookies,
   determineOverlaysToDisplayFromSearchParams,
@@ -30,6 +31,7 @@ import {
 } from "~/load.server";
 import {
   calculateFactionDiffForWeek,
+  isNotNull,
   orderedRegionsBySize,
   overlays as defaultOverlays,
   searchParamSeparator,
@@ -48,14 +50,18 @@ const lastModified = "Last-Modified";
 const cacheControl = "Cache-Control";
 const eTag = "ETag";
 const setCookie = "Set-Cookie";
+const expires = "Expires";
 
 export const headers: HeadersFunction = ({ loaderHeaders }) => {
   const loaderCache = loaderHeaders.get(cacheControl);
+  const expiresDate = loaderHeaders.get(expires);
 
-  const headers: HeadersInit = {};
+  const headers: HeadersInit = {
+    [cacheControl]: loaderCache ?? "public, max-age=1800, s-maxage=3600",
+  };
 
-  if (loaderCache) {
-    headers[cacheControl] = loaderCache;
+  if (expiresDate) {
+    headers.Expires = expiresDate;
   }
 
   const lastModifiedDate = loaderHeaders.get(lastModified);
@@ -215,14 +221,26 @@ export const loader: LoaderFunction = async ({ params, request }) => {
     .reduce((acc, dataset) => (acc > dataset.ts ? acc : dataset.ts), 0);
 
   headers[lastModified] = new Date(mostRecentDataset).toUTCString();
+
+  const shortestExpiry = regions
+    .map((region) =>
+      determineExpirationTimestamp(season, region, enhancedSeason.data[region])
+    )
+    .reduce(
+      (acc, expiry) => (acc > expiry ? expiry : acc),
+      Number.POSITIVE_INFINITY
+    );
+
+  headers[expires] = new Date(shortestExpiry * 1000 + Date.now()).toUTCString();
   headers[eTag] = [
     season.slug,
     mostRecentDataset,
     extrapolationEnd,
-    // eslint-disable-next-line @typescript-eslint/require-array-sort-compare
-    ...[...regions].sort(), // in order to always have the same order for caching
+    ...regions,
+    ...overlays,
   ]
-    .filter(Boolean)
+    .filter(isNotNull)
+    .sort((a, b) => (a > b ? 1 : -1))
     .join("-");
 
   return json(enhancedSeason, { headers });
