@@ -430,7 +430,10 @@ export const determineOverlaysToDisplayFromCookies = (
 
   try {
     const values = raw.split("=")[1]?.split(searchParamSeparator);
-    return overlays.filter((overlay) => values.includes(overlay));
+    const filteredOverlays = overlays.filter((overlay) =>
+      values.includes(overlay)
+    );
+    return filteredOverlays.length > 0 ? filteredOverlays : null;
   } catch {
     return null;
   }
@@ -453,7 +456,10 @@ export const determineRegionsToDisplayFromCookies = (
 
   try {
     const values = raw.split("=")[1]?.split(searchParamSeparator);
-    return orderedRegionsBySize.filter((region) => values.includes(region));
+    const filteredRegions = orderedRegionsBySize.filter((region) =>
+      values.includes(region)
+    );
+    return filteredRegions.length > 0 ? filteredRegions : null;
   } catch {
     return null;
   }
