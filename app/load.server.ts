@@ -400,27 +400,25 @@ export const calculateZoom = (
       : extrapolation?.to.ts) ?? data[data.length - 1].ts;
 
   if (daysUntilSeasonEnding) {
-    if (daysUntilSeasonEnding < 1) {
-      const offset = (1 + 1 / 7) * oneWeekInMs;
+    const offset =
+      daysUntilSeasonEnding < 1
+        ? 1.5
+        : daysUntilSeasonEnding < 7
+        ? 2.5
+        : daysUntilSeasonEnding < 14
+        ? 3.5
+        : null;
+
+    if (offset) {
       const backThen = [...data]
         .reverse()
-        .find((dataset) => dataset.ts < zoomEnd - offset);
-
-      return [backThen ? backThen.ts : 0, zoomEnd];
-    }
-
-    if (daysUntilSeasonEnding < 7) {
-      const offset = (extrapolation ? 3 : 2) * oneWeekInMs;
-
-      const backThen = [...data]
-        .reverse()
-        .find((dataset) => dataset.ts < zoomEnd - offset);
+        .find((dataset) => dataset.ts < zoomEnd - offset * oneWeekInMs);
 
       return [backThen ? backThen.ts : 0, zoomEnd];
     }
   }
 
-  // offset by +2 weeks since extrapolation is at least tw into the future
+  // offset by +2 weeks since extrapolation is at least two into the future
   const offset = (extrapolation ? 6 : 4) * oneWeekInMs;
 
   const backThen = [...data]
