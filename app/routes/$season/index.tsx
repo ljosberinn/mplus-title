@@ -13,6 +13,8 @@ import HighchartsReact from "highcharts-react-official";
 import { Fragment, useEffect, useRef } from "react";
 
 import { getAffixIconUrl, getAffixName } from "~/affixes";
+import { Footer } from "~/components/Footer";
+import { Header } from "~/components/Header";
 import {
   determineOverlaysToDisplayFromCookies,
   determineOverlaysToDisplayFromSearchParams,
@@ -134,16 +136,24 @@ export default function Season(): JSX.Element | null {
   const season = useLoaderData<typeof loader>();
 
   return (
-    <div className="space-y-4 p-4">
-      {season.regionsToDisplay.map((region, index, arr) => {
-        return (
-          <Fragment key={region}>
-            <Card season={season} region={region} />
-            {index === arr.length - 1 ? null : <hr className="opacity-50" />}
-          </Fragment>
-        );
-      })}
-    </div>
+    <>
+      <Header />
+      <main className="container mx-auto flex flex-1 flex-col">
+        <div className="space-y-4 p-4">
+          {season.regionsToDisplay.map((region, index, arr) => {
+            return (
+              <Fragment key={region}>
+                <Card season={season} region={region} />
+                {index === arr.length - 1 ? null : (
+                  <hr className="opacity-50" />
+                )}
+              </Fragment>
+            );
+          })}
+        </div>
+      </main>
+      <Footer />
+    </>
   );
 }
 
