@@ -33,7 +33,7 @@ export type Season = {
 };
 
 export type EnhancedSeason = Season & {
-  data: Record<Regions, Dataset[]>;
+  dataByRegion: Record<Regions, Dataset[]>;
   extrapolation: Record<
     Regions,
     | null

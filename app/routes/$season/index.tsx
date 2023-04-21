@@ -1,11 +1,8 @@
 import { type Regions } from "@prisma/client";
+import { type LoaderArgs, type TypedResponse } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { useLoaderData, useNavigation } from "@remix-run/react";
-import {
-  type HeadersFunction,
-  type LoaderFunction,
-  redirect,
-} from "@remix-run/server-runtime";
+import { type HeadersFunction, redirect } from "@remix-run/server-runtime";
 import Highcharts, {
   type Options,
   type PointLabelObject,
@@ -30,15 +27,17 @@ import {
   loadDataForRegion,
 } from "~/load.server";
 import {
+  type EnhancedSeason,
+  findSeasonByName,
+  hasSeasonEndedForAllRegions,
+} from "~/seasons";
+import {
   calculateFactionDiffForWeek,
   isNotNull,
   orderedRegionsBySize,
   overlays as defaultOverlays,
   searchParamSeparator,
 } from "~/utils";
-
-import { type EnhancedSeason } from "../../seasons";
-import { findSeasonByName, hasSeasonEndedForAllRegions } from "../../seasons";
 
 const factionColors = {
   alliance: "#60a5fa",
@@ -56,12 +55,13 @@ export const headers: HeadersFunction = ({ loaderHeaders }) => {
   const loaderCache = loaderHeaders.get(cacheControl);
 
   const headers: HeadersInit = {
-    [cacheControl]: loaderCache ?? 'public'
+    [cacheControl]: loaderCache ?? "public",
   };
 
   const expiresDate = loaderHeaders.get(expires);
 
-  if (expiresDate) { // gets overwritten by cacheControl if present anyways
+  if (expiresDate) {
+    // gets overwritten by cacheControl if present anyways
     headers.Expires = expiresDate;
   }
 
@@ -88,7 +88,10 @@ export const headers: HeadersFunction = ({ loaderHeaders }) => {
 
 const oneWeekInMs = 7 * 24 * 60 * 60 * 1000;
 
-export const loader: LoaderFunction = async ({ params, request }) => {
+export const loader = async ({
+  params,
+  request,
+}: LoaderArgs): Promise<TypedResponse<EnhancedSeason>> => {
   if (!("season" in params) || !params.season) {
     throw new Response(undefined, {
       status: 400,
@@ -147,7 +150,7 @@ export const loader: LoaderFunction = async ({ params, request }) => {
     ...season,
     regionsToDisplay: regions,
     overlaysToDisplay: [...overlays],
-    data: {
+    dataByRegion: {
       eu: [],
       us: [],
       kr: [],
@@ -178,7 +181,7 @@ export const loader: LoaderFunction = async ({ params, request }) => {
   await Promise.all(
     Object.values(regions).map(async (region) => {
       const data = await loadDataForRegion(region, season);
-      enhancedSeason.data[region] = data;
+      enhancedSeason.dataByRegion[region] = data;
 
       if (data.length === 0) {
         return;
@@ -217,7 +220,7 @@ export const loader: LoaderFunction = async ({ params, request }) => {
     })
   );
 
-  const mostRecentDataset = Object.values(enhancedSeason.data)
+  const mostRecentDataset = Object.values(enhancedSeason.dataByRegion)
     .flat()
     .reduce((acc, dataset) => (acc > dataset.ts ? acc : dataset.ts), 0);
 
@@ -225,7 +228,11 @@ export const loader: LoaderFunction = async ({ params, request }) => {
 
   const shortestExpiry = regions
     .map((region) =>
-      determineExpirationTimestamp(season, region, enhancedSeason.data[region])
+      determineExpirationTimestamp(
+        season,
+        region,
+        enhancedSeason.dataByRegion[region]
+      )
     )
     .reduce(
       (acc, expiry) => (acc > expiry ? expiry : acc),
@@ -248,7 +255,7 @@ export const loader: LoaderFunction = async ({ params, request }) => {
 };
 
 export default function Season(): JSX.Element | null {
-  const season = useLoaderData() as unknown as EnhancedSeason;
+  const season = useLoaderData<typeof loader>();
 
   return (
     <div className="space-y-4 p-4">
@@ -265,7 +272,7 @@ export default function Season(): JSX.Element | null {
 }
 
 const findIndexOfCurrentWeek = (season: EnhancedSeason, region: Regions) => {
-  if (!season.startDates[region] || season.data[region].length === 0) {
+  if (!season.startDates[region] || season.dataByRegion[region].length === 0) {
     return null;
   }
 
@@ -276,7 +283,8 @@ const findIndexOfCurrentWeek = (season: EnhancedSeason, region: Regions) => {
     return null;
   }
 
-  const latestDataset = season.data[region][season.data[region].length - 1];
+  const latestDataset =
+    season.dataByRegion[region][season.dataByRegion[region].length - 1];
 
   return (
     Math.floor((latestDataset.ts - startDate) / 1000 / 60 / 60 / 24 / 7) -
@@ -323,7 +331,7 @@ function Card({ season, region }: CardProps): JSX.Element {
     ref.current.chart.showResetZoom();
   }, [zoom]);
 
-  if (season.data[region].length === 0) {
+  if (season.dataByRegion[region].length === 0) {
     const startDate = season.startDates[region];
     const seasonHasNotStartedForRegion = !startDate || startDate > Date.now();
     const hoursUntilSeasonStart =
@@ -604,7 +612,7 @@ const createSeries = (
           type: "line",
           name: "Score Horde",
           color: factionColors.horde,
-          data: season.data[region]
+          data: season.dataByRegion[region]
             .filter((dataset) => dataset.faction === "horde")
             .map((dataset) => {
               return [dataset.ts, dataset.score];
@@ -621,7 +629,7 @@ const createSeries = (
           type: "line",
           name: "Score Alliance",
           color: factionColors.alliance,
-          data: season.data[region]
+          data: season.dataByRegion[region]
             .filter((dataset) => dataset.faction === "alliance")
             .map((dataset) => {
               return [dataset.ts, dataset.score];
@@ -638,7 +646,7 @@ const createSeries = (
           type: "line",
           name: "Score X-Faction",
           color: factionColors.xFaction,
-          data: season.data[region]
+          data: season.dataByRegion[region]
             .filter((dataset) => !("faction" in dataset))
             .map((dataset) => {
               return [dataset.ts, dataset.score];
@@ -776,7 +784,7 @@ const createPlotBands = (
               .map((affix) => {
                 return `<img width="18" height="18" style="transform: rotate(-90deg); opacity: 0.75;" src="${getAffixIconUrl(
                   affix
-                )}" />`;
+                )}" alt="${affix}" />`;
               })
               .join("")
           : undefined,
@@ -789,7 +797,7 @@ const createPlotBands = (
 
     const { allianceDiff, hordeDiff, xFactionDiff } =
       calculateFactionDiffForWeek(
-        season.data[region],
+        season.dataByRegion[region],
         season.crossFactionSupport,
         index === 0,
         from,

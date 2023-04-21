@@ -1,4 +1,6 @@
+import { type TypedResponse } from "@remix-run/node";
 import {
+  json,
   type LinksFunction,
   type MetaFunction,
   type SerializeFrom,
@@ -38,12 +40,12 @@ export const links: LinksFunction = () => {
   return [{ rel: "stylesheet", href: stylesheet }];
 };
 
-export const loader = (): Record<string, unknown> => {
-  return {
+export const loader = (): TypedResponse<{ ENV: Record<string, unknown> }> => {
+  return json({
     ENV: {
       VERCEL_ANALYTICS_ID: process.env.VERCEL_ANALYTICS_ID,
     },
-  };
+  });
 };
 
 declare global {
