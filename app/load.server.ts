@@ -2,6 +2,8 @@ import { Regions } from "@prisma/client";
 import { Redis } from "@upstash/redis";
 import { type XAxisPlotLinesOptions } from "highcharts";
 
+import { env } from "~/env/server";
+
 import { prisma } from "./prisma.server";
 import { type Dataset, type EnhancedSeason, type Season } from "./seasons";
 import { type Overlay, searchParamSeparator } from "./utils";
@@ -66,12 +68,12 @@ const getHistory = (region: Regions, gte: number | null, lte?: number) => {
 
 const setupRedisProviders = () => {
   const upstash = new Redis({
-    url: process.env.UPSTASH_REDIS_REST_URL,
-    token: process.env.UPSTASH_REDIS_REST_TOKEN,
+    url: env.UPSTASH_REDIS_REST_URL,
+    token: env.UPSTASH_REDIS_REST_TOKEN,
   });
 
   const persist = (data: Dataset[], key: string, expiry: number) => {
-    if (process.env.NODE_ENV === "development") {
+    if (env.NODE_ENV === "development") {
       return;
     }
 
@@ -81,7 +83,7 @@ const setupRedisProviders = () => {
   };
 
   const load = async (key: string): Promise<Dataset[] | null> => {
-    if (process.env.NODE_ENV === "development") {
+    if (env.NODE_ENV === "development") {
       return null;
     }
 

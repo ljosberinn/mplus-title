@@ -1,6 +1,7 @@
 import { type LoaderArgs, type TypedResponse } from "@remix-run/node";
 import { json } from "@remix-run/node";
 
+import { env } from "~/env/server";
 import {
   determineOverlaysToDisplayFromSearchParams,
   determineRegionsToDisplayFromSearchParams,
@@ -13,7 +14,7 @@ export const loader = async ({
   params,
   request,
 }: LoaderArgs): Promise<TypedResponse<EnhancedSeason>> => {
-  if (process.env.FEATURE_FLAG_API_ENABLED !== "true") {
+  if (!env.FEATURE_FLAG_API_ENABLED) {
     throw new Response(undefined, {
       status: 501,
       statusText: "API is not enabled.",
@@ -39,12 +40,12 @@ export const loader = async ({
   const regions = determineRegionsToDisplayFromSearchParams(request);
   const overlays = determineOverlaysToDisplayFromSearchParams(request);
 
-  const { season: enhancedSeason } = await getEnhancedSeason({
+  const { season: enhancedSeason, headers } = await getEnhancedSeason({
     request,
     regions,
     overlays,
     season,
   });
 
-  return json(enhancedSeason);
+  return json(enhancedSeason, { headers });
 };

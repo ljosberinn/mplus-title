@@ -26,6 +26,7 @@ import { Analytics } from "@vercel/analytics/react";
 import { type FormEventHandler } from "react";
 import { useEffect, useRef } from "react";
 
+import { env } from "~/env/client";
 import stylesheet from "~/tailwind.css";
 
 import { seasons } from "./seasons";
@@ -43,7 +44,7 @@ export const links: LinksFunction = () => {
 export const loader = (): TypedResponse<{ ENV: Record<string, unknown> }> => {
   return json({
     ENV: {
-      VERCEL_ANALYTICS_ID: process.env.VERCEL_ANALYTICS_ID,
+      VERCEL_ANALYTICS_ID: env.VERCEL_ANALYTICS_ID,
     },
   });
 };

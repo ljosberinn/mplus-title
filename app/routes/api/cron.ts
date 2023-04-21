@@ -5,6 +5,7 @@ import { type ActionFunction, type LoaderFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { load } from "cheerio";
 
+import { env } from "~/env/server";
 import { prisma } from "~/prisma.server";
 import { type Season } from "~/seasons";
 import { findSeasonByTimestamp } from "~/seasons";
@@ -34,11 +35,11 @@ export const action: ActionFunction = async ({ request }) => {
   }
 
   try {
-    if (process.env.NODE_ENV === "production") {
+    if (env.NODE_ENV === "production") {
       const body = await request.text();
       const payload = JSON.parse(body);
 
-      const secret = process.env.SECRET;
+      const secret = env.SECRET;
 
       if (!secret) {
         return json({ error: "secret missing" }, 500);
