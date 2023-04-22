@@ -371,7 +371,7 @@ export function Nav(): JSX.Element {
                 navigation.state === "idle" ? (
                   <NavLink
                     className={navLinkClassNameActivity}
-                    to={`${season.slug}${paramsAsString}`}
+                    to={`/${season.slug}${paramsAsString}`}
                   >
                     {body}
                   </NavLink>
