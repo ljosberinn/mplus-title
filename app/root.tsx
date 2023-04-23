@@ -20,7 +20,38 @@ import { env } from "~/env/client";
 import stylesheet from "~/tailwind.css";
 
 export const links: LinksFunction = () => {
-  return [{ rel: "stylesheet", href: stylesheet }];
+  return [
+    { rel: "stylesheet", href: stylesheet },
+
+    {
+      rel: "apple-touch-icon",
+      sizes: "180x180",
+      href: "/apple-touch-icon.png",
+    },
+    {
+      rel: "icon",
+      type: "image/png",
+      sizes: "32x32",
+      href: "/favicon-32x32.png",
+    },
+    {
+      rel: "icon",
+      type: "image/png",
+      sizes: "16x16",
+      href: "/favicon-16x16.png",
+    },
+    {
+      rel: "icon",
+      type: "image/x-icon",
+      href: "/favicon.ico",
+    },
+    { rel: "manifest", href: "/site.webmanifest" },
+    {
+      rel: "mask-icon",
+      href: "/safari-pinned-tab.svg",
+      color: "#5bbad5",
+    },
+  ];
 };
 
 export const loader = (): TypedResponse<{ ENV: Record<string, unknown> }> => {
@@ -38,12 +69,12 @@ declare global {
   }
 }
 
-const title = "Mythic+ Estimated Title Cutoff";
+const title = "Title Cutoff History & Estimation";
 
 export const meta: MetaFunction = () => {
   const url = "https://mplus-title.vercel.app/";
   const description =
-    "Displays estimated rank & score required for the seasonal Mythic+ title.";
+    "Seasonal Mythic+ Title Score History & Estimation, updated hourly.";
 
   return {
     charset: "utf-8",
@@ -70,6 +101,8 @@ export const meta: MetaFunction = () => {
     author: "Gerrit Alex",
     "revisit-after": "7days",
     distribution: "global",
+    "msapplication-TileColor": "#da532c",
+    "theme-color": "#ffffff",
   };
 };
 
