@@ -15,6 +15,7 @@ import {
   useLoaderData,
 } from "@remix-run/react";
 import { Analytics } from "@vercel/analytics/react";
+import { SSRProvider } from "react-aria";
 
 import { env } from "~/env/client";
 import stylesheet from "~/tailwind.css";
@@ -121,7 +122,9 @@ export default function App(): JSX.Element {
       </head>
       <body className="min-h-screen">
         <div className="flex min-h-screen flex-col">
-          <Outlet />
+          <SSRProvider>
+            <Outlet />
+          </SSRProvider>
         </div>
         <ScrollRestoration />
         <Analytics />

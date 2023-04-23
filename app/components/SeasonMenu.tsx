@@ -164,7 +164,6 @@ function Button(
     <button
       {...buttonProps}
       ref={ref}
-      id={undefined}
       type="button"
       className="flex space-x-2 rounded-lg bg-gray-700 px-4 py-2 font-medium text-white outline-none ring-gray-500 transition-all duration-200 ease-in-out hover:bg-gray-500 focus:outline-none focus:ring-2"
     >
