@@ -1,5 +1,5 @@
 import clsx from "clsx";
-import type { ReactNode, HTMLAttributes } from "react";
+import  { type HTMLAttributes,type ReactNode } from "react";
 
 export type ExternalLinkProps = Pick<
   HTMLAttributes<"a">,
@@ -7,7 +7,6 @@ export type ExternalLinkProps = Pick<
 > & {
   href: string;
   children: ReactNode;
-  "data-linkbox-overlay"?: boolean;
 };
 
 export function ExternalLink({
@@ -20,7 +19,7 @@ export function ExternalLink({
     <a
       href={href}
       target="_blank"
-      rel={`noopener${href.includes("warcraftlogs") ? "" : " noreferrer"}`}
+      rel="noopener noreferrer"
       className={clsx("hover:underline", className)}
       title={title}
     >

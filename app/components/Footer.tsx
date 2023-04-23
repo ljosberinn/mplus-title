@@ -1,11 +1,11 @@
 import { version } from "react";
+import { BsPaypal } from "react-icons/bs";
+import { FaDiscord, FaPatreon,FaTwitter } from "react-icons/fa";
+import  { type IconType } from "react-icons/lib";
+import { SiBuymeacoffee } from "react-icons/si";
+
 import { ExternalLink } from "./ExternalLink";
 import { Logo } from "./Logo";
-
-import { BsPaypal } from "react-icons/bs";
-import { FaTwitter, FaDiscord, FaPatreon } from "react-icons/fa";
-import { SiBuymeacoffee } from "react-icons/si";
-import { IconType } from "react-icons/lib";
 
 export function Footer(): JSX.Element {
   return (
@@ -20,35 +20,35 @@ export function Footer(): JSX.Element {
             <ul />
             <ul className="md:text-right">
               <FooterNavLink
-                href={"https://www.buymeacoffee.com/rOSn8DF"}
+                href="https://www.buymeacoffee.com/rOSn8DF"
                 icon={SiBuymeacoffee}
               >
                 Buy Me A Coffee
               </FooterNavLink>
 
               <FooterNavLink
-                href={"https://www.paypal.com/paypalme/gerritalex"}
+                href="https://www.paypal.com/paypalme/gerritalex"
                 icon={BsPaypal}
               >
                 PayPal
               </FooterNavLink>
 
               <FooterNavLink
-                href={"https://www.patreon.com/RaiderIO"}
+                href="https://www.patreon.com/RaiderIO"
                 icon={FaPatreon}
               >
                 Raider.IO Patreon
               </FooterNavLink>
 
               <FooterNavLink
-                href={"https://www.patreon.com/warcraftlogs"}
+                href="https://www.patreon.com/warcraftlogs"
                 icon={FaPatreon}
               >
                 Warcraft Logs Patreon
               </FooterNavLink>
 
               <FooterNavLink
-                href={"https://twitter.com/gerrit_alex"}
+                href="https://twitter.com/gerrit_alex"
                 icon={FaTwitter}
               >
                 Twitter
@@ -177,7 +177,7 @@ function GitHub() {
       xmlns="http://www.w3.org/2000/svg"
       aria-hidden="true"
       viewBox="0 0 24 24"
-      className={"h-4"}
+      className="h-4"
       fill="#fff"
     >
       <path
@@ -295,7 +295,7 @@ function Vercel() {
       viewBox="0 0 1155 1000"
       className="h-4"
     >
-      <path fill={"white"} d="m577.344 0 577.346 1000H0L577.344 0Z" />
+      <path fill="white" d="m577.344 0 577.346 1000H0L577.344 0Z" />
     </svg>
   );
 }
@@ -365,7 +365,7 @@ function FooterNavLink({ href, children, icon: Icon }: FooterNavLinkProps) {
   return (
     <li className="py-1 text-base leading-relaxed md:text-sm">
       {href ? (
-        <ExternalLink className={"internalLinkClasses"} href={href}>
+        <ExternalLink className="transition-colors duration-150 ease-in-out hover:text-yellow-600" href={href}>
           {body}
         </ExternalLink>
       ) : (

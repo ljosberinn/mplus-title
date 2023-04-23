@@ -1,3 +1,4 @@
+import { type Node } from "@react-types/shared";
 import {
   NavLink,
   useNavigation,
@@ -5,36 +6,32 @@ import {
   useSearchParams,
 } from "@remix-run/react";
 import clsx from "clsx";
-
-import type { AriaButtonProps, AriaPopoverProps } from "react-aria";
-import {
-  OverlayTriggerState,
-  Section,
-  TreeState,
-  useTreeState,
-  Item,
-  useMenuTriggerState,
-} from "react-stately";
-
+import { type MutableRefObject, type ReactNode } from "react";
+import { useRef } from "react";
+import { type AriaButtonProps, type AriaPopoverProps } from "react-aria";
+import { type AriaMenuProps } from "react-aria";
 import {
   Overlay,
-  usePopover,
   useButton,
-  useMenuSection,
-  useMenuItem,
   useMenu,
+  useMenuItem,
+  useMenuSection,
   useMenuTrigger,
+  usePopover,
 } from "react-aria";
+import { type OverlayTriggerState, type TreeState } from "react-stately";
+import { type MenuTriggerProps } from "react-stately";
+import {
+  Item,
+  Section,
+  useMenuTriggerState,
+  useTreeState,
+} from "react-stately";
 
-import type { AriaMenuProps } from "react-aria";
 import { type Season } from "~/seasons";
 import { seasons } from "~/seasons";
 
-import type { MenuTriggerProps } from "react-stately";
-import { MutableRefObject, ReactNode, useRef } from "react";
-import type { Node } from "@react-types/shared";
-
-export function SeasonMenu() {
+export function SeasonMenu(): JSX.Element {
   const now = Date.now();
   const navigation = useNavigation();
   const [params] = useSearchParams();
@@ -99,7 +96,7 @@ export function SeasonMenu() {
                           navigation.state === "idle"
                             ? "cursor-not-allowed"
                             : "cursor-wait",
-                          isLast && "rounded-bl-lg rounded-br-lg"
+                          isLast && "rounded-b-lg"
                         )}
                       >
                         <SeasonNavItemBody season={season} />
@@ -108,7 +105,7 @@ export function SeasonMenu() {
                       <NavLink
                         className={clsx(
                           "flex flex-1 space-x-2 bg-gray-700 px-4 py-2 text-white outline-none transition-all duration-200 ease-in-out hover:bg-gray-500",
-                          isLast && "rounded-bl-lg rounded-br-lg"
+                          isLast && "rounded-b-lg"
                         )}
                         to={`/${season.slug}${paramsAsString}`}
                       >
@@ -125,10 +122,10 @@ export function SeasonMenu() {
   );
 }
 
-interface PopoverProps extends Omit<AriaPopoverProps, "popoverRef"> {
+type PopoverProps = {
   children: ReactNode;
   state: OverlayTriggerState;
-}
+} & Omit<AriaPopoverProps, "popoverRef">;
 
 function Popover({ children, state, ...props }: PopoverProps) {
   const popoverRef = useRef<HTMLDivElement | null>(null);
@@ -156,7 +153,7 @@ function Popover({ children, state, ...props }: PopoverProps) {
 }
 
 function Button(
-  props: AriaButtonProps<"button"> & {
+  props: AriaButtonProps & {
     buttonRef: MutableRefObject<HTMLButtonElement | null>;
   }
 ) {
@@ -168,6 +165,7 @@ function Button(
       {...buttonProps}
       ref={ref}
       id={undefined}
+      type="button"
       className="flex space-x-2 rounded-lg bg-gray-700 px-4 py-2 font-medium text-white outline-none ring-gray-500 transition-all duration-200 ease-in-out hover:bg-gray-500 focus:outline-none focus:ring-2"
     >
       {props.children}
@@ -221,9 +219,10 @@ function Menu<T extends object>(props: AriaMenuProps<T>) {
   );
 }
 
-interface MenuButtonProps<T> extends AriaMenuProps<T>, MenuTriggerProps {
+type MenuButtonProps<T> = {
   label?: ReactNode;
-}
+} & AriaMenuProps<T> &
+  MenuTriggerProps;
 
 function MenuButton<T extends object>(props: MenuButtonProps<T>) {
   const state = useMenuTriggerState(props);
@@ -256,7 +255,7 @@ type MenuSectionProps<T> = {
 };
 
 function MenuSection<T>({ section, state }: MenuSectionProps<T>) {
-  let { itemProps, headingProps, groupProps } = useMenuSection({
+  const { itemProps, headingProps, groupProps } = useMenuSection({
     heading: section.rendered,
     "aria-label": section["aria-label"],
   });
@@ -269,8 +268,8 @@ function MenuSection<T>({ section, state }: MenuSectionProps<T>) {
         <span
           {...headingProps}
           className={clsx(
-            "py-1.25 inline-block w-full bg-gray-600 px-4 text-lg font-semibold",
-            isFirst && "rounded-tl-lg rounded-tr-lg"
+            "inline-block w-full bg-gray-600 px-4 py-1 text-lg font-semibold",
+            isFirst && "rounded-t-lg"
           )}
         >
           {section.rendered}

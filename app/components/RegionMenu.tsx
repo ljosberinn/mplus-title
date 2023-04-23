@@ -1,14 +1,17 @@
 import { useNavigation, useSubmit } from "@remix-run/react";
-import { useRef, FormEventHandler } from "react";
-import { EnhancedSeason } from "~/seasons";
+import { type FormEventHandler } from "react";
+import { useRef } from "react";
+
+import { type EnhancedSeason } from "~/seasons";
 import { isNotNull, orderedRegionsBySize } from "~/utils";
+
 import { linkClassName } from "./tokens";
 
 type RegionToggleProps = {
   season: EnhancedSeason;
 };
 
-export function RegionToggle({ season }: RegionToggleProps) {
+export function RegionToggle({ season }: RegionToggleProps): JSX.Element {
   const submit = useSubmit();
   const { state: navigationState } = useNavigation();
 

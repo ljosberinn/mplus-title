@@ -1,4 +1,5 @@
-import { EnhancedSeason } from "~/seasons";
+import  { type EnhancedSeason } from "~/seasons";
+
 import { CustomExtrapolationForm } from "./CustomExtrapolationForm";
 import { Logo } from "./Logo";
 import { OverlaysToggle } from "./OverlaysToggle";

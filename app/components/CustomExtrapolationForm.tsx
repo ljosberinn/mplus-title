@@ -1,12 +1,14 @@
 import {
-  useNavigation,
+  Form,
   useLocation,
   useNavigate,
-  Form,
+  useNavigation,
 } from "@remix-run/react";
 import clsx from "clsx";
-import { useRef, useEffect } from "react";
-import { EnhancedSeason } from "~/seasons";
+import { useEffect, useRef } from "react";
+
+import { type EnhancedSeason } from "~/seasons";
+
 import { linkClassName } from "./tokens";
 
 type CustomExtrapolationFormProps = {
@@ -15,7 +17,7 @@ type CustomExtrapolationFormProps = {
 
 export function CustomExtrapolationForm({
   season,
-}: CustomExtrapolationFormProps) {
+}: CustomExtrapolationFormProps): JSX.Element | null {
   const location = useLocation();
   const navigate = useNavigate();
   const ref = useRef<HTMLInputElement | null>(null);
