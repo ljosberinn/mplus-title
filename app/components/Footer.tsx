@@ -16,7 +16,7 @@ export function Footer(): JSX.Element {
             <Logo />
           </div>
 
-          <div className="grid w-full grid-cols-1 items-center text-center md:w-auto md:grid-cols-2 md:items-start md:gap-10 md:text-left lg:pr-8">
+          <div className="grid w-full grid-cols-1 items-center text-center md:w-auto md:grid-cols-2 md:items-start md:gap-10 md:text-left">
             <ul />
             <ul className="md:text-right">
               <FooterNavLink
