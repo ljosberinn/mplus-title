@@ -4,15 +4,11 @@ import {
   useSearchParams,
   useSubmit,
 } from "@remix-run/react";
-import {
-  Form,
-  useLocation,
-  useNavigate,
-  useRouteLoaderData,
-} from "@remix-run/react";
+import { Form, useLocation, useNavigate } from "@remix-run/react";
 import { type FormEventHandler } from "react";
 import { useEffect, useRef } from "react";
 
+import { type EnhancedSeason } from "~/seasons";
 import { seasons } from "~/seasons";
 import {
   extraOverlayNames,
@@ -27,13 +23,14 @@ const activeLinkClassName = "underline bg-gray-500";
 
 type CustomExtrapolationFormProps = {
   navigationState: ReturnType<typeof useNavigation>["state"];
+  season: EnhancedSeason;
 };
 function CustomExtrapolationForm({
   navigationState,
+  season,
 }: CustomExtrapolationFormProps) {
   const location = useLocation();
   const navigate = useNavigate();
-  const routeData = useRouteLoaderData("routes/$season/index");
   const ref = useRef<HTMLInputElement | null>(null);
 
   const customExtrapolationEndDate = (() => {
@@ -54,46 +51,21 @@ function CustomExtrapolationForm({
     }
   }, [customExtrapolationEndDate]);
 
-  const seasonHasStarted = (() => {
-    try {
-      // @ts-expect-error return type of the loader within the route
-      return Object.values(routeData.startDates).some(
-        // @ts-expect-error cba casting, its null|number
-        (maybeDate) => maybeDate !== null && maybeDate <= Date.now()
-      );
-    } catch {
-      return false;
-    }
-  })();
+  const seasonHasStarted = Object.values(season.startDates).some(
+    (maybeDate) => maybeDate !== null && maybeDate <= Date.now()
+  );
 
   if (!seasonHasStarted) {
     return null;
   }
 
-  const seasonHasEndedInEveryRegion = (() => {
-    try {
-      // @ts-expect-error return type of the loader within the route
-      return Object.values(routeData.endDates).every(
-        // @ts-expect-error cba casting, its null|number
-        (maybeDate) => maybeDate !== null && maybeDate <= Date.now()
-      );
-    } catch {
-      return false;
-    }
-  })();
+  const seasonHasEndedInEveryRegion = Object.values(season.endDates).every(
+    (maybeDate) => maybeDate !== null && maybeDate <= Date.now()
+  );
 
   const seasonHasEndingDate = seasonHasEndedInEveryRegion
     ? false
-    : (() => {
-        try {
-          // @ts-expect-error return type of the loader within the route
-          return Object.values(routeData.endDates).every(
-            (maybeDate) => maybeDate !== null
-          );
-        } catch {
-          return false;
-        }
-      })();
+    : Object.values(season.endDates).every((maybeDate) => maybeDate !== null);
 
   if (seasonHasEndedInEveryRegion) {
     return null;
@@ -197,9 +169,8 @@ function CustomExtrapolationForm({
 
 type OverlaysToggleProps = CustomExtrapolationFormProps;
 
-function OverlaysToggle({ navigationState }: OverlaysToggleProps) {
+function OverlaysToggle({ navigationState, season }: OverlaysToggleProps) {
   const submit = useSubmit();
-  const routeData = useRouteLoaderData("routes/$season/index");
 
   const ref = useRef<(HTMLInputElement | null)[]>([]);
 
@@ -221,8 +192,7 @@ function OverlaysToggle({ navigationState }: OverlaysToggleProps) {
     <fieldset disabled={navigationState !== "idle"}>
       <ul className="flex flex-col space-y-2 px-4 pt-4 md:flex-row md:space-x-2 md:space-y-0 md:px-0 md:pt-0">
         {overlays.map((overlay, index) => {
-          // @ts-expect-error type EnhancedSeason
-          const checked = routeData.overlaysToDisplay.includes(overlay);
+          const checked = season.overlaysToDisplay.includes(overlay);
 
           return (
             <li
@@ -261,9 +231,8 @@ function OverlaysToggle({ navigationState }: OverlaysToggleProps) {
 
 type RegionToggleProps = CustomExtrapolationFormProps;
 
-function RegionToggle({ navigationState }: RegionToggleProps) {
+function RegionToggle({ navigationState, season }: RegionToggleProps) {
   const submit = useSubmit();
-  const routeData = useRouteLoaderData("routes/$season/index");
 
   const ref = useRef<(HTMLInputElement | null)[]>([]);
 
@@ -285,10 +254,8 @@ function RegionToggle({ navigationState }: RegionToggleProps) {
     <fieldset disabled={navigationState !== "idle"}>
       <ul className="flex flex-col space-y-2 px-4 pt-4 md:flex-row md:space-x-2 md:space-y-0 md:px-0 md:pt-0">
         {orderedRegionsBySize.map((region, index) => {
-          // @ts-expect-error type EnhancedSeason
-          const checked = routeData.regionsToDisplay.includes(region);
-          // @ts-expect-error type EnhancedSeason
-          const disabled = routeData.regionsToDisplay.length === 1 && checked;
+          const checked = season.regionsToDisplay.includes(region);
+          const disabled = season.regionsToDisplay.length === 1 && checked;
 
           return (
             <li
@@ -338,7 +305,10 @@ function navLinkClassNameActivity({ isActive }: { isActive: boolean }) {
   return isActive ? `${linkClassName} ${activeLinkClassName}` : linkClassName;
 }
 
-export function Nav(): JSX.Element {
+type NavProps = {
+  season: EnhancedSeason;
+};
+export function Nav({ season }: NavProps): JSX.Element {
   const now = Date.now();
   const navigation = useNavigation();
   const [params] = useSearchParams();
@@ -395,10 +365,13 @@ export function Nav(): JSX.Element {
             );
           })}
         </ul>
-        <RegionToggle navigationState={navigation.state} />
-        <OverlaysToggle navigationState={navigation.state} />
+        <RegionToggle navigationState={navigation.state} season={season} />
+        <OverlaysToggle navigationState={navigation.state} season={season} />
       </nav>
-      <CustomExtrapolationForm navigationState={navigation.state} />
+      <CustomExtrapolationForm
+        navigationState={navigation.state}
+        season={season}
+      />
     </>
   );
 }

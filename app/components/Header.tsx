@@ -1,8 +1,12 @@
 import { Nav } from "~/components/Nav";
+import { type EnhancedSeason } from "~/seasons";
 
 const title = "Mythic+ Estimated Title Cutoff";
 
-export function Header(): JSX.Element {
+type HeaderProps = {
+  season: EnhancedSeason;
+};
+export function Header({ season }: HeaderProps): JSX.Element {
   return (
     <header className="container mx-auto">
       <h1 className="pb-2 pt-8 text-center text-2xl font-semibold">{title}</h1>
@@ -23,7 +27,7 @@ export function Header(): JSX.Element {
           help improving the site by answering a couple questions
         </a>
       </div>
-      <Nav />
+      <Nav season={season} />
     </header>
   );
 }

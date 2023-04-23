@@ -137,7 +137,7 @@ export default function Season(): JSX.Element | null {
 
   return (
     <>
-      <Header />
+      <Header season={season} />
       <main className="container mx-auto flex flex-1 flex-col">
         <div className="space-y-4 p-4">
           {season.regionsToDisplay.map((region, index, arr) => {
