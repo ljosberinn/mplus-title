@@ -286,7 +286,7 @@
         "project": "./tsconfig.json",
         "warnOnUnsupportedTypeScriptVersion": true
       },
-      "plugins": ["@typescript-eslint"],
+      "plugins": ["@typescript-eslint", "etc"],
       "settings": {
         "react": {
           "version": "detect"
@@ -463,6 +463,11 @@
         "@typescript-eslint/typedef": "off",
         "@typescript-eslint/unbound-method": "off",
         "@typescript-eslint/unified-signatures": "warn",
+        "etc/no-assign-mutated-array": "error",
+        "etc/no-commented-out-code": "off",
+        "etc/no-internal": "warn",
+        "etc/no-misused-generics": "warn",
+        "etc/underscore-internal": "warn",
         "@typescript-eslint/block-spacing": "off",
         "@typescript-eslint/key-spacing": "off",
         "@typescript-eslint/object-curly-spacing": "off"
@@ -1104,7 +1109,7 @@
     "sonarjs/no-all-duplicated-branches": "error",
     "sonarjs/no-collapsible-if": "error",
     "sonarjs/no-collection-size-mischeck": "warn",
-    "sonarjs/no-duplicate-string": "off",
+    "sonarjs/no-duplicate-string": "error",
     "sonarjs/no-duplicated-branches": "error",
     "sonarjs/no-element-overwrite": "error",
     "sonarjs/no-empty-collection": "off",

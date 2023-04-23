@@ -2,6 +2,7 @@ import { type Regions } from "@prisma/client";
 import { json, type LoaderArgs, type TypedResponse } from "@remix-run/node";
 import { useLoaderData, useNavigation } from "@remix-run/react";
 import { type HeadersFunction, redirect } from "@remix-run/server-runtime";
+import clsx from "clsx";
 import Highcharts, {
   type Options,
   type PointLabelObject,
@@ -138,19 +139,15 @@ export default function Season(): JSX.Element | null {
   return (
     <>
       <Header season={season} />
-      <main className="container mx-auto flex flex-1 flex-col">
-        <div className="space-y-4 p-4">
-          {season.regionsToDisplay.map((region, index, arr) => {
-            return (
-              <Fragment key={region}>
-                <Card season={season} region={region} />
-                {index === arr.length - 1 ? null : (
-                  <hr className="opacity-50" />
-                )}
-              </Fragment>
-            );
-          })}
-        </div>
+      <main className="container md:mx-auto max-w-screen-2xl px-4 mt-4 flex flex-1 flex-col space-y-4">
+        {season.regionsToDisplay.map((region, index, arr) => {
+          return (
+            <Fragment key={region}>
+              <Card season={season} region={region} />
+              {index === arr.length - 1 ? null : <hr className="opacity-50" />}
+            </Fragment>
+          );
+        })}
       </main>
       <Footer />
     </>
@@ -350,9 +347,10 @@ function Card({ season, region }: CardProps): JSX.Element {
 
   return (
     <section
-      className={`${
-        navigation.state === "loading" ? "grayscale" : ""
-      } rounded-md bg-gray-700 transition-all duration-500 ease-linear motion-reduce:transition-none`}
+      className={clsx(
+        navigation.state === "loading" && "grayscale",
+        "max-w-screen-2xl rounded-md bg-gray-700 transition-all duration-500 ease-linear motion-reduce:transition-none"
+      )}
       aria-labelledby={`title-${region}`}
       id={region}
     >
@@ -389,7 +387,7 @@ function Card({ season, region }: CardProps): JSX.Element {
 
           return (
             <div
-              className={[
+              className={clsx(
                 "flex flex-1 flex-col items-center space-y-2",
                 isCurrentWeek
                   ? "opacity-100"
@@ -399,10 +397,8 @@ function Card({ season, region }: CardProps): JSX.Element {
                 isCurrentWeek
                   ? null
                   : "grayscale transition-opacity hover:filter-none",
-                isNextWeek ? "filter-none" : null,
-              ]
-                .filter(Boolean)
-                .join(" ")}
+                isNextWeek ? "filter-none" : null
+              )}
               key={[...set, index].join("-")}
             >
               <span>W{index + 1}</span>
@@ -670,7 +666,7 @@ const createPlotBands = (
               .map((affix) => {
                 return `<img width="18" height="18" style="transform: rotate(-90deg); opacity: 0.75;" src="${getAffixIconUrl(
                   affix
-                )}" alt="${affix}" />`;
+                )}"/>`;
               })
               .join("")
           : undefined,

@@ -1,33 +1,34 @@
-import { Nav } from "~/components/Nav";
-import { type EnhancedSeason } from "~/seasons";
+import { EnhancedSeason } from "~/seasons";
+import { CustomExtrapolationForm } from "./CustomExtrapolationForm";
+import { Logo } from "./Logo";
+import { OverlaysToggle } from "./OverlaysToggle";
+import { RegionToggle } from "./RegionMenu";
+import { SeasonMenu } from "./SeasonMenu";
 
-const title = "Mythic+ Estimated Title Cutoff";
-
-type HeaderProps = {
-  season: EnhancedSeason;
-};
-export function Header({ season }: HeaderProps): JSX.Element {
+export function Header({ season }: { season: EnhancedSeason }): JSX.Element {
   return (
-    <header className="container mx-auto">
-      <h1 className="pb-2 pt-8 text-center text-2xl font-semibold">{title}</h1>
-
-      <p className="pb-4 text-center italic">updates hourly</p>
-      <p className="pb-4 text-center italic">
-        extrapolation ignores the first FOUR weeks of a season. further weeks
-        are weighted relatively to today
-      </p>
-
-      <div className="pb-4 text-center">
-        <a
-          className="cursor-pointer pb-4 underline"
-          target="_blank"
-          rel="noreferrer noopener"
-          href="https://forms.gle/xWwPFGJ5DKyntRgq9"
-        >
-          help improving the site by answering a couple questions
-        </a>
+    <>
+      <header className="flex h-20 items-center justify-between border-b  border-gray-700 p-6 text-stone-100 drop-shadow-sm print:hidden">
+        <nav className="mx-auto flex w-full max-w-screen-2xl items-center justify-between">
+          <ul>
+            <li>
+              <Logo />
+            </li>
+          </ul>
+          <SeasonMenu />
+        </nav>
+      </header>
+      <div className="mx-auto flex w-full max-w-screen-2xl items-center justify-between">
+        <div className="flex w-full flex-col flex-wrap justify-between gap-3 pt-4 md:flex-row md:px-4">
+          <RegionToggle season={season} />
+          <OverlaysToggle season={season} />
+        </div>
       </div>
-      <Nav season={season} />
-    </header>
+      <div className="mx-auto flex w-full max-w-screen-2xl items-center justify-between">
+        <div className="flex w-full flex-col flex-wrap justify-between gap-3 md:flex-row">
+          <CustomExtrapolationForm season={season} />
+        </div>
+      </div>
+    </>
   );
 }
