@@ -1,7 +1,7 @@
 import { type Factions, type Regions } from "@prisma/client";
-import  { type XAxisPlotLinesOptions } from "highcharts";
+import { type XAxisPlotLinesOptions } from "highcharts";
 
-import  { type Overlay } from "~/utils";
+import { type Overlay } from "~/utils";
 
 import { Affix, getAffixIconUrl } from "./affixes";
 
@@ -88,7 +88,7 @@ export const seasons: Season[] = [
       "https://wow.zamimg.com/images/wow/icons/small/inv_misc_head_dragon_black_nightmare.jpg",
     dungeonHotfixes: {},
     patches: {},
-    dungeons: 8
+    dungeons: 8,
   },
   {
     name: "DF S1",
@@ -152,7 +152,7 @@ export const seasons: Season[] = [
         tw: 1_675_292_400_000,
       },
     },
-    dungeons: 8
+    dungeons: 8,
   },
   {
     name: "SL S4",
@@ -208,7 +208,7 @@ export const seasons: Season[] = [
     seasonIcon: getAffixIconUrl(Affix.Shrouded),
     dungeonHotfixes: {},
     patches: {},
-    dungeons: 8
+    dungeons: 8,
   },
   {
     name: "SL S3",
@@ -261,7 +261,7 @@ export const seasons: Season[] = [
     seasonIcon: getAffixIconUrl(Affix.Encrypted),
     dungeonHotfixes: {},
     patches: {},
-    dungeons: 10
+    dungeons: 10,
   },
   {
     name: "SL S2",
