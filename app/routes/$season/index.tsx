@@ -16,11 +16,13 @@ import { Fragment, useEffect, useRef } from "react";
 import { getAffixIconUrl, getAffixName } from "~/affixes";
 import { Footer } from "~/components/Footer";
 import { Header } from "~/components/Header";
+import { time, type Timings } from "~/load.server";
 import {
   determineOverlaysToDisplayFromCookies,
   determineOverlaysToDisplayFromSearchParams,
   determineRegionsToDisplayFromCookies,
   determineRegionsToDisplayFromSearchParams,
+  getServerTimeHeader,
 } from "~/load.server";
 import { getEnhancedSeason } from "~/models/season.server";
 import { type EnhancedSeason, findSeasonByName } from "~/seasons";
@@ -37,6 +39,7 @@ const cacheControl = "Cache-Control";
 const eTag = "ETag";
 const setCookie = "Set-Cookie";
 const expires = "Expires";
+const serverTiming = "Server-Timing";
 
 export const headers: HeadersFunction = ({ loaderHeaders }) => {
   const loaderCache = loaderHeaders.get(cacheControl);
@@ -70,6 +73,12 @@ export const headers: HeadersFunction = ({ loaderHeaders }) => {
     headers[setCookie] = maybeSetCookie;
   }
 
+  const serverTimings = loaderHeaders.get(serverTiming);
+
+  if (serverTimings) {
+    headers[serverTiming] = serverTimings;
+  }
+
   return headers;
 };
 
@@ -95,16 +104,29 @@ export const loader = async ({
     });
   }
 
-  const searchParamOverlays =
-    determineOverlaysToDisplayFromSearchParams(request);
-  const searchParamRegions = determineRegionsToDisplayFromSearchParams(request);
+  const timings: Timings = {};
+
+  const searchParamOverlays = await time(
+    () => determineOverlaysToDisplayFromSearchParams(request),
+    { type: "determineOverlaysToDisplayFromSearchParams", timings }
+  );
+  const searchParamRegions = await time(
+    () => determineRegionsToDisplayFromSearchParams(request),
+    { type: "determineRegionsToDisplayFromSearchParams", timings }
+  );
 
   const cookieRegions = searchParamRegions
     ? null
-    : determineRegionsToDisplayFromCookies(request);
+    : await time(() => determineRegionsToDisplayFromCookies(request), {
+        type: "determineRegionsToDisplayFromCookies",
+        timings,
+      });
   const cookieOverlays = searchParamOverlays
     ? null
-    : determineOverlaysToDisplayFromCookies(request);
+    : await time(() => determineOverlaysToDisplayFromCookies(request), {
+        type: "determineOverlaysToDisplayFromCookies",
+        timings,
+      });
 
   if (cookieRegions || cookieOverlays) {
     const params = new URLSearchParams();
@@ -123,12 +145,19 @@ export const loader = async ({
   const regions = searchParamRegions;
   const overlays = searchParamOverlays;
 
-  const { season: enhancedSeason, headers } = await getEnhancedSeason({
-    request,
-    regions,
-    overlays,
-    season,
-  });
+  const { season: enhancedSeason, headers } = await time(
+    () =>
+      getEnhancedSeason({
+        request,
+        regions,
+        overlays,
+        season,
+        timings,
+      }),
+    { type: "getEnhancedSeason", timings }
+  );
+
+  headers[serverTiming] = getServerTimeHeader(timings);
 
   return json(enhancedSeason, { headers });
 };

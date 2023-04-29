@@ -39,8 +39,8 @@ export type EnhancedSeason = Season & {
     | null
     | [number, number][]
     | {
-        from: Dataset;
-        to: Dataset;
+        from: Omit<Dataset, 'rank'>;
+        to: Omit<Dataset, 'rank'>;
       }
   >;
   initialZoom: Record<Regions, null | [number, number]>;

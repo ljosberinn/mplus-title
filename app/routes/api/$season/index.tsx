@@ -45,6 +45,7 @@ export const loader = async ({
     regions,
     overlays,
     season,
+    timings: {},
   });
 
   return json(enhancedSeason, { headers });

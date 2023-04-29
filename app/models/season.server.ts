@@ -1,5 +1,6 @@
 import { type Regions } from "@prisma/client";
 
+import { type Timings } from "~/load.server";
 import {
   calculateExtrapolation,
   calculateXAxisPlotLines,
@@ -7,6 +8,7 @@ import {
   determineExpirationTimestamp,
   determineExtrapolationEnd,
   loadDataForRegion,
+  time,
 } from "~/load.server";
 import { type Season } from "~/seasons";
 import { type EnhancedSeason, hasSeasonEndedForAllRegions } from "~/seasons";
@@ -27,9 +29,10 @@ type GetEnhancedSeasonParams = {
   request: Request;
   regions: Regions[] | null;
   season: Season;
+  timings: Timings;
 };
 type GetEnhancedSeasonResult = {
-  headers: HeadersInit;
+  headers: Record<string, string>;
   season: EnhancedSeason;
 };
 export const getEnhancedSeason = async ({
@@ -37,8 +40,9 @@ export const getEnhancedSeason = async ({
   request,
   regions: pRegions,
   season,
+  timings,
 }: GetEnhancedSeasonParams): Promise<GetEnhancedSeasonResult> => {
-  const headers: HeadersInit = {};
+  const headers: Record<string, string> = {};
 
   if (hasSeasonEndedForAllRegions(season.slug)) {
     const thirtyDays = 30 * 24 * 60 * 60;
@@ -47,7 +51,10 @@ export const getEnhancedSeason = async ({
     ] = `public, max-age=${thirtyDays}, s-maxage=${thirtyDays}, immutable`;
   }
 
-  const extrapolationEnd = determineExtrapolationEnd(request);
+  const extrapolationEnd = await time(
+    () => determineExtrapolationEnd(request),
+    { type: "determineExtrapolationEnd", timings }
+  );
 
   const regions = pRegions ?? orderedRegionsBySize;
   const overlays = pOverlays ?? defaultOverlays;
@@ -86,26 +93,28 @@ export const getEnhancedSeason = async ({
 
   await Promise.all(
     Object.values(regions).map(async (region) => {
-      const data = await loadDataForRegion(region, season);
+      const data = await loadDataForRegion(region, season, timings);
       enhancedSeason.dataByRegion[region] = data;
 
       if (data.length === 0) {
         return;
       }
 
-      const extrapolation = calculateExtrapolation(
-        season,
-        region,
-        data,
-        extrapolationEnd
+      const extrapolation = await time(
+        () => calculateExtrapolation(season, region, data, extrapolationEnd),
+        { type: `calculateExtrapolation-${region}`, timings }
       );
 
-      enhancedSeason.xAxisPlotLines[region] = calculateXAxisPlotLines(
-        season,
-        region,
-        data,
-        extrapolation,
-        overlays
+      enhancedSeason.xAxisPlotLines[region] = await time(
+        () =>
+          calculateXAxisPlotLines(
+            season,
+            region,
+            data,
+            extrapolation,
+            overlays
+          ),
+        { type: `calculateXAxisPlotLines-${region}`, timings }
       );
 
       const seasonEnding = season.endDates[region];
@@ -117,11 +126,9 @@ export const getEnhancedSeason = async ({
 
       enhancedSeason.extrapolation[region] = extrapolation;
 
-      enhancedSeason.initialZoom[region] = calculateZoom(
-        season,
-        region,
-        data,
-        extrapolation
+      enhancedSeason.initialZoom[region] = await time(
+        () => calculateZoom(season, region, data, extrapolation),
+        { type: `calculateZoom-${region}`, timings }
       );
     })
   );
@@ -132,18 +139,22 @@ export const getEnhancedSeason = async ({
 
   headers[lastModified] = new Date(mostRecentDataset).toUTCString();
 
-  const shortestExpiry = regions
-    .map((region) =>
-      determineExpirationTimestamp(
-        season,
-        region,
-        enhancedSeason.dataByRegion[region]
-      )
-    )
-    .reduce(
-      (acc, expiry) => (acc > expiry ? expiry : acc),
-      Number.POSITIVE_INFINITY
-    );
+  const shortestExpiry = await time(
+    () =>
+      regions
+        .map((region) =>
+          determineExpirationTimestamp(
+            season,
+            region,
+            enhancedSeason.dataByRegion[region]
+          )
+        )
+        .reduce(
+          (acc, expiry) => (acc > expiry ? expiry : acc),
+          Number.POSITIVE_INFINITY
+        ),
+    { type: "shortestExpiry", timings }
+  );
 
   headers[expires] = new Date(shortestExpiry * 1000 + Date.now()).toUTCString();
   headers[eTag] = [

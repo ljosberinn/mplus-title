@@ -99,7 +99,8 @@ const setupRedisProviders = () => {
 
 export const loadDataForRegion = async (
   region: Regions,
-  season: Season
+  season: Season,
+  timings: Timings
 ): Promise<Dataset[]> => {
   const gte = season.startDates[region];
   const lte = season.endDates[region] ?? undefined;
@@ -107,44 +108,64 @@ export const loadDataForRegion = async (
 
   const { persist, load } = setupRedisProviders();
 
-  const cached = await load(key);
+  const cached = await time(() => load(key), {
+    type: `loadFromRedis-${region}`,
+    timings,
+  });
 
   if (cached) {
     return cached;
   }
 
   const [rawHistory, rawCrossFactionHistory] = await Promise.all([
-    season.crossFactionSupport === "complete"
-      ? []
-      : getHistory(region, gte, lte),
-    season.crossFactionSupport === "none"
-      ? []
-      : getCrossFactionHistory(region, gte, lte),
+    time(
+      () =>
+        season.crossFactionSupport === "complete"
+          ? []
+          : getHistory(region, gte, lte),
+      { type: `getHistory-${region}`, timings }
+    ),
+    time(
+      () =>
+        season.crossFactionSupport === "none"
+          ? []
+          : getCrossFactionHistory(region, gte, lte),
+      { type: `getCrossFactionHistory-${region}`, timings }
+    ),
   ]);
 
-  const datasets = [...rawHistory, ...rawCrossFactionHistory]
-    .map((dataset) => {
-      const next: Dataset = {
-        ts: Number(dataset.timestamp) * 1000,
-        score: "customScore" in dataset ? dataset.customScore : dataset.score,
-        rank: "rank" in dataset ? dataset.rank : null,
-      };
+  const datasets = await time(
+    () =>
+      [...rawHistory, ...rawCrossFactionHistory]
+        .map((dataset) => {
+          const next: Dataset = {
+            ts: Number(dataset.timestamp) * 1000,
+            score:
+              "customScore" in dataset ? dataset.customScore : dataset.score,
+            rank: "rank" in dataset ? dataset.rank : null,
+          };
 
-      if ("faction" in dataset) {
-        next.faction = dataset.faction;
-      }
+          if ("faction" in dataset) {
+            next.faction = dataset.faction;
+          }
 
-      return next;
-    })
-    .filter((dataset) => {
-      return dataset.score > 0;
-    })
-    .sort((a, b) => a.ts - b.ts);
+          return next;
+        })
+        .filter((dataset) => {
+          return dataset.score > 0;
+        })
+        .sort((a, b) => a.ts - b.ts),
+    { type: `normalizeDatasets-${region}`, timings }
+  );
 
-  await persist(
-    datasets,
-    key,
-    determineExpirationTimestamp(season, region, datasets)
+  await time(
+    () =>
+      persist(
+        datasets,
+        key,
+        determineExpirationTimestamp(season, region, datasets)
+      ),
+    { type: `persist-${region}`, timings }
   );
 
   return datasets;
@@ -654,3 +675,57 @@ export const setCookie = (
 ): string => {
   return `${key}=${value ?? ""}; Max-Age=${maxAge ?? 0}`;
 };
+
+export type Timings = Record<
+  string,
+  { desc?: string; type: string; time: number }[]
+>;
+
+export function getServerTimeHeader(timings: Timings): string {
+  return Object.entries(timings)
+    .map(([key, timingInfos]) => {
+      const dur = timingInfos
+        .reduce((acc, timingInfo) => acc + timingInfo.time, 0)
+        .toFixed(1);
+      const desc = timingInfos
+        .map((t) => t.desc)
+        .filter(Boolean)
+        .join(" & ");
+      return [
+        key.replaceAll(/([ ,:;=@])/gu, "_"),
+        desc ? `desc=${JSON.stringify(desc)}` : null,
+        `dur=${dur}`,
+      ]
+        .filter(Boolean)
+        .join(";");
+    })
+    .join(",");
+}
+
+export async function time<ReturnType>(
+  fn: Promise<ReturnType> | (() => ReturnType | Promise<ReturnType>),
+  {
+    type,
+    desc,
+    timings,
+  }: {
+    type: string;
+    desc?: string;
+    timings?: Timings;
+  }
+): Promise<ReturnType> {
+  const start = performance.now();
+  const promise = typeof fn === "function" ? fn() : fn;
+  if (!timings) {
+    return promise;
+  }
+  const result = await promise;
+  let timingType = timings[type];
+  if (!timingType) {
+    // eslint-disable-next-line no-multi-assign
+    timingType = timings[type] = [];
+  }
+
+  timingType.push({ desc, type, time: performance.now() - start });
+  return result;
+}
