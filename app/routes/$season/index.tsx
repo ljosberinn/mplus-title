@@ -564,7 +564,7 @@ const createSeries = (
 
   const ranks: SeriesLineOptions = {
     type: "line",
-    name: "Characters above Cutoff",
+    name: "Characters above Cutoff (default hidden)",
     data: season.dataByRegion[region]
       .filter((dataset) => dataset.rank !== null)
       .map((dataset) => [dataset.ts, dataset.rank]),
