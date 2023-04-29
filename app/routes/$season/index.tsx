@@ -562,7 +562,20 @@ const createSeries = (
           },
         };
 
-  return [horde, alliance, xFaction, extrapolation].filter(
+  const ranks: SeriesLineOptions = {
+    type: "line",
+    name: "Characters above Cutoff",
+    data: season.dataByRegion[region]
+      .filter((dataset) => dataset.rank !== null)
+      .map((dataset) => [dataset.ts, dataset.rank]),
+    dataLabels: {
+      formatter,
+    },
+    color: "white",
+    visible: false,
+  };
+
+  return [horde, alliance, xFaction, extrapolation, ranks].filter(
     (series): series is SeriesLineOptions =>
       series?.data !== undefined && series.data.length > 0
   );

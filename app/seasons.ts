@@ -53,6 +53,7 @@ export type Dataset = {
   ts: number;
   score: number;
   faction?: Factions;
+  rank: number | null;
 };
 
 export const seasons: Season[] = [
@@ -108,8 +109,16 @@ export const seasons: Season[] = [
       tw: 1_683_118_800_000,
     },
     confirmedCutoffs: {
-      eu: { score: 0, source: "https://eu.forums.blizzard.com/en/wow/t/m-thundering-hero-title-updated-27-april/444828" },
-      us: { score: 0, source: "https://us.forums.blizzard.com/en/wow/t/m-thundering-hero-title-updated-april-27/1576546/1" },
+      eu: {
+        score: 0,
+        source:
+          "https://eu.forums.blizzard.com/en/wow/t/m-thundering-hero-title-updated-27-april/444828",
+      },
+      us: {
+        score: 0,
+        source:
+          "https://us.forums.blizzard.com/en/wow/t/m-thundering-hero-title-updated-april-27/1576546/1",
+      },
       kr: { score: 0, source: null },
       tw: { score: 0, source: null },
     },

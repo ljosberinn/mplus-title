@@ -35,6 +35,7 @@ const getCrossFactionHistory = (
     select: {
       timestamp: true,
       score: true,
+      rank: true,
     },
     orderBy: {
       timestamp: "desc",
@@ -126,6 +127,7 @@ export const loadDataForRegion = async (
       const next: Dataset = {
         ts: Number(dataset.timestamp) * 1000,
         score: "customScore" in dataset ? dataset.customScore : dataset.score,
+        rank: "rank" in dataset ? dataset.rank : null,
       };
 
       if ("faction" in dataset) {
@@ -222,7 +224,10 @@ export const calculateExtrapolation = (
   region: Regions,
   data: Dataset[],
   endOverride: number | null
-): null | [number, number][] | { from: Dataset; to: Dataset } => {
+):
+  | null
+  | [number, number][]
+  | { from: Omit<Dataset, "rank">; to: Omit<Dataset, "rank"> } => {
   let seasonEnding = season.endDates[region];
 
   if (seasonEnding && Date.now() >= seasonEnding) {
@@ -587,7 +592,7 @@ export const calculateXAxisPlotLines = (
       const tyrannicalAndFortified = total * 1.5 + total * 0.5;
       const allDungeons = tyrannicalAndFortified * season.dungeons;
 
-      let match = data.find((dataset) => {
+      let match: Omit<Dataset, "rank"> | undefined = data.find((dataset) => {
         return dataset.score >= allDungeons;
       });
 
