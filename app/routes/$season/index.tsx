@@ -589,6 +589,7 @@ const createSeries = (
           marker: {
             enabled: true,
           },
+          visible: true,
         };
 
   const ranks: SeriesLineOptions = {
