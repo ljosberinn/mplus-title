@@ -61,7 +61,15 @@ export function CustomExtrapolationForm({
     ? false
     : Object.values(season.endDates).every((maybeDate) => maybeDate !== null);
 
-  const disabled = seasonHasEndingDate || navigationState !== "idle";
+  const seasonIsLessThanFourWeeksOld = Object.values(season.startDates).some(
+    (startDate) =>
+      startDate !== null && Date.now() - startDate < 4 * 7 * 24 * 60 * 60 * 1000
+  );
+
+  const disabled =
+    seasonHasEndingDate ||
+    seasonIsLessThanFourWeeksOld ||
+    navigationState !== "idle";
 
   function createExtrapolationFormButtonClassName(disabled: boolean) {
     const base = linkClassName.replace("flex", "");
@@ -84,9 +92,22 @@ export function CustomExtrapolationForm({
   return (
     <>
       <div className="px-4 pt-4">
-        <Form
+        <form
           className="flex flex-col space-y-2 md:inline md:space-x-2 md:space-y-0"
-          action={location.pathname}
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (ref.current) {
+              const url = new URL(window.location.href);
+
+              url.searchParams.delete("extrapolationEndDate");
+              url.searchParams.append(
+                "extrapolationEndDate",
+                ref.current.value
+              );
+
+              navigate(window.location.pathname + url.search);
+            }
+          }}
         >
           <fieldset
             disabled={disabled}
@@ -102,7 +123,11 @@ export function CustomExtrapolationForm({
               id="date-label"
             >
               Custom Extrapolation{" "}
-              {seasonHasEndingDate ? "returns next season." : null}
+              {seasonHasEndingDate
+                ? "returns next season."
+                : seasonIsLessThanFourWeeksOld
+                ? "becomes available after week 4."
+                : null}
             </label>
             <input
               aria-labelledby="date-label"
@@ -116,7 +141,7 @@ export function CustomExtrapolationForm({
               min={new Date().toISOString().split("T")[0]}
               name="extrapolationEndDate"
               required
-              disabled={seasonHasEndingDate}
+              disabled={seasonHasEndingDate || seasonIsLessThanFourWeeksOld}
               defaultValue={customExtrapolationEndDate ?? undefined}
             />
           </fieldset>
@@ -140,9 +165,9 @@ export function CustomExtrapolationForm({
           >
             Reset
           </button>
-        </Form>
+        </form>
       </div>
-      {customExtrapolationEndDate ? (
+      {!disabled && customExtrapolationEndDate ? (
         <div className="px-4 pt-4 text-white">
           <div className="flex flex-col rounded-lg bg-red-500 p-2 dark:bg-red-500/40 md:flex-row">
             <div className="flex justify-center" />

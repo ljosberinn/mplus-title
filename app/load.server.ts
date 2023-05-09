@@ -276,6 +276,11 @@ export const calculateExtrapolation = (
     return null;
   })();
 
+  // don't allow nonsensical extrapolation
+  if (daysUntilSeasonEnding && daysUntilSeasonEnding > 8 * 28) {
+    return null;
+  }
+
   const lastDataset = data[data.length - 1];
   const firstRelevantDataset = determineExtrapolationStart(
     data,
