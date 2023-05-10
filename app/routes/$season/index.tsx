@@ -402,6 +402,7 @@ function Card({ season, region }: CardProps): JSX.Element {
 
       <div className="mb-2 flex w-full justify-between">
         {season.affixes.map((set, index) => {
+          const setSlice = set.length === 3 ? set : set.slice(0, -1);
           const isCurrentWeek = index === indexOfCurrentWeek;
 
           const isNextWeek =
@@ -477,7 +478,7 @@ function Card({ season, region }: CardProps): JSX.Element {
               </span>
 
               <div>
-                {set.slice(0, -1).map((affix) => {
+                {setSlice.map((affix) => {
                   const affixName = getAffixName(affix);
 
                   return (
@@ -694,6 +695,9 @@ const createPlotBands = (
         index >= season.affixes.length ? index % season.affixes.length : index
       ] ?? [];
 
+    const relevantRotationSlice =
+      rotation.length === 3 ? rotation : rotation.slice(0, 3);
+
     options.push({
       from,
       to,
@@ -704,8 +708,7 @@ const createPlotBands = (
           display: "flex",
         },
         text: season.overlaysToDisplay.includes("affixes")
-          ? rotation
-              .slice(0, 3)
+          ? relevantRotationSlice
               .map((affix) => {
                 return `<img width="18" height="18" style="transform: rotate(-90deg); opacity: 0.75;" src="${getAffixIconUrl(
                   affix
