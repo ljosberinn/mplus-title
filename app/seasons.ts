@@ -18,7 +18,7 @@ export type Season = {
     Regions,
     CutoffSource | ({ source: string | null } & Record<Factions, number>)
   >;
-  affixes: [Affix, Affix, Affix, Affix][];
+  affixes: [Affix, Affix, Affix, Affix][] | [Affix, Affix, Affix][];
   rioKey: string;
   crossFactionSupport: "complete" | "none" | "partial";
   wcl?: {
@@ -39,8 +39,8 @@ export type EnhancedSeason = Season & {
     | null
     | [number, number][]
     | {
-        from: Omit<Dataset, 'rank'>;
-        to: Omit<Dataset, 'rank'>;
+        from: Omit<Dataset, "rank">;
+        to: Omit<Dataset, "rank">;
       }
   >;
   initialZoom: Record<Regions, null | [number, number]>;
@@ -80,7 +80,7 @@ export const seasons: Season[] = [
       kr: { score: 0, source: null },
       tw: { score: 0, source: null },
     },
-    affixes: [],
+    affixes: [[Affix.Fortified, Affix.Raging, Affix.Storming]],
     wcl: {
       zoneId: 34,
       weekIndexToAffixSetId: [],
