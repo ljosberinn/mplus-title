@@ -83,7 +83,7 @@ export const seasons: Season[] = [
     affixes: [[Affix.Tyrannical, Affix.Raging, Affix.Storming]],
     wcl: {
       zoneId: 34,
-      weekIndexToAffixSetId: [],
+      weekIndexToAffixSetId: [706],
     },
     seasonIcon:
       "https://wow.zamimg.com/images/wow/icons/small/inv_misc_head_dragon_black_nightmare.jpg",
