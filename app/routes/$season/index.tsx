@@ -460,7 +460,7 @@ function Card({ season, region }: CardProps): JSX.Element {
                   href={`https://mplus.subcreation.net/${
                     isCurrentSeason
                       ? season.affixes.length === 1
-                        ? "index.html"
+                        ? "index"
                         : ""
                       : `${season.slug.replace("season-", "s")}/`
                   }${
