@@ -458,12 +458,18 @@ function Card({ season, region }: CardProps): JSX.Element {
                 ) : null}
                 <a
                   href={`https://mplus.subcreation.net/${
-                    isCurrentSeason 
-                      ? season.affixes.length === 1 ? 'index.html' : ""
+                    isCurrentSeason
+                      ? season.affixes.length === 1
+                        ? "index.html"
+                        : ""
                       : `${season.slug.replace("season-", "s")}/`
-                  }${set
-                    .map((affix) => getAffixName(affix).toLowerCase())
-                    .join("-")}.html`}
+                  }${
+                    season.affixes.length === 1
+                      ? ""
+                      : set
+                          .map((affix) => getAffixName(affix).toLowerCase())
+                          .join("-")
+                  }.html`}
                   target="_blank"
                   rel="noopener noreferrer"
                   title="Subcreation for this week"
