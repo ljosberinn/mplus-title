@@ -198,10 +198,17 @@ const findIndexOfCurrentWeek = (season: EnhancedSeason, region: Regions) => {
   const latestDataset =
     season.dataByRegion[region][season.dataByRegion[region].length - 1];
 
-  return (
-    Math.floor((latestDataset.ts - startDate) / 1000 / 60 / 60 / 24 / 7) -
-    season.affixes.length
+  const weeksPassed = Math.floor(
+    (latestDataset.ts - startDate) / 1000 / 60 / 60 / 24 / 7
   );
+
+  // early into the season, affixes may be added at a time where either in
+  // general or for a specific region, data isn't present yet
+  if (weeksPassed - season.affixes.length <= 0) {
+    return 0;
+  }
+
+  return weeksPassed;
 };
 
 type CardProps = {
