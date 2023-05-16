@@ -80,7 +80,10 @@ export const seasons: Season[] = [
       kr: { score: 0, source: null },
       tw: { score: 0, source: null },
     },
-    affixes: [[Affix.Tyrannical, Affix.Raging, Affix.Storming]],
+    affixes: [
+      [Affix.Tyrannical, Affix.Raging, Affix.Storming],
+      [Affix.Fortified, Affix.Entangling, Affix.Bolstering],
+    ],
     wcl: {
       zoneId: 34,
       weekIndexToAffixSetId: [706],
