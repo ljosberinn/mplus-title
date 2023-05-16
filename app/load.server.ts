@@ -537,6 +537,7 @@ export const calculateXAxisPlotLines = (
   overlays: readonly Overlay[]
 ): XAxisPlotLinesOptions[] => {
   const endDate = season.endDates[region];
+  const startDate = season.startDates[region];
 
   const lines: XAxisPlotLinesOptions[] = [];
 
@@ -606,7 +607,9 @@ export const calculateXAxisPlotLines = (
   if (
     overlays.includes("levelCompletion") &&
     season.crossFactionSupport === "complete" &&
-    (season.wcl?.zoneId ?? 0) >= 32
+    (season.wcl?.zoneId ?? 0) >= 32 &&
+    data.length > 0 &&
+    startDate
   ) {
     for (let level = 16; level <= 35; level++) {
       const base = 25;
@@ -615,10 +618,18 @@ export const calculateXAxisPlotLines = (
 
       const total = base + levelPoints + affixPoints;
 
-      const tyrannicalAndFortified = total * 1.5 + total * 0.5;
+      const set1 = total * 1.5; // basically tyrannical only
+      const set2 = total * 0.5; // fort
+
+      // week 1 naturally has only 1 affix set
+      const tyrannicalAndFortified = set1 + set2;
       const allDungeons = tyrannicalAndFortified * season.dungeons;
 
       let match: Omit<Dataset, "rank"> | undefined = data.find((dataset) => {
+        if (dataset.ts - startDate < oneWeekInMs) {
+          return dataset.score >= set1 * season.dungeons;
+        }
+
         return dataset.score >= allDungeons;
       });
 
