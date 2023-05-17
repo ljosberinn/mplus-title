@@ -611,10 +611,44 @@ export const calculateXAxisPlotLines = (
     data.length > 0 &&
     startDate
   ) {
-    for (let level = 16; level <= 35; level++) {
-      const base = 25;
+    const base = 25;
+    const affixPoints = 25;
+
+    // calculate thresholds for week 1 separeately in order to show low key levels again across both weeks
+    for (let level = 15; level <= 23; level++) {
       const levelPoints = 5 * level + (level - 10) * 2;
-      const affixPoints = 25;
+      const total = base + levelPoints + affixPoints;
+      // week 1 naturally has only 1 affix set
+      const firstWeek = total * 1.5 * season.dungeons;
+
+      const match: Omit<Dataset, "rank"> | undefined = data.find((dataset) => {
+        if (dataset.ts - startDate < oneWeekInMs) {
+          return dataset.score >= firstWeek;
+        }
+
+        return false;
+      });
+
+      if (match) {
+        lines.push({
+          zIndex: 100,
+          label: {
+            text: `All ${level}`,
+            rotation: 0,
+            y: 200,
+            style: {
+              color: "white",
+            },
+          },
+          value: match.ts,
+          dashStyle: "Dash",
+          color: "white",
+        });
+      }
+    }
+
+    for (let level = 16; level <= 35; level++) {
+      const levelPoints = 5 * level + (level - 10) * 2;
 
       const total = base + levelPoints + affixPoints;
 
@@ -622,22 +656,18 @@ export const calculateXAxisPlotLines = (
       const set2 = total * 0.5; // fort
 
       // week 1 naturally has only 1 affix set
-      const tyrannicalAndFortified = set1 + set2;
-      const allDungeons = tyrannicalAndFortified * season.dungeons;
+      const bothWeeks = set1 + set2;
+      const allDungeonsBothWeeks = bothWeeks * season.dungeons;
 
       let match: Omit<Dataset, "rank"> | undefined = data.find((dataset) => {
-        if (dataset.ts - startDate < oneWeekInMs) {
-          return dataset.score >= set1 * season.dungeons;
-        }
-
-        return dataset.score >= allDungeons;
+        return dataset.score >= allDungeonsBothWeeks;
       });
 
       // if we have an extrapolation, check whether a key level threshold is
       // reached during the extrapolation window
       if (!match && Array.isArray(extrapolation)) {
         const extrapolationMatchIndex = extrapolation.findIndex(
-          ([, score]) => score >= allDungeons
+          ([, score]) => score >= allDungeonsBothWeeks
         );
 
         if (extrapolationMatchIndex > -1) {
@@ -651,10 +681,10 @@ export const calculateXAxisPlotLines = (
 
           // expensive, but a lot more precise than just picking next match
           for (let i = 0; i < timeDiff; i += 60_000) {
-            if (last.score + step * i > allDungeons) {
+            if (last.score + step * i > allDungeonsBothWeeks) {
               match = {
                 ts: last.ts + i,
-                score: allDungeons,
+                score: allDungeonsBothWeeks,
               };
               break;
             }
