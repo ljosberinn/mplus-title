@@ -48,7 +48,7 @@ export const action: ActionFunction = async ({ request }) => {
       const maybeSecret = payload.secret;
 
       if (!maybeSecret || secret !== maybeSecret) {
-        return json({ error: "secret missing" }, 403);
+        return json({ error: "secret missing" }, 204);
       }
     } else {
       console.info("Skipping verification of secret.");
