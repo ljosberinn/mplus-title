@@ -198,17 +198,7 @@ const findIndexOfCurrentWeek = (season: EnhancedSeason, region: Regions) => {
   const latestDataset =
     season.dataByRegion[region][season.dataByRegion[region].length - 1];
 
-  const weeksPassed = Math.floor(
-    (latestDataset.ts - startDate) / 1000 / 60 / 60 / 24 / 7
-  );
-
-  // early into the season, affixes may be added at a time where either in
-  // general or for a specific region, data isn't present yet
-  if (weeksPassed - season.affixes.length <= 0) {
-    return 0;
-  }
-
-  return weeksPassed;
+  return Math.floor((latestDataset.ts - startDate) / 1000 / 60 / 60 / 24 / 7);
 };
 
 type CardProps = {
@@ -217,6 +207,38 @@ type CardProps = {
 };
 
 const numberFormatParts = new Intl.NumberFormat().formatToParts(1234.5);
+
+type SubcreationLinkProps = {
+  isCurrentSeason: boolean;
+  isCurrentWeek: boolean;
+  season: CardProps["season"];
+  set: CardProps["season"]["affixes"][number];
+};
+
+function SubcreationLink({
+  set,
+  isCurrentSeason,
+  season,
+  isCurrentWeek,
+}: SubcreationLinkProps) {
+  const href = `https://mplus.subcreation.net/${(isCurrentSeason && isCurrentWeek) || season.affixes.length === 1 ? 'index' :set.map((affix) => getAffixName(affix).toLowerCase()).join("-") }.html`;
+
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      title="Subcreation for this week"
+    >
+      <img
+        src="https://subcreation.net/favicon.ico"
+        loading="lazy"
+        className="h-4 w-4"
+        alt=""
+      />
+    </a>
+  );
+}
 
 function Card({ season, region }: CardProps): JSX.Element {
   const ref = useRef<HighchartsReact.RefObject | null>(null);
@@ -463,31 +485,12 @@ function Card({ season, region }: CardProps): JSX.Element {
                     />
                   </a>
                 ) : null}
-                <a
-                  href={`https://mplus.subcreation.net/${
-                    isCurrentSeason
-                      ? season.affixes.length === 1
-                        ? "index"
-                        : ""
-                      : `${season.slug.replace("season-", "s")}/`
-                  }${
-                    season.affixes.length === 1
-                      ? ""
-                      : set
-                          .map((affix) => getAffixName(affix).toLowerCase())
-                          .join("-")
-                  }.html`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  title="Subcreation for this week"
-                >
-                  <img
-                    src="https://subcreation.net/favicon.ico"
-                    loading="lazy"
-                    className="h-4 w-4"
-                    alt=""
-                  />
-                </a>
+                <SubcreationLink
+                  season={season}
+                  isCurrentWeek={isCurrentWeek}
+                  isCurrentSeason={isCurrentSeason}
+                  set={set}
+                />
               </span>
 
               <div>

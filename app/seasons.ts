@@ -81,8 +81,9 @@ export const seasons: Season[] = [
       tw: { score: 0, source: null },
     },
     affixes: [
-      [Affix.Tyrannical, Affix.Raging, Affix.Storming],
+      [Affix.Tyrannical, Affix.Storming, Affix.Raging],
       [Affix.Fortified, Affix.Entangling, Affix.Bolstering],
+      [Affix.Tyrannical, Affix.Incorporeal, Affix.Spiteful],
     ],
     wcl: {
       zoneId: 34,

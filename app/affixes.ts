@@ -105,10 +105,10 @@ export const affixes: Record<Affix, { icon: string; name: string }> = {
     name: 'Entangling', icon: 'inv_misc_root_01'
   },
   [Affix.Afflicted]: {
-    name: 'Entangling', icon: 'spell_misc_emotionsad'
+    name: 'Afflicted', icon: 'spell_misc_emotionsad'
   },
   [Affix.Incorporeal]: {
-    name: 'Entangling', icon: 'achievement_boss_anomalus'
+    name: 'Incorporeal', icon: 'achievement_boss_anomalus'
   }
 };
 
