@@ -89,7 +89,7 @@ export const seasons: Season[] = [
     ],
     wcl: {
       zoneId: 34,
-      weekIndexToAffixSetId: [706, 762, 765, 767],
+      weekIndexToAffixSetId: [706, 762, 765, 767, 769],
     },
     seasonIcon:
       "https://wow.zamimg.com/images/wow/icons/small/inv_misc_head_dragon_black_nightmare.jpg",
