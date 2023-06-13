@@ -221,7 +221,11 @@ function SubcreationLink({
   season,
   isCurrentWeek,
 }: SubcreationLinkProps) {
-  const href = `https://mplus.subcreation.net/${(isCurrentSeason && isCurrentWeek) || season.affixes.length === 1 ? 'index' :set.map((affix) => getAffixName(affix).toLowerCase()).join("-") }.html`;
+  const href = `https://mplus.subcreation.net/${
+    (isCurrentSeason && isCurrentWeek) || season.affixes.length === 1
+      ? "index"
+      : set.map((affix) => getAffixName(affix).toLowerCase()).join("-")
+  }.html`;
 
   return (
     <a
@@ -695,7 +699,9 @@ const createPlotBands = (
 
   const seasonEnd = season.endDates[region];
 
-  const weeks = seasonEnd ? (seasonEnd - seasonStart) / oneWeekInMs + 1 : 36;
+  const weeks = seasonEnd
+    ? (seasonEnd - seasonStart) / oneWeekInMs + 1
+    : season.affixes.length * 3;
 
   return Array.from({
     length: weeks,
@@ -712,7 +718,12 @@ const createPlotBands = (
       ] ?? [];
 
     const relevantRotationSlice =
-      rotation.length === 3 ? rotation : rotation.slice(0, 3);
+    // for future weeks early into a season without a full rotation, default to -1 // questionmarks
+      from > Date.now() && season.affixes.length < 10
+        ? [-1, -1, -1]
+        : rotation.length === 3
+        ? rotation
+        : rotation.slice(0, 3);
 
     options.push({
       from,

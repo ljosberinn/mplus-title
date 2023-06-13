@@ -102,16 +102,24 @@ export const affixes: Record<Affix, { icon: string; name: string }> = {
     icon: "shaman_pvp_leaderclan",
   },
   [Affix.Entangling]: {
-    name: 'Entangling', icon: 'inv_misc_root_01'
+    name: "Entangling",
+    icon: "inv_misc_root_01",
   },
   [Affix.Afflicted]: {
-    name: 'Afflicted', icon: 'spell_misc_emotionsad'
+    name: "Afflicted",
+    icon: "spell_misc_emotionsad",
   },
   [Affix.Incorporeal]: {
-    name: 'Incorporeal', icon: 'achievement_boss_anomalus'
-  }
+    name: "Incorporeal",
+    icon: "achievement_boss_anomalus",
+  },
 };
 
-export const getAffixIconUrl = (id: Affix): string =>
-  `https://wow.zamimg.com/images/wow/icons/small/${affixes[id].icon}.jpg`;
+export const getAffixIconUrl = (id: Affix | -1): string => {
+  if (id === -1) {
+    return `https://wow.zamimg.com/images/wow/icons/small/inv_misc_questionmark.jpg`;
+  }
+
+  return `https://wow.zamimg.com/images/wow/icons/small/${affixes[id].icon}.jpg`;
+};
 export const getAffixName = (id: Affix): string => affixes[id].name;
