@@ -703,6 +703,8 @@ const createPlotBands = (
     ? (seasonEnd - seasonStart) / oneWeekInMs + 1
     : season.affixes.length * 3;
 
+  const now = Date.now();
+
   return Array.from({
     length: weeks,
   }).flatMap<XAxisPlotBandsOptions>((_, index) => {
@@ -718,8 +720,8 @@ const createPlotBands = (
       ] ?? [];
 
     const relevantRotationSlice =
-    // for future weeks early into a season without a full rotation, default to -1 // questionmarks
-      from > Date.now() && season.affixes.length < 10
+      // for future weeks early into a season without a full rotation, default to -1 // questionmarks
+      from > now && season.affixes.length < 10
         ? [-1, -1, -1]
         : rotation.length === 3
         ? rotation
