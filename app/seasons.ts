@@ -56,6 +56,9 @@ export type Dataset = {
   rank: number | null;
 };
 
+const usToEuOffset = 46_800_000;
+const usToAsiaOffset = 111_600_000
+
 export const seasons: Season[] = [
   {
     name: "DF S2",
@@ -96,7 +99,14 @@ export const seasons: Season[] = [
     seasonIcon:
       "https://wow.zamimg.com/images/wow/icons/small/inv_misc_head_dragon_black_nightmare.jpg",
     dungeonHotfixes: {},
-    patches: {},
+    patches: {
+      "10.1.5": {
+        us: 1_689_087_600_000,
+        eu: 1_689_087_600_000 + usToEuOffset,
+        kr: 1_689_087_600_000 + usToAsiaOffset,
+        tw: 1_689_087_600_000 + usToAsiaOffset,
+      },
+    },
     dungeons: 8,
   },
   {
