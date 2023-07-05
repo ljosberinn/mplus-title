@@ -93,6 +93,7 @@ export const seasons: Season[] = [
       [Affix.Tyrannical, Affix.Afflicted, Affix.Bolstering],
       [Affix.Fortified, Affix.Incorporeal, Affix.Sanguine],
       [Affix.Tyrannical, Affix.Entangling, Affix.Bursting],
+      [Affix.Fortified, Affix.Volcanic, Affix.Spiteful],
     ],
     wcl: {
       zoneId: 34,
