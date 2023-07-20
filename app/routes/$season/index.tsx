@@ -198,7 +198,11 @@ const findIndexOfCurrentWeek = (season: EnhancedSeason, region: Regions) => {
   const latestDataset =
     season.dataByRegion[region][season.dataByRegion[region].length - 1];
 
-  return Math.floor((latestDataset.ts - startDate) / 1000 / 60 / 60 / 24 / 7);
+  const result = Math.floor(
+    (latestDataset.ts - startDate) / 1000 / 60 / 60 / 24 / 7
+  );
+
+  return result === season.affixes.length ? 0 : result;
 };
 
 type CardProps = {
@@ -439,7 +443,7 @@ function Card({ season, region }: CardProps): JSX.Element {
           const isCurrentWeek = index === indexOfCurrentWeek;
 
           const isNextWeek =
-            isCurrentWeek || !indexOfCurrentWeek
+            isCurrentWeek || indexOfCurrentWeek === null
               ? false
               : index === indexOfCurrentWeek + 1;
 
