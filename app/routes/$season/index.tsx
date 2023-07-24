@@ -11,7 +11,7 @@ import Highcharts, {
   type YAxisPlotLinesOptions,
 } from "highcharts";
 import HighchartsReact from "highcharts-react-official";
-import { Fragment, useEffect, useRef } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 
 import { getAffixIconUrl, getAffixName } from "~/affixes";
 import { Footer } from "~/components/Footer";
@@ -162,8 +162,11 @@ export const loader = async ({
   return json(enhancedSeason, { headers });
 };
 
+type ZoomExtremes = null | { min: number; max: number };
+
 export default function Season(): JSX.Element | null {
   const season = useLoaderData<typeof loader>();
+  const [extremes, setExtremes] = useState<ZoomExtremes>(null);
 
   return (
     <>
@@ -172,7 +175,12 @@ export default function Season(): JSX.Element | null {
         {season.regionsToDisplay.map((region, index, arr) => {
           return (
             <Fragment key={region}>
-              <Card season={season} region={region} />
+              <Card
+                season={season}
+                region={region}
+                onZoom={setExtremes}
+                extremes={extremes}
+              />
               {index === arr.length - 1 ? null : <hr className="opacity-50" />}
             </Fragment>
           );
@@ -208,6 +216,8 @@ const findIndexOfCurrentWeek = (season: EnhancedSeason, region: Regions) => {
 type CardProps = {
   season: EnhancedSeason;
   region: Regions;
+  extremes: ZoomExtremes
+  onZoom: (extremes: ZoomExtremes) => void;
 };
 
 const numberFormatParts = new Intl.NumberFormat().formatToParts(1234.5);
@@ -248,18 +258,25 @@ function SubcreationLink({
   );
 }
 
-function Card({ season, region }: CardProps): JSX.Element {
+function Card({ season, region, extremes, onZoom }: CardProps): JSX.Element {
   const ref = useRef<HighchartsReact.RefObject | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
 
   const confirmedCutoffUrl = season.confirmedCutoffs[region].source;
-  const zoom = season.initialZoom[region];
   const navigation = useNavigation();
 
   useEffect(() => {
     if (!ref.current) {
       return;
     }
+
+    if (extremes) {
+      ref.current.chart.xAxis[0].setExtremes(extremes.min, extremes.max);
+      ref.current.chart.showResetZoom();
+      return
+    }
+
+    const zoom = season.initialZoom[region];
 
     if (containerRef.current) {
       containerRef.current.className = "";
@@ -278,7 +295,7 @@ function Card({ season, region }: CardProps): JSX.Element {
 
     ref.current.chart.xAxis[0].setExtremes(start, end);
     ref.current.chart.showResetZoom();
-  }, [zoom]);
+  }, [region, season.initialZoom, extremes]);
 
   if (season.dataByRegion[region].length === 0) {
     const startDate = season.startDates[region];
@@ -355,6 +372,18 @@ function Card({ season, region }: CardProps): JSX.Element {
       },
     },
     xAxis: {
+      events: {
+        afterSetExtremes(event) {
+          if (event.trigger !== "zoom") {
+            return;
+          }
+
+          onZoom({
+            min: event.min,
+            max: event.max,
+          });
+        },
+      },
       title: {
         text: "Day",
         style: {
