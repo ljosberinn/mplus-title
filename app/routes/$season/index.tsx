@@ -210,13 +210,21 @@ const findIndexOfCurrentWeek = (season: EnhancedSeason, region: Regions) => {
     (latestDataset.ts - startDate) / 1000 / 60 / 60 / 24 / 7
   );
 
-  return result === season.affixes.length ? 0 : result;
+  if (result === season.affixes.length) {
+    return 0;
+  }
+
+  if (result > season.affixes.length) {
+    return result - season.affixes.length;
+  }
+
+  return result;
 };
 
 type CardProps = {
   season: EnhancedSeason;
   region: Regions;
-  extremes: ZoomExtremes
+  extremes: ZoomExtremes;
   onZoom: (extremes: ZoomExtremes) => void;
 };
 
@@ -273,7 +281,7 @@ function Card({ season, region, extremes, onZoom }: CardProps): JSX.Element {
     if (extremes) {
       ref.current.chart.xAxis[0].setExtremes(extremes.min, extremes.max);
       ref.current.chart.showResetZoom();
-      return
+      return;
     }
 
     const zoom = season.initialZoom[region];
