@@ -54,7 +54,7 @@ export function Footer(): JSX.Element {
                 Twitter
               </FooterNavLink>
 
-              <FooterNavLink icon={FaDiscord}>Xepheris#6539</FooterNavLink>
+              <FooterNavLink icon={FaDiscord}>xepher1s</FooterNavLink>
             </ul>
           </div>
         </nav>
