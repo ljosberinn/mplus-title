@@ -57,7 +57,7 @@ export type Dataset = {
 };
 
 const usToEuOffset = 46_800_000;
-const usToAsiaOffset = 111_600_000
+const usToAsiaOffset = 111_600_000;
 
 export const seasons: Season[] = [
   {
@@ -102,12 +102,24 @@ export const seasons: Season[] = [
     seasonIcon:
       "https://wow.zamimg.com/images/wow/icons/small/inv_misc_head_dragon_black_nightmare.jpg",
     dungeonHotfixes: {
+      "Larger Class Tuning": {
+        us: 1_691_506_800_000,
+        eu: 1_691_506_800_000 + usToEuOffset,
+        kr: 1_691_506_800_000 + usToAsiaOffset,
+        tw: 1_691_506_800_000 + usToAsiaOffset,
+      },
+      "Small Class Tuning": {
+        us: 1_690_297_200_000,
+        eu: 1_690_297_200_000 + usToEuOffset,
+        kr: 1_690_297_200_000 + usToAsiaOffset,
+        tw: 1_690_297_200_000 + usToAsiaOffset,
+      },
       "Various Nerfs": {
-          us: 1_688_130_000_000,
-          eu: 1_688_130_000_000 + usToEuOffset,
-          kr: 1_688_130_000_000 + usToAsiaOffset,
-          tw: 1_688_130_000_000 + usToAsiaOffset,
-      }
+        us: 1_688_130_000_000,
+        eu: 1_688_130_000_000 + usToEuOffset,
+        kr: 1_688_130_000_000 + usToAsiaOffset,
+        tw: 1_688_130_000_000 + usToAsiaOffset,
+      },
     },
     patches: {
       "10.1.5": {
