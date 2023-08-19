@@ -102,6 +102,12 @@ export const seasons: Season[] = [
     seasonIcon:
       "https://wow.zamimg.com/images/wow/icons/small/inv_misc_head_dragon_black_nightmare.jpg",
     dungeonHotfixes: {
+      "Scaling Adjustment": {
+        us: 1_692_716_400_000,
+        eu: 1_692_716_400_000 + usToEuOffset,
+        kr: 1_692_716_400_000 + usToAsiaOffset,
+        tw: 1_692_716_400_000 + usToAsiaOffset,
+      },
       "Larger Class Tuning": {
         us: 1_691_506_800_000,
         eu: 1_691_506_800_000 + usToEuOffset,
