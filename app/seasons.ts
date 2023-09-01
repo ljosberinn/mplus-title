@@ -30,6 +30,7 @@ export type Season = {
   dungeonHotfixes: Record<string, Record<Regions, number>>;
   patches: Record<string, Record<Regions, number>>;
   dungeons: number;
+  startingPeriod: number | null;
 };
 
 export type EnhancedSeason = Season & {
@@ -136,6 +137,7 @@ export const seasons: Season[] = [
       },
     },
     dungeons: 8,
+    startingPeriod: 906,
   },
   {
     name: "DF S1",
@@ -208,6 +210,7 @@ export const seasons: Season[] = [
       },
     },
     dungeons: 8,
+    startingPeriod: 885,
   },
   {
     name: "SL S4",
@@ -264,6 +267,7 @@ export const seasons: Season[] = [
     dungeonHotfixes: {},
     patches: {},
     dungeons: 8,
+    startingPeriod: 866,
   },
   {
     name: "SL S3",
@@ -317,6 +321,7 @@ export const seasons: Season[] = [
     dungeonHotfixes: {},
     patches: {},
     dungeons: 10,
+    startingPeriod: 844,
   },
   {
     name: "SL S2",
@@ -385,6 +390,7 @@ export const seasons: Season[] = [
     //   ],
     // },
     dungeons: 8,
+    startingPeriod: null,
   },
 ];
 

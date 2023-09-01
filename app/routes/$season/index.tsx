@@ -739,10 +739,17 @@ const createPlotBands = (
   }
 
   const seasonEnd = season.endDates[region];
+  const {
+    startingPeriod,
+    affixes,
+    overlaysToDisplay,
+    dataByRegion,
+    crossFactionSupport,
+  } = season;
 
   const weeks = seasonEnd
     ? (seasonEnd - seasonStart) / oneWeekInMs + 1
-    : season.affixes.length * 3;
+    : affixes.length * 3;
 
   const now = Date.now();
 
@@ -756,13 +763,11 @@ const createPlotBands = (
     const color = index % 2 === 0 ? "#4b5563" : "#1f2937";
 
     const rotation =
-      season.affixes[
-        index >= season.affixes.length ? index % season.affixes.length : index
-      ] ?? [];
+      affixes[index >= affixes.length ? index % affixes.length : index] ?? [];
 
     const relevantRotationSlice =
       // for future weeks early into a season without a full rotation, default to -1 // questionmarks
-      from > now && season.affixes.length < 10
+      from > now && affixes.length < 10
         ? [-1, -1, -1]
         : rotation.length === 3
         ? rotation
@@ -777,7 +782,7 @@ const createPlotBands = (
         style: {
           display: "flex",
         },
-        text: season.overlaysToDisplay.includes("affixes")
+        text: overlaysToDisplay.includes("affixes")
           ? relevantRotationSlice
               .map((affix) => {
                 return `<img width="18" height="18" style="transform: rotate(-90deg); opacity: 0.75;" src="${getAffixIconUrl(
@@ -793,10 +798,29 @@ const createPlotBands = (
       },
     });
 
+    if (startingPeriod && from < now) {
+      const size = 36;
+
+      options.push({
+        from,
+        to,
+        color,
+        label: {
+          useHTML: true,
+          text: `<a href="https://mythicstats.com/period/${
+            startingPeriod + index
+          }" target="_blank"><img style="border: 1px solid" title="MythicStats" height="${size}" width="${size}" src="/mythic-stats.png" alt="MythicStats" /></a>`,
+          align: "left",
+          x: 18,
+          y: size / 2 - 1,
+        },
+      });
+    }
+
     const { allianceDiff, hordeDiff, xFactionDiff } =
       calculateFactionDiffForWeek(
-        season.dataByRegion[region],
-        season.crossFactionSupport,
+        dataByRegion[region],
+        crossFactionSupport,
         index === 0,
         from,
         to
