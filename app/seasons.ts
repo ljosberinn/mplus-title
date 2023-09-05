@@ -135,6 +135,12 @@ export const seasons: Season[] = [
         kr: 1_689_087_600_000 + usToAsiaOffset,
         tw: 1_689_087_600_000 + usToAsiaOffset,
       },
+      "10.1.7": {
+        us: 1_693_926_000_000,
+        eu: 1_693_926_000_000 + usToEuOffset,
+        kr: 1_693_926_000_000 + usToAsiaOffset,
+        tw: 1_693_926_000_000 + usToAsiaOffset,
+      },
     },
     dungeons: 8,
     startingPeriod: 906,
