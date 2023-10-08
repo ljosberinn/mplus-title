@@ -1,9 +1,6 @@
 import {
-  json,
   type LinksFunction,
   type MetaFunction,
-  type SerializeFrom,
-  type TypedResponse,
 } from "@remix-run/node";
 import {
   Links,
@@ -12,12 +9,9 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
-  useLoaderData,
 } from "@remix-run/react";
-import { Analytics } from "@vercel/analytics/react";
 import { SSRProvider } from "react-aria";
 
-import { env } from "~/env/client";
 import stylesheet from "~/tailwind.css";
 
 export const links: LinksFunction = () => {
@@ -55,20 +49,8 @@ export const links: LinksFunction = () => {
   ];
 };
 
-export const loader = (): TypedResponse<{ ENV: Record<string, unknown> }> => {
-  return json({
-    ENV: {
-      VERCEL_ANALYTICS_ID: env.VERCEL_ANALYTICS_ID,
-    },
-  });
-};
 
-declare global {
-  // eslint-disable-next-line @typescript-eslint/consistent-type-definitions
-  interface Window {
-    ENV: SerializeFrom<typeof loader>["ENV"];
-  }
-}
+
 
 const title = "Title Cutoff History & Estimation";
 
@@ -108,7 +90,6 @@ export const meta: MetaFunction = () => {
 };
 
 export default function App(): JSX.Element {
-  const { ENV } = useLoaderData<typeof loader>();
 
   return (
     <html
@@ -119,7 +100,8 @@ export default function App(): JSX.Element {
       <head>
         <Meta />
         <Links />
-      </head>
+        <script defer data-domain="mplus-title.vercel.app" src="/trace.js" />
+        </head>
       <body className="min-h-screen">
         <div className="flex min-h-screen flex-col">
           <SSRProvider>
@@ -127,15 +109,8 @@ export default function App(): JSX.Element {
           </SSRProvider>
         </div>
         <ScrollRestoration />
-        <Analytics />
         <Scripts />
         <LiveReload />
-        <script
-          // eslint-disable-next-line react/no-danger
-          dangerouslySetInnerHTML={{
-            __html: `window.ENV = ${JSON.stringify(ENV)}`,
-          }}
-        />
       </body>
     </html>
   );

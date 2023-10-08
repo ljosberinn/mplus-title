@@ -1,6 +1,5 @@
 import { z } from "zod";
 
-import { clientSchema } from "~/env/client";
 
 /**
  * Server accessible values go here.
@@ -19,7 +18,7 @@ export const serverSchema = z.object({
     .transform(Boolean),
 });
 
-export const mergedSchema = serverSchema.merge(clientSchema);
+export const mergedSchema = serverSchema
 
 const parsed = mergedSchema.safeParse(process.env);
 if (!parsed.success) {

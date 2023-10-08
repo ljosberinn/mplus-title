@@ -809,7 +809,7 @@ const createPlotBands = (
           useHTML: true,
           text: `<a href="https://mythicstats.com/period/${
             startingPeriod + index
-          }" target="_blank"><img style="border: 1px solid" title="MythicStats" height="${size}" width="${size}" src="/mythic-stats.png" alt="MythicStats" /></a>`,
+          }" target="_blank"><img style="border: 1px solid" title="MythicStats" height="${size}" width="${size}" src="/mythic-stats.png" /></a>`,
           align: "left",
           x: 18,
           y: size / 2 - 1,
