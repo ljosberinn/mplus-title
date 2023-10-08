@@ -811,8 +811,9 @@ const createPlotBands = (
             startingPeriod + index
           }" target="_blank"><img style="border: 1px solid" title="MythicStats" height="${size}" width="${size}" src="/mythic-stats.png" /></a>`,
           align: "left",
-          x: 18,
-          y: size / 2 - 1,
+          x: 5,
+          y: -size + 5,
+          verticalAlign: 'bottom'
         },
       });
     }
