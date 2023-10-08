@@ -3,7 +3,13 @@
   const a = window.location;
   const r = window.document;
   const o = r.currentScript;
-  const l = '/api/event'
+  const l = "/api/event";
+
+  const params = new URL(document.location).searchParams;
+
+  const regions = (params.get("regions")?.split("~") ?? []).sort();
+  const overlays = (params.get("overlays")?.split("~") ?? [])?.sort();
+
   function s(t, e) {
     t && console.warn(`Ignoring Event: ${t}`), e && e.callback && e.callback();
   }
@@ -23,6 +29,15 @@
       return s(null, e);
     }
     const n = {};
+
+    if (regions.length > 0) {
+      n.regions = regions;
+    }
+
+    if (overlays.length > 0) {
+      n.overlays = overlays;
+    }
+
     const i =
       ((n.n = t),
       (n.u = a.href),
