@@ -19,5 +19,5 @@ export const action: ActionFunction = async ({ request }) => {
     // ignore
   }
 
-  return null;
+  return json([], 204);
 };

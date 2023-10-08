@@ -1,6 +1,5 @@
 import { z } from "zod";
 
-
 /**
  * Server accessible values go here.
  */

@@ -1,8 +1,8 @@
 import { version } from "react";
 import { BsPaypal } from "react-icons/bs";
-import { FaDiscord, FaPatreon,FaTwitter } from "react-icons/fa";
-import  { type IconType } from "react-icons/lib";
-import { SiBuymeacoffee } from "react-icons/si";
+import { FaDiscord, FaPatreon, FaTwitter } from "react-icons/fa";
+import { type IconType } from "react-icons/lib";
+import { SiBuymeacoffee, SiPlausibleanalytics } from "react-icons/si";
 
 import { ExternalLink } from "./ExternalLink";
 import { Logo } from "./Logo";
@@ -45,6 +45,13 @@ export function Footer(): JSX.Element {
                 icon={FaPatreon}
               >
                 Warcraft Logs Patreon
+              </FooterNavLink>
+
+              <FooterNavLink
+                href="https://plausible.io/mplus-title.vercel.app/"
+                icon={SiPlausibleanalytics}
+              >
+                Plausible Analytics
               </FooterNavLink>
 
               <FooterNavLink
@@ -365,7 +372,10 @@ function FooterNavLink({ href, children, icon: Icon }: FooterNavLinkProps) {
   return (
     <li className="py-1 text-base leading-relaxed md:text-sm">
       {href ? (
-        <ExternalLink className="transition-colors duration-150 ease-in-out hover:text-yellow-600" href={href}>
+        <ExternalLink
+          className="transition-colors duration-150 ease-in-out hover:text-yellow-600"
+          href={href}
+        >
           {body}
         </ExternalLink>
       ) : (
