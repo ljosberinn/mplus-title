@@ -7,19 +7,13 @@
 
   const params = new URL(document.location).searchParams;
 
-  const regions = (params.get("regions")?.split("~") ?? []).sort();
-  const overlays = (params.get("overlays")?.split("~") ?? [])?.sort();
+  const regions = params.get("regions");
+  const overlays = params.get("overlays");
 
   function s(t, e) {
     t && console.warn(`Ignoring Event: ${t}`), e && e.callback && e.callback();
   }
   function t(t, e) {
-    if (
-      /^localhost$|^127(\.\d+){0,2}\.\d+$|^\[::1?]$/.test(a.hostname) ||
-      a.protocol === "file:"
-    ) {
-      return s("localhost", e);
-    }
     if (
       window._phantom ||
       window.__nightmare ||
@@ -30,12 +24,21 @@
     }
     const n = {};
 
-    if (regions.length > 0) {
-      n.regions = regions;
+    const props = {};
+    let hasProps = false;
+
+    if (regions) {
+      props.regions = regions;
+      hasProps = true;
     }
 
-    if (overlays.length > 0) {
-      n.overlays = overlays;
+    if (overlays) {
+      props.overlays = regions;
+      hasProps = true;
+    }
+
+    if (hasProps) {
+      n.props = props;
     }
 
     const i =
