@@ -22,24 +22,12 @@
     ) {
       return s(null, e);
     }
-    const n = {};
-
-    const props = {};
-    let hasProps = false;
-
-    if (regions) {
-      props.regions = regions;
-      hasProps = true;
-    }
-
-    if (overlays) {
-      props.overlays = regions;
-      hasProps = true;
-    }
-
-    if (hasProps) {
-      n.props = props;
-    }
+    const n = {
+      props: {
+        regions,
+        overlays,
+      },
+    };
 
     const i =
       ((n.n = t),
