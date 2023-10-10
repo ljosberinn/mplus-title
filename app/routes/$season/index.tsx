@@ -215,7 +215,7 @@ const findIndexOfCurrentWeek = (season: EnhancedSeason, region: Regions) => {
   }
 
   if (result > season.affixes.length) {
-    return result - season.affixes.length;
+    return result % season.affixes.length;
   }
 
   return result;
