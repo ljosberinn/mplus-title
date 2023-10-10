@@ -55,7 +55,7 @@ export function Footer(): JSX.Element {
               </FooterNavLink>
 
               <FooterNavLink
-                href="https://twitter.com/gerrit_alex"
+                href="https://twitter.com/xepher1s"
                 icon={FaTwitter}
               >
                 Twitter
