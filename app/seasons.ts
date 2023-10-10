@@ -57,20 +57,66 @@ export type Dataset = {
   rank: number | null;
 };
 
-const usToEuOffset = 46_800_000;
-const usToAsiaOffset = 111_600_000;
+function offsetByRegion(timestamp: number, region: Regions): number {
+  switch (region) {
+    case "us": {
+      return timestamp;
+    }
+    case "eu": {
+      return timestamp + 46_800_000;
+    }
+    case "kr":
+    case "tw": {
+      return timestamp + 111_600_000;
+    }
+  }
+}
 
 export const seasons: Season[] = [
+  {
+    name: "DF S3",
+    slug: "df-season-3",
+    rioKey: "season-df-3",
+    crossFactionSupport: "complete",
+    startDates: {
+      eu: null,
+      kr: null,
+      tw: null,
+      us: null,
+    },
+    endDates: {
+      us: UNKNOWN_SEASON_START_OR_ENDING,
+      eu: UNKNOWN_SEASON_START_OR_ENDING,
+      kr: UNKNOWN_SEASON_START_OR_ENDING,
+      tw: UNKNOWN_SEASON_START_OR_ENDING,
+    },
+    confirmedCutoffs: {
+      eu: { score: 0, source: null },
+      us: { score: 0, source: null },
+      kr: { score: 0, source: null },
+      tw: { score: 0, source: null },
+    },
+    affixes: [],
+    wcl: {
+      zoneId: 36,
+      weekIndexToAffixSetId: [],
+    },
+    seasonIcon: "https://assets.rpglogs.com/img/warcraft/zones/zone-36.png",
+    dungeonHotfixes: {},
+    dungeons: 8,
+    patches: {},
+    startingPeriod: null,
+  },
   {
     name: "DF S2",
     slug: "df-season-2",
     rioKey: "season-df-2",
     crossFactionSupport: "complete",
     startDates: {
-      us: 1_683_644_400_000,
-      eu: 1_683_691_200_000,
-      kr: 1_683_759_600_000,
-      tw: 1_683_759_600_000,
+      us: offsetByRegion(1_683_644_400_000, "us"),
+      eu: offsetByRegion(1_683_644_400_000, "eu"),
+      kr: offsetByRegion(1_683_644_400_000, "kr"),
+      tw: offsetByRegion(1_683_644_400_000, "tw"),
     },
     endDates: {
       us: UNKNOWN_SEASON_START_OR_ENDING,
@@ -100,46 +146,45 @@ export const seasons: Season[] = [
       zoneId: 34,
       weekIndexToAffixSetId: [706, 762, 765, 767, 769, 419, 771, 775, 785, 502],
     },
-    seasonIcon:
-      "https://wow.zamimg.com/images/wow/icons/small/inv_misc_head_dragon_black_nightmare.jpg",
+    seasonIcon: "https://assets.rpglogs.com/img/warcraft/zones/zone-34.png",
     dungeonHotfixes: {
       "Scaling Adjustment": {
-        us: 1_692_716_400_000,
-        eu: 1_692_716_400_000 + usToEuOffset,
-        kr: 1_692_716_400_000 + usToAsiaOffset,
-        tw: 1_692_716_400_000 + usToAsiaOffset,
+        us: offsetByRegion(1_692_716_400_000, "us"),
+        eu: offsetByRegion(1_692_716_400_000, "eu"),
+        kr: offsetByRegion(1_692_716_400_000, "kr"),
+        tw: offsetByRegion(1_692_716_400_000, "tw"),
       },
       "Larger Class Tuning": {
-        us: 1_691_506_800_000,
-        eu: 1_691_506_800_000 + usToEuOffset,
-        kr: 1_691_506_800_000 + usToAsiaOffset,
-        tw: 1_691_506_800_000 + usToAsiaOffset,
+        us: offsetByRegion(1_691_506_800_000, "us"),
+        eu: offsetByRegion(1_691_506_800_000, "eu"),
+        kr: offsetByRegion(1_691_506_800_000, "kr"),
+        tw: offsetByRegion(1_691_506_800_000, "tw"),
       },
       "Small Class Tuning": {
-        us: 1_690_297_200_000,
-        eu: 1_690_297_200_000 + usToEuOffset,
-        kr: 1_690_297_200_000 + usToAsiaOffset,
-        tw: 1_690_297_200_000 + usToAsiaOffset,
+        us: offsetByRegion(1_690_297_200_000, "us"),
+        eu: offsetByRegion(1_690_297_200_000, "eu"),
+        kr: offsetByRegion(1_690_297_200_000, "kr"),
+        tw: offsetByRegion(1_690_297_200_000, "tw"),
       },
       "Various Nerfs": {
-        us: 1_688_130_000_000,
-        eu: 1_688_130_000_000 + usToEuOffset,
-        kr: 1_688_130_000_000 + usToAsiaOffset,
-        tw: 1_688_130_000_000 + usToAsiaOffset,
+        us: offsetByRegion(1_688_130_000_000, "us"),
+        eu: offsetByRegion(1_688_130_000_000, "eu"),
+        kr: offsetByRegion(1_688_130_000_000, "kr"),
+        tw: offsetByRegion(1_688_130_000_000, "tw"),
       },
     },
     patches: {
       "10.1.5": {
-        us: 1_689_087_600_000,
-        eu: 1_689_087_600_000 + usToEuOffset,
-        kr: 1_689_087_600_000 + usToAsiaOffset,
-        tw: 1_689_087_600_000 + usToAsiaOffset,
+        us: offsetByRegion(1_689_087_600_000, "us"),
+        eu: offsetByRegion(1_689_087_600_000, "eu"),
+        kr: offsetByRegion(1_689_087_600_000, "kr"),
+        tw: offsetByRegion(1_689_087_600_000, "tw"),
       },
       "10.1.7": {
-        us: 1_693_926_000_000,
-        eu: 1_693_926_000_000 + usToEuOffset,
-        kr: 1_693_926_000_000 + usToAsiaOffset,
-        tw: 1_693_926_000_000 + usToAsiaOffset,
+        us: offsetByRegion(1_693_926_000_000, "us"),
+        eu: offsetByRegion(1_693_926_000_000, "eu"),
+        kr: offsetByRegion(1_693_926_000_000, "kr"),
+        tw: offsetByRegion(1_693_926_000_000, "tw"),
       },
     },
     dungeons: 8,
@@ -151,16 +196,16 @@ export const seasons: Season[] = [
     rioKey: "season-df-1",
     crossFactionSupport: "complete",
     startDates: {
-      us: 1_670_943_600_000,
-      eu: 1_670_990_400_000,
-      kr: 1_671_058_800_000,
-      tw: 1_671_058_800_000,
+      us: offsetByRegion(1_670_943_600_000, "us"),
+      eu: offsetByRegion(1_670_943_600_000, "eu"),
+      kr: offsetByRegion(1_670_943_600_000, "kr"),
+      tw: offsetByRegion(1_670_943_600_000, "tw"),
     },
     endDates: {
-      us: 1_683_007_200_000,
-      eu: 1_683_057_600_000,
-      kr: 1_683_118_800_000,
-      tw: 1_683_118_800_000,
+      us: offsetByRegion(1_683_007_200_000, "us"),
+      eu: offsetByRegion(1_683_007_200_000, "eu"),
+      kr: offsetByRegion(1_683_007_200_000, "kr"),
+      tw: offsetByRegion(1_683_007_200_000, "tw"),
     },
     confirmedCutoffs: {
       eu: {
@@ -195,24 +240,24 @@ export const seasons: Season[] = [
     seasonIcon: getAffixIconUrl(Affix.Thundering),
     dungeonHotfixes: {
       "Azure Vault +1.5 Minutes": {
-        eu: 1_678_852_800_000,
-        us: 1_678_798_800_000,
-        kr: 1_678_921_200_000,
-        tw: 1_678_921_200_000,
+        us: offsetByRegion(1_678_798_800_000, "us"),
+        eu: offsetByRegion(1_678_798_800_000, "eu"),
+        kr: offsetByRegion(1_678_798_800_000, "kr"),
+        tw: offsetByRegion(1_678_798_800_000, "tw"),
       },
     },
     patches: {
       "10.0.7": {
-        eu: 1_679_457_600_000,
-        us: 1_679_410_800_000,
-        kr: 1_679_526_000_000,
-        tw: 1_679_526_000_000,
+        us: offsetByRegion(1_679_410_800_000, "us"),
+        eu: offsetByRegion(1_679_410_800_000, "eu"),
+        kr: offsetByRegion(1_679_410_800_000, "kr"),
+        tw: offsetByRegion(1_679_410_800_000, "tw"),
       },
       "10.0.5": {
-        eu: 1_675_224_000_000,
-        us: 1_675_177_200_000,
-        kr: 1_675_292_400_000,
-        tw: 1_675_292_400_000,
+        us: offsetByRegion(1_675_177_200_000, "us"),
+        eu: offsetByRegion(1_675_177_200_000, "eu"),
+        kr: offsetByRegion(1_675_177_200_000, "kr"),
+        tw: offsetByRegion(1_675_177_200_000, "tw"),
       },
     },
     dungeons: 8,
@@ -224,16 +269,16 @@ export const seasons: Season[] = [
     rioKey: "season-sl-4",
     crossFactionSupport: "complete",
     startDates: {
-      us: 1_659_452_400_000,
-      eu: 1_659_510_000_000,
-      kr: 1_659_564_000_000,
-      tw: 1_659_564_000_000,
+      us: offsetByRegion(1_659_452_400_000, "us"),
+      eu: offsetByRegion(1_659_452_400_000, "eu"),
+      kr: offsetByRegion(1_659_452_400_000, "kr"),
+      tw: offsetByRegion(1_659_452_400_000, "tw"),
     },
     endDates: {
-      us: 1_666_710_000_000,
-      eu: 1_666_767_600_000,
-      kr: 1_666_821_600_000,
-      tw: 1_666_821_600_000,
+      us: offsetByRegion(1_666_710_000_000, "us"),
+      eu: offsetByRegion(1_666_710_000_000, "eu"),
+      kr: offsetByRegion(1_666_710_000_000, "kr"),
+      tw: offsetByRegion(1_666_710_000_000, "tw"),
     },
     confirmedCutoffs: {
       eu: {
@@ -281,16 +326,16 @@ export const seasons: Season[] = [
     rioKey: "season-sl-3",
     crossFactionSupport: "partial",
     startDates: {
-      us: 1_646_146_800_000,
-      eu: 1_646_204_400_000,
-      kr: 1_646_258_400_000,
-      tw: 1_646_258_400_000,
+      us: offsetByRegion(1_646_146_800_000, "us"),
+      eu: offsetByRegion(1_646_146_800_000, "eu"),
+      kr: offsetByRegion(1_646_146_800_000, "kr"),
+      tw: offsetByRegion(1_646_146_800_000, "tw"),
     },
     endDates: {
-      us: 1_659_452_400_000,
-      eu: 1_659_510_000_000,
-      kr: 1_659_564_000_000,
-      tw: 1_659_564_000_000,
+      us: offsetByRegion(1_659_452_400_000, "us"),
+      eu: offsetByRegion(1_659_452_400_000, "eu"),
+      kr: offsetByRegion(1_659_452_400_000, "kr"),
+      tw: offsetByRegion(1_659_452_400_000, "tw"),
     },
     confirmedCutoffs: {
       eu: {
@@ -335,16 +380,16 @@ export const seasons: Season[] = [
     rioKey: "season-sl-2",
     crossFactionSupport: "none",
     startDates: {
-      us: 1_625_583_600_000,
-      eu: 1_625_641_200_000,
-      kr: 1_625_695_200_000,
-      tw: 1_625_695_200_000,
+      us: offsetByRegion(1_625_583_600_000, "us"),
+      eu: offsetByRegion(1_625_583_600_000, "eu"),
+      kr: offsetByRegion(1_625_583_600_000, "kr"),
+      tw: offsetByRegion(1_625_583_600_000, "tw"),
     },
     endDates: {
-      us: 1_645_542_000_000,
-      eu: 1_645_599_600_000,
-      kr: 1_645_653_600_000,
-      tw: 1_645_653_600_000,
+      us: offsetByRegion(1_645_542_000_000, "us"),
+      eu: offsetByRegion(1_645_542_000_000, "eu"),
+      kr: offsetByRegion(1_645_542_000_000, "kr"),
+      tw: offsetByRegion(1_645_542_000_000, "tw"),
     },
     confirmedCutoffs: {
       eu: {

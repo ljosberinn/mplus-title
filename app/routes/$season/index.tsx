@@ -838,7 +838,9 @@ const createPlotBands = (
         : `<span style="font-size: 10px; color: ${factionColors.alliance}">${
             allianceDiff > 0 ? "+" : allianceDiff === 0 ? "±" : ""
           }${allianceDiff.toFixed(1)}</span>`,
-      from > now || crossFactionSupport === "none"
+      from > now ||
+      crossFactionSupport === "none" ||
+      (crossFactionSupport === "partial" && xFactionDiff === 0)
         ? null
         : `<span style="font-size: 10px; color: ${factionColors.xFaction}">${
             xFactionDiff > 0 ? "+" : xFactionDiff === 0 ? "±" : ""
