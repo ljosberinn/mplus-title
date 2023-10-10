@@ -809,11 +809,11 @@ const createPlotBands = (
           useHTML: true,
           text: `<a href="https://mythicstats.com/period/${
             startingPeriod + index
-          }" target="_blank"><img style="border: 1px solid" title="MythicStats" height="${size}" width="${size}" src="/mythic-stats.png" /></a>`,
+          }" target="_blank"><img class="md:inline hidden" style="border: 1px solid" title="MythicStats" height="${size}" width="${size}" src="/mythic-stats.png" /></a>`,
           align: "left",
           x: 5,
-          y: -size + 5,
-          verticalAlign: 'bottom'
+          y: -size - 20,
+          verticalAlign: "bottom",
         },
       });
     }
@@ -828,20 +828,20 @@ const createPlotBands = (
       );
 
     const text = [
-      hordeDiff === 0
+      crossFactionSupport === "complete"
         ? null
         : `<span style="font-size: 10px; color: ${factionColors.horde}">${
-            hordeDiff > 0 ? "+" : ""
+            hordeDiff > 0 ? "+" : hordeDiff === 0 ? "±" : ""
           }${hordeDiff.toFixed(1)}</span>`,
-      allianceDiff === 0
+      crossFactionSupport === "complete"
         ? null
         : `<span style="font-size: 10px; color: ${factionColors.alliance}">${
-            allianceDiff > 0 ? "+" : ""
+            allianceDiff > 0 ? "+" : allianceDiff === 0 ? "±" : ""
           }${allianceDiff.toFixed(1)}</span>`,
-      xFactionDiff === 0
+      from > now || crossFactionSupport === "none"
         ? null
         : `<span style="font-size: 10px; color: ${factionColors.xFaction}">${
-            xFactionDiff > 0 ? "+" : ""
+            xFactionDiff > 0 ? "+" : xFactionDiff === 0 ? "±" : ""
           }${xFactionDiff.toFixed(1)}</span>`,
     ].filter(Boolean);
 
