@@ -79,10 +79,10 @@ export const seasons: Season[] = [
     rioKey: "season-df-3",
     crossFactionSupport: "complete",
     startDates: {
-      eu: null,
-      kr: null,
-      tw: null,
-      us: null,
+      us: offsetByRegion(1_699_974_000_000, "us"),
+      eu: offsetByRegion(1_699_974_000_000, "eu"),
+      kr: offsetByRegion(1_699_974_000_000, "kr"),
+      tw: offsetByRegion(1_699_974_000_000, "tw"),
     },
     endDates: {
       us: UNKNOWN_SEASON_START_OR_ENDING,
@@ -119,10 +119,10 @@ export const seasons: Season[] = [
       tw: offsetByRegion(1_683_644_400_000, "tw"),
     },
     endDates: {
-      us: UNKNOWN_SEASON_START_OR_ENDING,
-      eu: UNKNOWN_SEASON_START_OR_ENDING,
-      kr: UNKNOWN_SEASON_START_OR_ENDING,
-      tw: UNKNOWN_SEASON_START_OR_ENDING,
+      us: offsetByRegion(1_699_336_800_000, "us"),
+      eu: offsetByRegion(1_699_336_800_000, "eu"),
+      kr: offsetByRegion(1_699_336_800_000, "kr"),
+      tw: offsetByRegion(1_699_336_800_000, "tw"),
     },
     confirmedCutoffs: {
       eu: { score: 0, source: null },
