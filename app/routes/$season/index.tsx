@@ -477,7 +477,7 @@ function Card({ season, region, extremes, onZoom }: CardProps): JSX.Element {
       ) : null}
 
       {
-        needsTempBanner ? <div className="my-2 bg-red-500 p-2 text-center">Leaderboard data on Raider.io's end sadly broke as you can see below. Use <a href="https://raider.io/mythic-plus/cutoffs/season-df-2/us" target="_blank" rel="noreferrer">their own tool for the remainder of the season.</a></div>: null
+        needsTempBanner ? <div className="my-2 bg-red-500 p-2 text-center">Leaderboard data on Raider.io's end sadly broke as you can see below. Use <a href="https://raider.io/mythic-plus/cutoffs/season-df-2/us" className="cursor-pointer underline" target="_blank" rel="noreferrer">their own tool for the remainder of the season.</a></div>: null
       }
 
       <div className="mb-2 flex w-full justify-between">
