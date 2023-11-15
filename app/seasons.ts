@@ -136,8 +136,8 @@ export const seasons: Season[] = [
       tw: offsetByRegion(1_699_336_800_000, "tw"),
     },
     confirmedCutoffs: {
-      eu: { score: 0, source: null },
-      us: { score: 0, source: null },
+      eu: { score: 0, source: "https://eu.forums.blizzard.com/en/wow/t/m-smoldering-hero-title-updated-november-2/474193" },
+      us: { score: 0, source: "https://us.forums.blizzard.com/en/wow/t/m-smoldering-hero-title-updated-november-2/1697884" },
       kr: { score: 0, source: null },
       tw: { score: 0, source: null },
     },

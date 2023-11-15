@@ -264,13 +264,13 @@ const retrieveScore = async (
   lastEligibleRank: number
 ) => {
   const scorePage =
-    lastEligibleRank <= 20 ? 0 : Math.floor(lastEligibleRank / 20);
+    lastEligibleRank <= 40 ? 0 : Math.floor(lastEligibleRank / 40);
 
   const scorePageUrl = createPageUrl(
     rioSeasonName,
-    region, // if rank is divisible by 20, e.g. 80, it would result in page 4
+    region, // if rank is divisible by 40, e.g. 80, it would result in page 4
     // but its still on page 3
-    lastEligibleRank % 20 === 0 && lastEligibleRank > 20
+    lastEligibleRank % 40 === 0 && lastEligibleRank > 40
       ? scorePage - 1
       : scorePage
   );
