@@ -2,7 +2,7 @@ import { version } from "react";
 import { BsPaypal } from "react-icons/bs";
 import { FaDiscord, FaPatreon, FaTwitter } from "react-icons/fa";
 import { type IconType } from "react-icons/lib";
-import { SiBuymeacoffee, SiPlausibleanalytics } from "react-icons/si";
+import { SiBuymeacoffee } from "react-icons/si";
 
 import { ExternalLink } from "./ExternalLink";
 import { Logo } from "./Logo";
@@ -45,13 +45,6 @@ export function Footer(): JSX.Element {
                 icon={FaPatreon}
               >
                 Warcraft Logs Patreon
-              </FooterNavLink>
-
-              <FooterNavLink
-                href="https://plausible.io/mplus-title.vercel.app/"
-                icon={SiPlausibleanalytics}
-              >
-                Plausible Analytics
               </FooterNavLink>
 
               <FooterNavLink
