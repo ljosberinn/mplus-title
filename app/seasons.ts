@@ -110,13 +110,32 @@ export const seasons: Season[] = [
     ],
     wcl: {
       zoneId: 36,
-      weekIndexToAffixSetId: [],
+      weekIndexToAffixSetId: [775, 785, 502, 706, 762, 765, 767, 769, 419, 771],
     },
     seasonIcon: "https://assets.rpglogs.com/img/warcraft/zones/zone-36.png",
-    dungeonHotfixes: {},
+    dungeonHotfixes: {
+      "Rise +1 min": {
+        us: offsetByRegion(
+          1_699_974_000_000 + 2 * 7 * 24 * 60 * 60 * 1000,
+          "us"
+        ),
+        eu: offsetByRegion(
+          1_699_974_000_000 + 2 * 7 * 24 * 60 * 60 * 1000,
+          "eu"
+        ),
+        kr: offsetByRegion(
+          1_699_974_000_000 + 2 * 7 * 24 * 60 * 60 * 1000,
+          "kr"
+        ),
+        tw: offsetByRegion(
+          1_699_974_000_000 + 2 * 7 * 24 * 60 * 60 * 1000,
+          "tw"
+        ),
+      },
+    },
     dungeons: 8,
     patches: {},
-    startingPeriod: null,
+    startingPeriod: 933,
   },
   {
     name: "DF S2",
@@ -136,8 +155,16 @@ export const seasons: Season[] = [
       tw: offsetByRegion(1_699_336_800_000, "tw"),
     },
     confirmedCutoffs: {
-      eu: { score: 0, source: "https://eu.forums.blizzard.com/en/wow/t/m-smoldering-hero-title-updated-november-2/474193" },
-      us: { score: 0, source: "https://us.forums.blizzard.com/en/wow/t/m-smoldering-hero-title-updated-november-2/1697884" },
+      eu: {
+        score: 0,
+        source:
+          "https://eu.forums.blizzard.com/en/wow/t/m-smoldering-hero-title-updated-november-2/474193",
+      },
+      us: {
+        score: 0,
+        source:
+          "https://us.forums.blizzard.com/en/wow/t/m-smoldering-hero-title-updated-november-2/1697884",
+      },
       kr: { score: 0, source: null },
       tw: { score: 0, source: null },
     },
