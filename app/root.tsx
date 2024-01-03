@@ -100,7 +100,6 @@ export default function App(): JSX.Element {
       <head>
         <Meta />
         <Links />
-        <script defer data-domain="mplus-title.vercel.app" src="/trace.js" />
         </head>
       <body className="min-h-screen">
         <div className="flex min-h-screen flex-col">
