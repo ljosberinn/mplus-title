@@ -448,7 +448,7 @@ function Card({ season, region, extremes, onZoom }: CardProps): JSX.Element {
   const seasonEnd = season.endDates[region];
   const isCurrentSeason = seasonEnd === null || seasonEnd > Date.now();
 
-  const needsTempBanner = season.slug === 'df-season-2' && region === 'us'
+  const needsTempBanner = season.slug === "df-season-2" && region === "us";
 
   return (
     <section
@@ -476,9 +476,20 @@ function Card({ season, region, extremes, onZoom }: CardProps): JSX.Element {
         </div>
       ) : null}
 
-      {
-        needsTempBanner ? <div className="my-2 bg-red-500 p-2 text-center">Leaderboard data on Raider.io's end sadly broke as you can see below. Use <a href="https://raider.io/mythic-plus/cutoffs/season-df-2/us" className="cursor-pointer underline" target="_blank" rel="noreferrer">their own tool for the remainder of the season.</a></div>: null
-      }
+      {needsTempBanner ? (
+        <div className="my-2 bg-red-500 p-2 text-center">
+          Leaderboard data on Raider.io's end sadly broke as you can see below.
+          Use{" "}
+          <a
+            href="https://raider.io/mythic-plus/cutoffs/season-df-2/us"
+            className="cursor-pointer underline"
+            target="_blank"
+            rel="noreferrer"
+          >
+            their own tool for the remainder of the season.
+          </a>
+        </div>
+      ) : null}
 
       <div className="mb-2 flex w-full justify-between">
         {season.affixes.map((set, index) => {
@@ -817,9 +828,8 @@ const createPlotBands = (
             startingPeriod + index
           }" target="_blank"><img class="md:inline hidden" style="border: 1px solid" title="MythicStats" height="${size}" width="${size}" src="/mythic-stats.png" /></a>`,
           align: "left",
-          x: 5,
-          y: -size - 20,
-          verticalAlign: "bottom",
+          x: 20,
+          y: 15,
         },
       });
     }
