@@ -74,6 +74,36 @@ function offsetByRegion(timestamp: number, region: Regions): number {
 
 export const seasons: Season[] = [
   {
+    name: "DF S4",
+    slug: "df-season-4",
+    rioKey: "season-df-4",
+    crossFactionSupport: "complete",
+    startDates: {
+      us: UNKNOWN_SEASON_START_OR_ENDING,
+      eu: UNKNOWN_SEASON_START_OR_ENDING,
+      kr: UNKNOWN_SEASON_START_OR_ENDING,
+      tw: UNKNOWN_SEASON_START_OR_ENDING,
+    },
+    endDates: {
+      us: UNKNOWN_SEASON_START_OR_ENDING,
+      eu: UNKNOWN_SEASON_START_OR_ENDING,
+      kr: UNKNOWN_SEASON_START_OR_ENDING,
+      tw: UNKNOWN_SEASON_START_OR_ENDING,
+    },
+    affixes: [],
+    confirmedCutoffs: {
+      eu: { score: 0, source: null },
+      us: { score: 0, source: null },
+      kr: { score: 0, source: null },
+      tw: { score: 0, source: null },
+    },
+    dungeonHotfixes: {},
+    dungeons: 8,
+    patches: {},
+    seasonIcon: "https://wow.zamimg.com/images/wow/icons/large/inv_misc_questionmark.jpg",
+    startingPeriod: 0,
+  },
+  {
     name: "DF S3",
     slug: "df-season-3",
     rioKey: "season-df-3",
@@ -154,10 +184,40 @@ export const seasons: Season[] = [
     dungeons: 8,
     patches: {
       "10.2.5": {
-        us: offsetByRegion(1_699_974_000_000 + 9 * 7 * 24 * 60 * 60 * 1000, "us"),
-        eu: offsetByRegion(1_699_974_000_000 + 9 * 7 * 24 * 60 * 60 * 1000, "eu"),
-        kr: offsetByRegion(1_699_974_000_000 + 9 * 7 * 24 * 60 * 60 * 1000, "kr"),
-        tw: offsetByRegion(1_699_974_000_000 + 9 * 7 * 24 * 60 * 60 * 1000, "tw"),
+        us: offsetByRegion(
+          1_699_974_000_000 + 9 * 7 * 24 * 60 * 60 * 1000,
+          "us"
+        ),
+        eu: offsetByRegion(
+          1_699_974_000_000 + 9 * 7 * 24 * 60 * 60 * 1000,
+          "eu"
+        ),
+        kr: offsetByRegion(
+          1_699_974_000_000 + 9 * 7 * 24 * 60 * 60 * 1000,
+          "kr"
+        ),
+        tw: offsetByRegion(
+          1_699_974_000_000 + 9 * 7 * 24 * 60 * 60 * 1000,
+          "tw"
+        ),
+      },
+      "Spec Tuning": {
+        us: offsetByRegion(
+          1_699_974_000_000 + 10 * 7 * 24 * 60 * 60 * 1000,
+          "us"
+        ),
+        eu: offsetByRegion(
+          1_699_974_000_000 + 10 * 7 * 24 * 60 * 60 * 1000,
+          "eu"
+        ),
+        kr: offsetByRegion(
+          1_699_974_000_000 + 10 * 7 * 24 * 60 * 60 * 1000,
+          "kr"
+        ),
+        tw: offsetByRegion(
+          1_699_974_000_000 + 10 * 7 * 24 * 60 * 60 * 1000,
+          "tw"
+        ),
       },
     },
     startingPeriod: 933,
