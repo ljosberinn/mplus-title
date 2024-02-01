@@ -180,6 +180,24 @@ export const seasons: Season[] = [
           "tw"
         ),
       },
+      "Spec Tuning & Rise nerfs": {
+        us: offsetByRegion(
+          1_699_974_000_000 + 10 * 7 * 24 * 60 * 60 * 1000,
+          "us"
+        ),
+        eu: offsetByRegion(
+          1_699_974_000_000 + 10 * 7 * 24 * 60 * 60 * 1000,
+          "eu"
+        ),
+        kr: offsetByRegion(
+          1_699_974_000_000 + 10 * 7 * 24 * 60 * 60 * 1000,
+          "kr"
+        ),
+        tw: offsetByRegion(
+          1_699_974_000_000 + 10 * 7 * 24 * 60 * 60 * 1000,
+          "tw"
+        ),
+      },
     },
     dungeons: 8,
     patches: {
@@ -198,24 +216,6 @@ export const seasons: Season[] = [
         ),
         tw: offsetByRegion(
           1_699_974_000_000 + 9 * 7 * 24 * 60 * 60 * 1000,
-          "tw"
-        ),
-      },
-      "Spec Tuning": {
-        us: offsetByRegion(
-          1_699_974_000_000 + 10 * 7 * 24 * 60 * 60 * 1000,
-          "us"
-        ),
-        eu: offsetByRegion(
-          1_699_974_000_000 + 10 * 7 * 24 * 60 * 60 * 1000,
-          "eu"
-        ),
-        kr: offsetByRegion(
-          1_699_974_000_000 + 10 * 7 * 24 * 60 * 60 * 1000,
-          "kr"
-        ),
-        tw: offsetByRegion(
-          1_699_974_000_000 + 10 * 7 * 24 * 60 * 60 * 1000,
           "tw"
         ),
       },
