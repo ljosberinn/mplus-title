@@ -230,42 +230,6 @@ type CardProps = {
 
 const numberFormatParts = new Intl.NumberFormat().formatToParts(1234.5);
 
-type SubcreationLinkProps = {
-  isCurrentSeason: boolean;
-  isCurrentWeek: boolean;
-  season: CardProps["season"];
-  set: CardProps["season"]["affixes"][number];
-};
-
-function SubcreationLink({
-  set,
-  isCurrentSeason,
-  season,
-  isCurrentWeek,
-}: SubcreationLinkProps) {
-  const href = `https://mplus.subcreation.net/${
-    (isCurrentSeason && isCurrentWeek) || season.affixes.length === 1
-      ? "index"
-      : set.map((affix) => getAffixName(affix).toLowerCase()).join("-")
-  }.html`;
-
-  return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      title="Subcreation for this week"
-    >
-      <img
-        src="https://subcreation.net/favicon.ico"
-        loading="lazy"
-        className="h-4 w-4"
-        alt=""
-      />
-    </a>
-  );
-}
-
 function Card({ season, region, extremes, onZoom }: CardProps): JSX.Element {
   const ref = useRef<HighchartsReact.RefObject | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -547,12 +511,6 @@ function Card({ season, region, extremes, onZoom }: CardProps): JSX.Element {
                     />
                   </a>
                 ) : null}
-                <SubcreationLink
-                  season={season}
-                  isCurrentWeek={isCurrentWeek}
-                  isCurrentSeason={isCurrentSeason}
-                  set={set}
-                />
               </span>
 
               <div>
