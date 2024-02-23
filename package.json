@@ -7,7 +7,7 @@
   "scripts": {
     "build": "remix build",
     "dev": "remix dev",
-    "postinstall": "prisma generate && yarn-deduplicate -l && sort-package-json && rm .eslintrc.json && node node_modules/eslint-config-galex/dist/generateStandalone",
+    "postinstall": "prisma generate && yarn-deduplicate -l && sort-package-json && rm .eslintrc.json",
     "install:clean": "rm -rf node_modules && rm yarn.lock && yarn",
     "lint": "eslint app",
     "prisma:generate": "prisma generate",
@@ -56,6 +56,6 @@
     "yarn-deduplicate": "6.0.2"
   },
   "engines": {
-    "node": ">=20"
+    "node": "20"
   }
 }
