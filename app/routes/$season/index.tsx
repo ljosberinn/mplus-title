@@ -508,7 +508,7 @@ function Card({ season, region, extremes, onZoom }: CardProps): JSX.Element {
             >
               <span className="flex space-x-1">
                 <span title={`Week ${index + 1}`}>W{index + 1}</span>
-                <span className="flex items-center space-x-1 lg:space-x-2">
+                <span className="hidden md:flex items-center space-x-1 lg:space-x-2">
                   {affixSetId && season.wcl ? (
                     <a
                       href={`https://www.warcraftlogs.com/zone/rankings/${
@@ -535,9 +535,9 @@ function Card({ season, region, extremes, onZoom }: CardProps): JSX.Element {
               </span>
 
               {startTime && endTime ? (
-                <span>
+                <span className="flex md:flex-row text-center flex-col items-center space-x-0 md:space-x-1">
                   <LocaleTime date={startTime} />
-                  {" - "}
+                  <span>-</span>
                   <LocaleTime date={endTime} />
                 </span>
               ) : null}
@@ -874,7 +874,7 @@ type LocaleTimeProps = {
 
 function LocaleTime({ date }: LocaleTimeProps) {
   return (
-    <time dateTime={date.toISOString()}>
+    <time className="text-xs" dateTime={date.toISOString()}>
       {date.toLocaleString("en-US", {
         month: "numeric",
         day: "numeric",
