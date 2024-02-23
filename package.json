@@ -7,7 +7,7 @@
   "scripts": {
     "build": "remix build",
     "dev": "remix dev",
-    "postinstall": "prisma generate && yarn-deduplicate -l && sort-package-json && rm .eslintrc.json",
+    "postinstall": "prisma generate && sort-package-json",
     "install:clean": "rm -rf node_modules && rm yarn.lock && yarn",
     "lint": "eslint app",
     "prisma:generate": "prisma generate",
@@ -52,9 +52,9 @@
     "prettier-plugin-tailwindcss": "0.5.11",
     "prisma": "5",
     "sort-package-json": "2.8.0",
-    "typescript": "5.3.3",
-    "yarn-deduplicate": "6.0.2"
+    "typescript": "5.3.3"
   },
+  "packageManager": "yarn@4.1.0",
   "engines": {
     "node": "20"
   }

@@ -7,7 +7,6 @@ import {
   Scripts,
   ScrollRestoration,
 } from "@remix-run/react";
-import { SSRProvider } from "react-aria";
 
 import stylesheet from "~/tailwind.css";
 
@@ -96,9 +95,7 @@ export default function App(): JSX.Element {
       </head>
       <body className="min-h-screen">
         <div className="flex min-h-screen flex-col">
-          <SSRProvider>
-            <Outlet />
-          </SSRProvider>
+          <Outlet />
         </div>
         <ScrollRestoration />
         <Scripts />
