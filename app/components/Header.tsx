@@ -1,7 +1,8 @@
-import  { type EnhancedSeason } from "~/seasons";
+import { type EnhancedSeason } from "~/seasons";
 
 import { CustomExtrapolationForm } from "./CustomExtrapolationForm";
 import { Logo } from "./Logo";
+import { BuyMeACoffee, RaiderPatreon, Twitter, WCLPatreon } from "./NavLink";
 import { OverlaysToggle } from "./OverlaysToggle";
 import { RegionToggle } from "./RegionMenu";
 import { SeasonMenu } from "./SeasonMenu";
@@ -15,6 +16,12 @@ export function Header({ season }: { season: EnhancedSeason }): JSX.Element {
             <li>
               <Logo />
             </li>
+          </ul>
+          <ul className="hidden space-x-1 md:space-x-2 lg:flex">
+            <BuyMeACoffee />
+            <RaiderPatreon />
+            <WCLPatreon />
+            <Twitter />
           </ul>
           <SeasonMenu />
         </nav>

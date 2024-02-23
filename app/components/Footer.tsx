@@ -1,11 +1,15 @@
 import { version } from "react";
-import { BsPaypal } from "react-icons/bs";
-import { FaDiscord, FaPatreon, FaTwitter } from "react-icons/fa";
-import { type IconType } from "react-icons/lib";
-import { SiBuymeacoffee } from "react-icons/si";
+import { FaDiscord } from "react-icons/fa";
 
 import { ExternalLink } from "./ExternalLink";
 import { Logo } from "./Logo";
+import {
+  BuyMeACoffee,
+  NavLink,
+  RaiderPatreon,
+  Twitter,
+  WCLPatreon,
+} from "./NavLink";
 
 export function Footer(): JSX.Element {
   return (
@@ -19,42 +23,12 @@ export function Footer(): JSX.Element {
           <div className="grid w-full grid-cols-1 items-center text-center md:w-auto md:grid-cols-2 md:items-start md:gap-10 md:text-left">
             <ul />
             <ul className="md:text-right">
-              <FooterNavLink
-                href="https://www.buymeacoffee.com/rOSn8DF"
-                icon={SiBuymeacoffee}
-              >
-                Buy Me A Coffee
-              </FooterNavLink>
+              <BuyMeACoffee />
+              <RaiderPatreon />
+              <WCLPatreon />
+              <Twitter />
 
-              <FooterNavLink
-                href="https://www.paypal.com/paypalme/gerritalex"
-                icon={BsPaypal}
-              >
-                PayPal
-              </FooterNavLink>
-
-              <FooterNavLink
-                href="https://www.patreon.com/RaiderIO"
-                icon={FaPatreon}
-              >
-                Raider.IO Patreon
-              </FooterNavLink>
-
-              <FooterNavLink
-                href="https://www.patreon.com/warcraftlogs"
-                icon={FaPatreon}
-              >
-                Warcraft Logs Patreon
-              </FooterNavLink>
-
-              <FooterNavLink
-                href="https://twitter.com/xepher1s"
-                icon={FaTwitter}
-              >
-                Twitter
-              </FooterNavLink>
-
-              <FooterNavLink icon={FaDiscord}>xepher1s</FooterNavLink>
+              <NavLink icon={FaDiscord}>xepher1s</NavLink>
             </ul>
           </div>
         </nav>
@@ -345,35 +319,5 @@ function Supabase() {
         </linearGradient>
       </defs>
     </svg>
-  );
-}
-
-type FooterNavLinkProps = {
-  href?: string;
-  children: string;
-  icon: IconType;
-};
-
-function FooterNavLink({ href, children, icon: Icon }: FooterNavLinkProps) {
-  const body = (
-    <span className="md:flex md:items-center md:justify-end">
-      <Icon className="mr-2 inline h-6 w-6" />
-      {children}
-    </span>
-  );
-
-  return (
-    <li className="py-1 text-base leading-relaxed md:text-sm">
-      {href ? (
-        <ExternalLink
-          className="transition-colors duration-150 ease-in-out hover:text-yellow-600"
-          href={href}
-        >
-          {body}
-        </ExternalLink>
-      ) : (
-        body
-      )}
-    </li>
   );
 }

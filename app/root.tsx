@@ -1,7 +1,4 @@
-import {
-  type LinksFunction,
-  type MetaFunction,
-} from "@remix-run/node";
+import { type LinksFunction, type MetaFunction } from "@remix-run/node";
 import {
   Links,
   LiveReload,
@@ -49,9 +46,6 @@ export const links: LinksFunction = () => {
   ];
 };
 
-
-
-
 const title = "Title Cutoff History & Estimation";
 
 export const meta: MetaFunction = () => {
@@ -90,7 +84,6 @@ export const meta: MetaFunction = () => {
 };
 
 export default function App(): JSX.Element {
-
   return (
     <html
       lang="en"
@@ -100,7 +93,7 @@ export default function App(): JSX.Element {
       <head>
         <Meta />
         <Links />
-        </head>
+      </head>
       <body className="min-h-screen">
         <div className="flex min-h-screen flex-col">
           <SSRProvider>

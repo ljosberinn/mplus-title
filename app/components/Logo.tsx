@@ -12,7 +12,7 @@ export function Logo(): JSX.Element {
       />
 
       <span className="inline text-lg font-semibold tracking-tight">
-        Title Cutoff Estimation
+        Title Cutoff Tracking
       </span>
     </NavLink>
   );
