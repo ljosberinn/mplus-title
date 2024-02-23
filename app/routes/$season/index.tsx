@@ -172,7 +172,7 @@ export default function Season(): JSX.Element | null {
     <>
       <Header season={season} />
       <main className="container mt-4 flex max-w-screen-2xl flex-1 flex-col space-y-4 px-4 md:mx-auto 2xl:px-0">
-        {season.regionsToDisplay.map((region, index, arr) => {
+        {season.regionsToDisplay.map((region) => {
           return (
             <Fragment key={region}>
               <Card
@@ -181,7 +181,6 @@ export default function Season(): JSX.Element | null {
                 onZoom={setExtremes}
                 extremes={extremes}
               />
-              {index === arr.length - 1 ? null : <hr className="opacity-50" />}
             </Fragment>
           );
         })}
@@ -409,8 +408,17 @@ function Card({ season, region, extremes, onZoom }: CardProps): JSX.Element {
   };
 
   const indexOfCurrentWeek = findIndexOfCurrentWeek(season, region);
-  const seasonEnd = season.endDates[region];
-  const isCurrentSeason = seasonEnd === null || seasonEnd > Date.now();
+  const seasonStartForRegion = season.startDates[region];
+  const timePassedSinceSeasonStart = seasonStartForRegion
+    ? Date.now() - seasonStartForRegion
+    : 0;
+  const weeksPassedSinceSeasonStart =
+    timePassedSinceSeasonStart / 1000 / 60 / 60 / 24 / 7;
+
+  const cycles =
+    weeksPassedSinceSeasonStart > season.affixes.length
+      ? Math.ceil(weeksPassedSinceSeasonStart / season.affixes.length) - 1
+      : 1;
 
   const needsTempBanner = season.slug === "df-season-2" && region === "us";
 
@@ -459,7 +467,6 @@ function Card({ season, region, extremes, onZoom }: CardProps): JSX.Element {
         {season.affixes.map((set, index) => {
           const setSlice = set.length === 3 ? set : set.slice(0, -1);
           const isCurrentWeek = index === indexOfCurrentWeek;
-
           const isNextWeek =
             isCurrentWeek || indexOfCurrentWeek === null
               ? false
@@ -470,48 +477,70 @@ function Card({ season, region, extremes, onZoom }: CardProps): JSX.Element {
               ? season.wcl.weekIndexToAffixSetId[index]
               : null;
 
+          const startTimeOfWeek = seasonStartForRegion
+            ? seasonStartForRegion +
+              (index + cycles * season.affixes.length) * 7 * 24 * 60 * 60 * 1000
+            : 0;
+          const endTimeOfWeek =
+            startTimeOfWeek === 0
+              ? 0
+              : startTimeOfWeek + 7 * 24 * 60 * 60 * 1000;
+
+          const startTime =
+            startTimeOfWeek > 0 ? new Date(startTimeOfWeek) : null;
+          const endTime = endTimeOfWeek > 0 ? new Date(endTimeOfWeek) : null;
+
           return (
             <div
               className={clsx(
-                "flex flex-1 flex-col items-center space-y-2",
+                "flex flex-1 flex-col items-center space-y-1",
                 isCurrentWeek
                   ? "opacity-100"
                   : isNextWeek
                   ? "opacity-75 hover:opacity-100"
                   : "opacity-50 hover:opacity-100",
                 isCurrentWeek
-                  ? null
+                  ? undefined
                   : "grayscale transition-opacity hover:filter-none",
                 isNextWeek ? "filter-none" : null
               )}
               key={[...set, index].join("-")}
             >
-              <span>W{index + 1}</span>
-
-              <span className="flex space-x-1 lg:space-x-2">
-                {affixSetId && season.wcl ? (
-                  <a
-                    href={`https://www.warcraftlogs.com/zone/rankings/${
-                      season.wcl.zoneId
-                    }#affixes=${affixSetId}&leaderboards=1${
-                      season.wcl.partition
-                        ? `&partition=${season.wcl.partition}`
-                        : ""
-                    }`}
-                    rel="noopener noreferrer"
-                    target="_blank"
-                    className="italic text-blue-400 underline"
-                    title="Logs for this week"
-                  >
-                    <img
-                      src="https://assets.rpglogs.com/img/warcraft/favicon.png?v=2"
-                      loading="lazy"
-                      alt="WCL"
-                      className="h-4 w-4"
-                    />
-                  </a>
-                ) : null}
+              <span className="flex space-x-1">
+                <span title={`Week ${index + 1}`}>W{index + 1}</span>
+                <span className="flex items-center space-x-1 lg:space-x-2">
+                  {affixSetId && season.wcl ? (
+                    <a
+                      href={`https://www.warcraftlogs.com/zone/rankings/${
+                        season.wcl.zoneId
+                      }#affixes=${affixSetId}&leaderboards=1${
+                        season.wcl.partition
+                          ? `&partition=${season.wcl.partition}`
+                          : ""
+                      }`}
+                      rel="noopener noreferrer"
+                      target="_blank"
+                      className="italic text-blue-400 underline"
+                      title="Logs for this affix set"
+                    >
+                      <img
+                        src="https://assets.rpglogs.com/img/warcraft/favicon.png?v=2"
+                        loading="lazy"
+                        alt="WCL"
+                        className="h-4 w-4"
+                      />
+                    </a>
+                  ) : null}
+                </span>
               </span>
+
+              {startTime && endTime ? (
+                <span>
+                  <LocaleTime date={startTime} />
+                  {" - "}
+                  <LocaleTime date={endTime} />
+                </span>
+              ) : null}
 
               <div>
                 {setSlice.map((affix) => {
@@ -838,3 +867,18 @@ const createPlotBands = (
     );
   });
 };
+
+type LocaleTimeProps = {
+  date: Date;
+};
+
+function LocaleTime({ date }: LocaleTimeProps) {
+  return (
+    <time dateTime={date.toISOString()}>
+      {date.toLocaleString("en-US", {
+        month: "numeric",
+        day: "numeric",
+      })}
+    </time>
+  );
+}

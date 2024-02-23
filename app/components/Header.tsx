@@ -17,7 +17,7 @@ export function Header({ season }: { season: EnhancedSeason }): JSX.Element {
               <Logo />
             </li>
           </ul>
-          <ul className="hidden space-x-1 md:space-x-2 lg:flex">
+          <ul className="hidden space-x-2 lg:flex">
             <BuyMeACoffee />
             <RaiderPatreon />
             <WCLPatreon />
