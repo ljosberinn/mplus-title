@@ -5,7 +5,7 @@
   "license": "",
   "sideEffects": false,
   "scripts": {
-    "build": "remix build",
+    "build": "prisma generate && remix build",
     "dev": "remix dev",
     "postinstall": "sort-package-json",
     "install:clean": "rm -rf node_modules && rm yarn.lock && yarn",
