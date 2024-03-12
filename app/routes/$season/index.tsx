@@ -118,15 +118,15 @@ export const loader = async ({
   const cookieRegions = searchParamRegions
     ? null
     : await time(() => determineRegionsToDisplayFromCookies(request), {
-        type: "determineRegionsToDisplayFromCookies",
-        timings,
-      });
+      type: "determineRegionsToDisplayFromCookies",
+      timings,
+    });
   const cookieOverlays = searchParamOverlays
     ? null
     : await time(() => determineOverlaysToDisplayFromCookies(request), {
-        type: "determineOverlaysToDisplayFromCookies",
-        timings,
-      });
+      type: "determineOverlaysToDisplayFromCookies",
+      timings,
+    });
 
   if (cookieRegions || cookieOverlays) {
     const params = new URLSearchParams();
@@ -477,18 +477,25 @@ function Card({ season, region, extremes, onZoom }: CardProps): JSX.Element {
               ? season.wcl.weekIndexToAffixSetId[index]
               : null;
 
-          const startTimeOfWeek = seasonStartForRegion
-            ? seasonStartForRegion +
-              (index + cycles * season.affixes.length) * 7 * 24 * 60 * 60 * 1000
-            : 0;
-          const endTimeOfWeek =
-            startTimeOfWeek === 0
-              ? 0
-              : startTimeOfWeek + 7 * 24 * 60 * 60 * 1000;
+          let startTimeOfWeek = 0
+          let endTimeOfWeek = 0
+          let startTime = null
+          let endTime = null
 
-          const startTime =
-            startTimeOfWeek > 0 ? new Date(startTimeOfWeek) : null;
-          const endTime = endTimeOfWeek > 0 ? new Date(endTimeOfWeek) : null;
+          if (seasonStartForRegion) {
+            startTimeOfWeek = seasonStartForRegion + (index + cycles * season.affixes.length) * 7 * 24 * 60 * 60 * 1000
+
+            // move date of past week to the future indicating when it comes around next
+            if (!isCurrentWeek && startTimeOfWeek <= Date.now()) {
+              startTimeOfWeek = seasonStartForRegion +
+                (index + (cycles + 1) * season.affixes.length) * 7 * 24 * 60 * 60 * 1000
+            }
+
+            endTimeOfWeek = startTimeOfWeek + 7 * 24 * 60 * 60 * 1000;
+
+            startTime = new Date(startTimeOfWeek)
+            endTime = new Date(endTimeOfWeek)
+          }
 
           return (
             <div
@@ -497,8 +504,8 @@ function Card({ season, region, extremes, onZoom }: CardProps): JSX.Element {
                 isCurrentWeek
                   ? "opacity-100"
                   : isNextWeek
-                  ? "opacity-75 hover:opacity-100"
-                  : "opacity-50 hover:opacity-100",
+                    ? "opacity-75 hover:opacity-100"
+                    : "opacity-50 hover:opacity-100",
                 isCurrentWeek
                   ? undefined
                   : "grayscale transition-opacity hover:filter-none",
@@ -511,13 +518,11 @@ function Card({ season, region, extremes, onZoom }: CardProps): JSX.Element {
                 <span className="hidden md:flex items-center space-x-1 lg:space-x-2">
                   {affixSetId && season.wcl ? (
                     <a
-                      href={`https://www.warcraftlogs.com/zone/rankings/${
-                        season.wcl.zoneId
-                      }#affixes=${affixSetId}&leaderboards=1${
-                        season.wcl.partition
+                      href={`https://www.warcraftlogs.com/zone/rankings/${season.wcl.zoneId
+                        }#affixes=${affixSetId}&leaderboards=1${season.wcl.partition
                           ? `&partition=${season.wcl.partition}`
                           : ""
-                      }`}
+                        }`}
                       rel="noopener noreferrer"
                       target="_blank"
                       className="italic text-blue-400 underline"
@@ -586,52 +591,52 @@ const createSeries = (
     season.crossFactionSupport === "complete"
       ? null
       : {
-          type: "line",
-          name: "Score Horde",
-          color: factionColors.horde,
-          data: season.dataByRegion[region]
-            .filter((dataset) => dataset.faction === "horde")
-            .map((dataset) => {
-              return [dataset.ts, dataset.score];
-            }),
-          dataLabels: {
-            formatter,
-          },
-        };
+        type: "line",
+        name: "Score Horde",
+        color: factionColors.horde,
+        data: season.dataByRegion[region]
+          .filter((dataset) => dataset.faction === "horde")
+          .map((dataset) => {
+            return [dataset.ts, dataset.score];
+          }),
+        dataLabels: {
+          formatter,
+        },
+      };
 
   const alliance: SeriesLineOptions | null =
     season.crossFactionSupport === "complete"
       ? null
       : {
-          type: "line",
-          name: "Score Alliance",
-          color: factionColors.alliance,
-          data: season.dataByRegion[region]
-            .filter((dataset) => dataset.faction === "alliance")
-            .map((dataset) => {
-              return [dataset.ts, dataset.score];
-            }),
-          dataLabels: {
-            formatter,
-          },
-        };
+        type: "line",
+        name: "Score Alliance",
+        color: factionColors.alliance,
+        data: season.dataByRegion[region]
+          .filter((dataset) => dataset.faction === "alliance")
+          .map((dataset) => {
+            return [dataset.ts, dataset.score];
+          }),
+        dataLabels: {
+          formatter,
+        },
+      };
 
   const xFaction: SeriesLineOptions | null =
     season.crossFactionSupport === "none"
       ? null
       : {
-          type: "line",
-          name: "Score X-Faction",
-          color: factionColors.xFaction,
-          data: season.dataByRegion[region]
-            .filter((dataset) => !("faction" in dataset))
-            .map((dataset) => {
-              return [dataset.ts, dataset.score];
-            }),
-          dataLabels: {
-            formatter,
-          },
-        };
+        type: "line",
+        name: "Score X-Faction",
+        color: factionColors.xFaction,
+        data: season.dataByRegion[region]
+          .filter((dataset) => !("faction" in dataset))
+          .map((dataset) => {
+            return [dataset.ts, dataset.score];
+          }),
+        dataLabels: {
+          formatter,
+        },
+      };
 
   const extrapolationData = season.extrapolation[region];
 
@@ -639,24 +644,24 @@ const createSeries = (
     extrapolationData === null
       ? null
       : {
-          type: "line",
-          name: "Score Extrapolated",
-          color: factionColors.xFaction,
-          data: Array.isArray(extrapolationData)
-            ? extrapolationData
-            : [
-                [extrapolationData.from.ts, extrapolationData.from.score],
-                [extrapolationData.to.ts, extrapolationData.to.score],
-              ],
-          dashStyle: "ShortDash",
-          dataLabels: {
-            formatter,
-          },
-          marker: {
-            enabled: true,
-          },
-          visible: true,
-        };
+        type: "line",
+        name: "Score Extrapolated",
+        color: factionColors.xFaction,
+        data: Array.isArray(extrapolationData)
+          ? extrapolationData
+          : [
+            [extrapolationData.from.ts, extrapolationData.from.score],
+            [extrapolationData.to.ts, extrapolationData.to.score],
+          ],
+        dashStyle: "ShortDash",
+        dataLabels: {
+          formatter,
+        },
+        marker: {
+          enabled: true,
+        },
+        visible: true,
+      };
 
   const ranks: SeriesLineOptions = {
     type: "line",
@@ -774,8 +779,8 @@ const createPlotBands = (
       from > now && affixes.length < 10
         ? [-1, -1, -1]
         : rotation.length === 3
-        ? rotation
-        : rotation.slice(0, 3);
+          ? rotation
+          : rotation.slice(0, 3);
 
     options.push({
       from,
@@ -788,12 +793,12 @@ const createPlotBands = (
         },
         text: overlaysToDisplay.includes("affixes")
           ? relevantRotationSlice
-              .map((affix) => {
-                return `<img width="18" height="18" style="transform: rotate(-90deg); opacity: 0.75;" src="${getAffixIconUrl(
-                  affix
-                )}"/>`;
-              })
-              .join("")
+            .map((affix) => {
+              return `<img width="18" height="18" style="transform: rotate(-90deg); opacity: 0.75;" src="${getAffixIconUrl(
+                affix
+              )}"/>`;
+            })
+            .join("")
           : undefined,
         rotation: 90,
         align: "left",
@@ -811,9 +816,8 @@ const createPlotBands = (
         color,
         label: {
           useHTML: true,
-          text: `<a href="https://mythicstats.com/period/${
-            startingPeriod + index
-          }" target="_blank"><img class="md:inline hidden" style="border: 1px solid" title="MythicStats" height="${size}" width="${size}" src="/mythic-stats.png" /></a>`,
+          text: `<a href="https://mythicstats.com/period/${startingPeriod + index
+            }" target="_blank"><img class="md:inline hidden" style="border: 1px solid" title="MythicStats" height="${size}" width="${size}" src="/mythic-stats.png" /></a>`,
           align: "left",
           x: 20,
           y: 15,
@@ -833,21 +837,18 @@ const createPlotBands = (
     const text = [
       crossFactionSupport === "complete"
         ? null
-        : `<span style="font-size: 10px; color: ${factionColors.horde}">${
-            hordeDiff > 0 ? "+" : hordeDiff === 0 ? "±" : ""
-          }${hordeDiff.toFixed(1)}</span>`,
+        : `<span style="font-size: 10px; color: ${factionColors.horde}">${hordeDiff > 0 ? "+" : hordeDiff === 0 ? "±" : ""
+        }${hordeDiff.toFixed(1)}</span>`,
       crossFactionSupport === "complete"
         ? null
-        : `<span style="font-size: 10px; color: ${factionColors.alliance}">${
-            allianceDiff > 0 ? "+" : allianceDiff === 0 ? "±" : ""
-          }${allianceDiff.toFixed(1)}</span>`,
+        : `<span style="font-size: 10px; color: ${factionColors.alliance}">${allianceDiff > 0 ? "+" : allianceDiff === 0 ? "±" : ""
+        }${allianceDiff.toFixed(1)}</span>`,
       from > now ||
-      crossFactionSupport === "none" ||
-      (crossFactionSupport === "partial" && xFactionDiff === 0)
+        crossFactionSupport === "none" ||
+        (crossFactionSupport === "partial" && xFactionDiff === 0)
         ? null
-        : `<span style="font-size: 10px; color: ${factionColors.xFaction}">${
-            xFactionDiff > 0 ? "+" : xFactionDiff === 0 ? "±" : ""
-          }${xFactionDiff.toFixed(1)}</span>`,
+        : `<span style="font-size: 10px; color: ${factionColors.xFaction}">${xFactionDiff > 0 ? "+" : xFactionDiff === 0 ? "±" : ""
+        }${xFactionDiff.toFixed(1)}</span>`,
     ].filter(Boolean);
 
     options.push({
