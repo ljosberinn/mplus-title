@@ -1,5 +1,5 @@
 import clsx from "clsx";
-import  { type HTMLAttributes,type ReactNode } from "react";
+import { type HTMLAttributes, type ReactNode } from "react";
 
 export type ExternalLinkProps = Pick<
   HTMLAttributes<"a">,

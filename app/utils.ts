@@ -10,11 +10,11 @@ export const calculateFactionDiffForWeek = (
   crossFactionSupport: Season["crossFactionSupport"],
   isFirstWeek: boolean,
   from: number,
-  to: number
+  to: number,
 ): { hordeDiff: number; allianceDiff: number; xFactionDiff: number } => {
   const hasCompleteXFactionSupport = crossFactionSupport === "complete";
   const thisWeeksData = data.filter(
-    (dataset) => dataset.ts >= from && dataset.ts <= to
+    (dataset) => dataset.ts >= from && dataset.ts <= to,
   );
 
   const horde = hasCompleteXFactionSupport
@@ -37,13 +37,13 @@ export const calculateFactionDiffForWeek = (
   const xFactionEndMatch = hasCompleteXFactionSupport
     ? thisWeeksData[thisWeeksData.length - 1]
     : crossFactionSupport === "partial"
-    ? [...thisWeeksData].reverse().find((dataset) => !dataset.faction)
-    : null;
+      ? [...thisWeeksData].reverse().find((dataset) => !dataset.faction)
+      : null;
   const xFactionStartMatch = hasCompleteXFactionSupport
     ? thisWeeksData[0]
     : crossFactionSupport === "partial"
-    ? thisWeeksData.find((dataset) => !dataset.faction)
-    : null;
+      ? thisWeeksData.find((dataset) => !dataset.faction)
+      : null;
 
   const hordeDiff =
     hordeEndMatch && hordeStartMatch
@@ -82,7 +82,7 @@ export const overlays = [
   "affixes",
 ] as const;
 
-export type Overlay = typeof overlays[number];
+export type Overlay = (typeof overlays)[number];
 
 export const extraOverlayNames: Record<Overlay, string> = {
   dungeonHotfixes: "Dungeon Hotfixes",

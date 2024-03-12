@@ -19,6 +19,22 @@
         }
       },
       "plugins": ["jsx-a11y", "react-hooks", "react"],
+      "overrides": [
+        {
+          "files": ["app/**/*.?(t|j)s?(x)"],
+          "rules": {
+            "import/no-default-export": "off"
+          },
+          "overrides": [
+            {
+              "files": ["**/routes/**/*.js?(x)", "**/routes/**/*.tsx"],
+              "rules": {
+                "react/display-name": "off"
+              }
+            }
+          ]
+        }
+      ],
       "settings": {
         "react": {
           "version": "detect",
@@ -39,30 +55,11 @@
           "@typescript-eslint/parser": [".ts", ".tsx", ".d.ts"]
         },
         "import/resolver": {
-          "typescript": {
-            "alwaysTryTypes": true
-          },
           "node": {
             "extensions": [".js", ".jsx", ".ts", ".tsx"]
           }
         }
       },
-      "overrides": [
-        {
-          "files": ["app/**/*.?(t|j)s?(x)"],
-          "rules": {
-            "import/no-default-export": "off"
-          },
-          "overrides": [
-            {
-              "files": ["**/routes/**/*.js?(x)", "**/routes/**/*.tsx"],
-              "rules": {
-                "react/display-name": "off"
-              }
-            }
-          ]
-        }
-      ],
       "rules": {
         "react/boolean-prop-naming": "off",
         "react/button-has-type": "error",
@@ -466,7 +463,7 @@
         "etc/no-assign-mutated-array": "error",
         "etc/no-commented-out-code": "off",
         "etc/no-internal": "warn",
-        "etc/no-misused-generics": "warn",
+        "etc/no-misused-generics": "off",
         "etc/underscore-internal": "warn",
         "@typescript-eslint/block-spacing": "off",
         "@typescript-eslint/key-spacing": "off",

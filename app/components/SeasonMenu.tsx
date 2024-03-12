@@ -40,7 +40,7 @@ export function SeasonMenu(): JSX.Element {
   const paramsAsString = params ? `?${params.toString()}` : "";
 
   const selectedSeason = seasons.find(
-    (season) => season.slug === selectedSeasonSlug
+    (season) => season.slug === selectedSeasonSlug,
   );
 
   return (
@@ -96,7 +96,7 @@ export function SeasonMenu(): JSX.Element {
                           navigation.state === "idle"
                             ? "cursor-not-allowed"
                             : "cursor-wait",
-                          isLast && "rounded-b-lg"
+                          isLast && "rounded-b-lg",
                         )}
                       >
                         <SeasonNavItemBody season={season} />
@@ -105,7 +105,7 @@ export function SeasonMenu(): JSX.Element {
                       <NavLink
                         className={clsx(
                           "flex flex-1 space-x-2 bg-gray-700 px-4 py-2 text-white outline-none transition-all duration-200 ease-in-out hover:bg-gray-500",
-                          isLast && "rounded-b-lg"
+                          isLast && "rounded-b-lg",
                         )}
                         to={`/${season.slug}${paramsAsString}`}
                       >
@@ -134,7 +134,7 @@ function Popover({ children, state, ...props }: PopoverProps) {
       ...props,
       popoverRef,
     },
-    state
+    state,
   );
 
   return (
@@ -155,7 +155,7 @@ function Popover({ children, state, ...props }: PopoverProps) {
 function Button(
   props: AriaButtonProps & {
     buttonRef: MutableRefObject<HTMLButtonElement | null>;
-  }
+  },
 ) {
   const ref = props.buttonRef;
   const { buttonProps } = useButton(props, ref);
@@ -182,7 +182,7 @@ function MenuItem<T>({ item, state }: MenuItemProps<T>) {
   const { menuItemProps, isSelected } = useMenuItem(
     { key: item.key },
     state,
-    ref
+    ref,
   );
 
   return (
@@ -212,7 +212,7 @@ function Menu<T extends object>(props: AriaMenuProps<T>) {
           <MenuSection key={item.key} section={item} state={state} />
         ) : (
           <MenuItem key={item.key} item={item} state={state} />
-        )
+        ),
       )}
     </ul>
   );
@@ -268,7 +268,7 @@ function MenuSection<T>({ section, state }: MenuSectionProps<T>) {
           {...headingProps}
           className={clsx(
             "inline-block w-full bg-gray-600 px-4 py-1 text-lg font-semibold",
-            isFirst && "rounded-t-lg"
+            isFirst && "rounded-t-lg",
           )}
         >
           {section.rendered}

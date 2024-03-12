@@ -120,7 +120,7 @@ const getMostOutdatedRegionForSeason = async (season: Season) => {
   });
 
   const mostRecentlyUpdatedRegions = new Set(
-    mostRecentData.map((dataset) => dataset.region)
+    mostRecentData.map((dataset) => dataset.region),
   );
 
   const datasets = await prisma.crossFactionHistory.findMany({
@@ -175,7 +175,7 @@ type LastPageUrlParams = {
 
 const retrieveLastPageUrl = async (
   rioSeasonName: string,
-  region: Regions
+  region: Regions,
 ): Promise<LastPageUrlParams> => {
   const firstPageUrl = createPageUrl(rioSeasonName, region);
   const firstPageResponse = await fetch(firstPageUrl);
@@ -216,7 +216,7 @@ const parsePage = (str: string) => {
 };
 
 const determineLastEligibleRank = async (
-  lastPageParams: LastPageUrlParams
+  lastPageParams: LastPageUrlParams,
 ): Promise<number> => {
   const retryDiff = lastPageParams.initialPage - lastPageParams.page;
 
@@ -236,7 +236,7 @@ const determineLastEligibleRank = async (
   const textContent = $lastPage(cellSelector).text();
 
   const totalRankedCharacters = Number.parseInt(
-    textContent.replaceAll(",", "")
+    textContent.replaceAll(",", ""),
   );
 
   if (Number.isNaN(totalRankedCharacters)) {
@@ -261,7 +261,7 @@ const determineLastEligibleRank = async (
 const retrieveScore = async (
   rioSeasonName: string,
   region: Regions,
-  lastEligibleRank: number
+  lastEligibleRank: number,
 ) => {
   const scorePage =
     lastEligibleRank <= 40 ? 0 : Math.floor(lastEligibleRank / 40);
@@ -272,7 +272,7 @@ const retrieveScore = async (
     // but its still on page 3
     lastEligibleRank % 40 === 0 && lastEligibleRank > 40
       ? scorePage - 1
-      : scorePage
+      : scorePage,
   );
 
   const scorePageResponse = await fetch(scorePageUrl);
@@ -290,7 +290,7 @@ const retrieveScore = async (
       })
       .parents(".mythic-plus-rankings--row")
       .find("b")
-      .text()
+      .text(),
   );
 
   return Number.isNaN(maybeScore) ? 0 : maybeScore;
@@ -298,7 +298,7 @@ const retrieveScore = async (
 
 const parseRegionData = async (
   region: Regions,
-  rioSeasonName: string
+  rioSeasonName: string,
 ): Promise<Prisma.CrossFactionHistoryCreateInput> => {
   const now = Math.round(Date.now() / 1000);
 

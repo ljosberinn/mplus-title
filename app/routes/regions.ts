@@ -7,7 +7,7 @@ import { orderedRegionsBySize, searchParamSeparator } from "~/utils";
 
 const addRegionsToReferrerOrBaseUrl = (
   request: Request,
-  regions: Regions[]
+  regions: Regions[],
 ): { url: string; headers: HeadersInit } => {
   const headers: HeadersInit = {};
   const referer = request.headers.get("Referer");
@@ -20,7 +20,7 @@ const addRegionsToReferrerOrBaseUrl = (
     } else {
       refererAsUrl.searchParams.set(
         "regions",
-        regions.join(searchParamSeparator)
+        regions.join(searchParamSeparator),
       );
     }
 
@@ -29,7 +29,7 @@ const addRegionsToReferrerOrBaseUrl = (
     headers["Set-Cookie"] = setCookie(
       "regions",
       nextValue,
-      nextValue ? 365 * 24 * 60 * 60 * 1000 : 0
+      nextValue ? 365 * 24 * 60 * 60 * 1000 : 0,
     );
 
     return {
@@ -41,7 +41,7 @@ const addRegionsToReferrerOrBaseUrl = (
   const searchParams = new URLSearchParams(
     regions.length === orderedRegionsBySize.length
       ? undefined
-      : { regions: regions.join(searchParamSeparator) }
+      : { regions: regions.join(searchParamSeparator) },
   );
   const paramsAsString = searchParams.toString();
 
@@ -50,7 +50,7 @@ const addRegionsToReferrerOrBaseUrl = (
   headers["Set-Cookie"] = setCookie(
     "regions",
     nextValue,
-    nextValue ? 365 * 24 * 60 * 60 * 1000 : 0
+    nextValue ? 365 * 24 * 60 * 60 * 1000 : 0,
   );
 
   return {
@@ -62,12 +62,12 @@ const addRegionsToReferrerOrBaseUrl = (
 export const action: ActionFunction = async ({ request }) => {
   const bodyData = await request.formData();
   const activeRegions = orderedRegionsBySize.filter(
-    (region) => bodyData.get(region) === "on"
+    (region) => bodyData.get(region) === "on",
   );
 
   const { url, headers } = addRegionsToReferrerOrBaseUrl(
     request,
-    activeRegions
+    activeRegions,
   );
 
   return redirect(url, { headers });

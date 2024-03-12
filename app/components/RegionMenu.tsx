@@ -49,7 +49,7 @@ export function RegionToggle({ season }: RegionToggleProps): JSX.Element {
                         "hover:bg-gray-500",
                         `${
                           disabled ? "cursor-not-allowed" : "cursor-wait"
-                        } grayscale`
+                        } grayscale`,
                       )
                   : linkClassName
               }`}

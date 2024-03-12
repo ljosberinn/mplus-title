@@ -100,7 +100,8 @@ export const seasons: Season[] = [
     dungeonHotfixes: {},
     dungeons: 8,
     patches: {},
-    seasonIcon: "https://wow.zamimg.com/images/wow/icons/large/inv_misc_questionmark.jpg",
+    seasonIcon:
+      "https://wow.zamimg.com/images/wow/icons/large/inv_misc_questionmark.jpg",
     startingPeriod: 0,
   },
   {
@@ -147,55 +148,55 @@ export const seasons: Season[] = [
       "Rise +1 min": {
         us: offsetByRegion(
           1_699_974_000_000 + 2 * 7 * 24 * 60 * 60 * 1000,
-          "us"
+          "us",
         ),
         eu: offsetByRegion(
           1_699_974_000_000 + 2 * 7 * 24 * 60 * 60 * 1000,
-          "eu"
+          "eu",
         ),
         kr: offsetByRegion(
           1_699_974_000_000 + 2 * 7 * 24 * 60 * 60 * 1000,
-          "kr"
+          "kr",
         ),
         tw: offsetByRegion(
           1_699_974_000_000 + 2 * 7 * 24 * 60 * 60 * 1000,
-          "tw"
+          "tw",
         ),
       },
       "WCM Thorns -35% hp": {
         us: offsetByRegion(
           1_699_974_000_000 + 7 * 7 * 24 * 60 * 60 * 1000,
-          "us"
+          "us",
         ),
         eu: offsetByRegion(
           1_699_974_000_000 + 7 * 7 * 24 * 60 * 60 * 1000,
-          "eu"
+          "eu",
         ),
         kr: offsetByRegion(
           1_699_974_000_000 + 7 * 7 * 24 * 60 * 60 * 1000,
-          "kr"
+          "kr",
         ),
         tw: offsetByRegion(
           1_699_974_000_000 + 7 * 7 * 24 * 60 * 60 * 1000,
-          "tw"
+          "tw",
         ),
       },
       "Spec Tuning & Rise nerfs": {
         us: offsetByRegion(
           1_699_974_000_000 + 10 * 7 * 24 * 60 * 60 * 1000,
-          "us"
+          "us",
         ),
         eu: offsetByRegion(
           1_699_974_000_000 + 10 * 7 * 24 * 60 * 60 * 1000,
-          "eu"
+          "eu",
         ),
         kr: offsetByRegion(
           1_699_974_000_000 + 10 * 7 * 24 * 60 * 60 * 1000,
-          "kr"
+          "kr",
         ),
         tw: offsetByRegion(
           1_699_974_000_000 + 10 * 7 * 24 * 60 * 60 * 1000,
-          "tw"
+          "tw",
         ),
       },
     },
@@ -204,19 +205,19 @@ export const seasons: Season[] = [
       "10.2.5": {
         us: offsetByRegion(
           1_699_974_000_000 + 9 * 7 * 24 * 60 * 60 * 1000,
-          "us"
+          "us",
         ),
         eu: offsetByRegion(
           1_699_974_000_000 + 9 * 7 * 24 * 60 * 60 * 1000,
-          "eu"
+          "eu",
         ),
         kr: offsetByRegion(
           1_699_974_000_000 + 9 * 7 * 24 * 60 * 60 * 1000,
-          "kr"
+          "kr",
         ),
         tw: offsetByRegion(
           1_699_974_000_000 + 9 * 7 * 24 * 60 * 60 * 1000,
-          "tw"
+          "tw",
         ),
       },
     },
@@ -587,16 +588,16 @@ export const hasSeasonEndedForAllRegions = (slug: string): boolean => {
 };
 
 export const findSeasonByTimestamp = (
-  timestamp = Date.now()
+  timestamp = Date.now(),
 ): Season | null => {
   const season = seasons.find(
     (season) =>
       Object.values(season.startDates).some(
-        (start) => start && timestamp >= start
+        (start) => start && timestamp >= start,
       ) &&
       Object.values(season.endDates).some(
-        (end) => end === UNKNOWN_SEASON_START_OR_ENDING || end > timestamp
-      )
+        (end) => end === UNKNOWN_SEASON_START_OR_ENDING || end > timestamp,
+      ),
   );
 
   return season ?? null;
@@ -612,7 +613,7 @@ export const findSeasonByName = (slug: string): Season | null => {
 
     const mostRecentlyStartedSeason = seasons.find(
       (season) =>
-        season.startDates.us !== null && Date.now() >= season.startDates.us
+        season.startDates.us !== null && Date.now() >= season.startDates.us,
     );
 
     if (mostRecentlyStartedSeason) {

@@ -11,7 +11,7 @@ import Highcharts, {
   type YAxisPlotLinesOptions,
 } from "highcharts";
 import HighchartsReact from "highcharts-react-official";
-import { Fragment, useEffect, useRef, useState } from "react";
+import { Fragment, lazy, Suspense, useEffect, useRef, useState } from "react";
 
 import { getAffixIconUrl, getAffixName } from "~/affixes";
 import { Footer } from "~/components/Footer";
@@ -108,25 +108,25 @@ export const loader = async ({
 
   const searchParamOverlays = await time(
     () => determineOverlaysToDisplayFromSearchParams(request),
-    { type: "determineOverlaysToDisplayFromSearchParams", timings }
+    { type: "determineOverlaysToDisplayFromSearchParams", timings },
   );
   const searchParamRegions = await time(
     () => determineRegionsToDisplayFromSearchParams(request),
-    { type: "determineRegionsToDisplayFromSearchParams", timings }
+    { type: "determineRegionsToDisplayFromSearchParams", timings },
   );
 
   const cookieRegions = searchParamRegions
     ? null
     : await time(() => determineRegionsToDisplayFromCookies(request), {
-      type: "determineRegionsToDisplayFromCookies",
-      timings,
-    });
+        type: "determineRegionsToDisplayFromCookies",
+        timings,
+      });
   const cookieOverlays = searchParamOverlays
     ? null
     : await time(() => determineOverlaysToDisplayFromCookies(request), {
-      type: "determineOverlaysToDisplayFromCookies",
-      timings,
-    });
+        type: "determineOverlaysToDisplayFromCookies",
+        timings,
+      });
 
   if (cookieRegions || cookieOverlays) {
     const params = new URLSearchParams();
@@ -154,7 +154,7 @@ export const loader = async ({
         season,
         timings,
       }),
-    { type: "getEnhancedSeason", timings }
+    { type: "getEnhancedSeason", timings },
   );
 
   headers[serverTiming] = getServerTimeHeader(timings);
@@ -206,7 +206,7 @@ const findIndexOfCurrentWeek = (season: EnhancedSeason, region: Regions) => {
     season.dataByRegion[region][season.dataByRegion[region].length - 1];
 
   const result = Math.floor(
-    (latestDataset.ts - startDate) / 1000 / 60 / 60 / 24 / 7
+    (latestDataset.ts - startDate) / 1000 / 60 / 60 / 24 / 7,
   );
 
   if (result === season.affixes.length) {
@@ -228,6 +228,8 @@ type CardProps = {
 };
 
 const numberFormatParts = new Intl.NumberFormat().formatToParts(1234.5);
+
+const TempBanner = lazy(() => import("../../components/TempBanner"));
 
 function Card({ season, region, extremes, onZoom }: CardProps): JSX.Element {
   const ref = useRef<HighchartsReact.RefObject | null>(null);
@@ -426,7 +428,7 @@ function Card({ season, region, extremes, onZoom }: CardProps): JSX.Element {
     <section
       className={clsx(
         navigation.state === "loading" && "grayscale",
-        "max-w-screen-2xl rounded-md bg-gray-700 transition-all duration-500 ease-linear motion-reduce:transition-none"
+        "max-w-screen-2xl rounded-md bg-gray-700 transition-all duration-500 ease-linear motion-reduce:transition-none",
       )}
       aria-labelledby={`title-${region}`}
       id={region}
@@ -449,18 +451,9 @@ function Card({ season, region, extremes, onZoom }: CardProps): JSX.Element {
       ) : null}
 
       {needsTempBanner ? (
-        <div className="my-2 bg-red-500 p-2 text-center">
-          Leaderboard data on Raider.io's end sadly broke as you can see below.
-          Use{" "}
-          <a
-            href="https://raider.io/mythic-plus/cutoffs/season-df-2/us"
-            className="cursor-pointer underline"
-            target="_blank"
-            rel="noreferrer"
-          >
-            their own tool for the remainder of the season.
-          </a>
-        </div>
+        <Suspense fallback={null}>
+          <TempBanner season={season} region={region} />
+        </Suspense>
       ) : null}
 
       <div className="mb-2 flex w-full justify-between">
@@ -471,30 +464,48 @@ function Card({ season, region, extremes, onZoom }: CardProps): JSX.Element {
             isCurrentWeek || indexOfCurrentWeek === null
               ? false
               : index === indexOfCurrentWeek + 1;
+          const isFutureWeek = indexOfCurrentWeek && index > indexOfCurrentWeek;
 
           const affixSetId =
             typeof season.wcl?.weekIndexToAffixSetId[index] === "number"
               ? season.wcl.weekIndexToAffixSetId[index]
               : null;
 
-          let startTimeOfWeek = 0
-          let endTimeOfWeek = 0
-          let startTime = null
-          let endTime = null
+          let startTimeOfWeek = 0;
+          let endTimeOfWeek = 0;
+          let startTime = null;
+          let endTime = null;
+          let weekOffset = 0;
 
           if (seasonStartForRegion) {
-            startTimeOfWeek = seasonStartForRegion + (index + cycles * season.affixes.length) * 7 * 24 * 60 * 60 * 1000
+            // adjust week offset by cycles - 1 for future weeks to show MythicStats link for the last time this affix set came around
+            weekOffset =
+              (cycles - (isFutureWeek ? 1 : 0)) * season.affixes.length + index;
+            startTimeOfWeek =
+              seasonStartForRegion +
+              (index + cycles * season.affixes.length) *
+                7 *
+                24 *
+                60 *
+                60 *
+                1000;
 
             // move date of past week to the future indicating when it comes around next
             if (!isCurrentWeek && startTimeOfWeek <= Date.now()) {
-              startTimeOfWeek = seasonStartForRegion +
-                (index + (cycles + 1) * season.affixes.length) * 7 * 24 * 60 * 60 * 1000
+              startTimeOfWeek =
+                seasonStartForRegion +
+                (index + (cycles + 1) * season.affixes.length) *
+                  7 *
+                  24 *
+                  60 *
+                  60 *
+                  1000;
             }
 
             endTimeOfWeek = startTimeOfWeek + 7 * 24 * 60 * 60 * 1000;
 
-            startTime = new Date(startTimeOfWeek)
-            endTime = new Date(endTimeOfWeek)
+            startTime = new Date(startTimeOfWeek);
+            endTime = new Date(endTimeOfWeek);
           }
 
           return (
@@ -509,20 +520,22 @@ function Card({ season, region, extremes, onZoom }: CardProps): JSX.Element {
                 isCurrentWeek
                   ? undefined
                   : "grayscale transition-opacity hover:filter-none",
-                isNextWeek ? "filter-none" : null
+                isNextWeek ? "filter-none" : null,
               )}
               key={[...set, index].join("-")}
             >
               <span className="flex space-x-1">
                 <span title={`Week ${index + 1}`}>W{index + 1}</span>
-                <span className="hidden md:flex items-center space-x-1 lg:space-x-2">
+                <span className="hidden items-center space-x-1 md:flex lg:space-x-2">
                   {affixSetId && season.wcl ? (
                     <a
-                      href={`https://www.warcraftlogs.com/zone/rankings/${season.wcl.zoneId
-                        }#affixes=${affixSetId}&leaderboards=1${season.wcl.partition
+                      href={`https://www.warcraftlogs.com/zone/rankings/${
+                        season.wcl.zoneId
+                      }#affixes=${affixSetId}&leaderboards=1${
+                        season.wcl.partition
                           ? `&partition=${season.wcl.partition}`
                           : ""
-                        }`}
+                      }`}
                       rel="noopener noreferrer"
                       target="_blank"
                       className="italic text-blue-400 underline"
@@ -536,17 +549,19 @@ function Card({ season, region, extremes, onZoom }: CardProps): JSX.Element {
                       />
                     </a>
                   ) : null}
+                  {cycles === 0 && isFutureWeek ? null : (
+                    <MythicStatsLink season={season} weekOffset={weekOffset} />
+                  )}
                 </span>
               </span>
 
               {startTime && endTime ? (
-                <span className="flex md:flex-row text-center flex-col items-center space-x-0 md:space-x-1">
+                <span className="flex flex-col items-center space-x-0 text-center md:flex-row md:space-x-1">
                   <LocaleTime date={startTime} />
                   <span>-</span>
                   <LocaleTime date={endTime} />
                 </span>
               ) : null}
-
               <div>
                 {setSlice.map((affix) => {
                   const affixName = getAffixName(affix);
@@ -583,60 +598,84 @@ function Card({ season, region, extremes, onZoom }: CardProps): JSX.Element {
   );
 }
 
+type MythicStatsLinkProps = {
+  season: CardProps["season"];
+  weekOffset: number;
+};
+
+function MythicStatsLink({ season, weekOffset }: MythicStatsLinkProps) {
+  if (!season.startingPeriod) {
+    return null;
+  }
+
+  const href = `https://mythicstats.com/period/${season.startingPeriod + weekOffset}`;
+
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      title="MythicStats for this week"
+    >
+      <img src="/mythic-stats.png" loading="lazy" className="h-4 w-4" alt="" />
+    </a>
+  );
+}
+
 const createSeries = (
   season: EnhancedSeason,
-  region: Regions
+  region: Regions,
 ): SeriesLineOptions[] => {
   const horde: SeriesLineOptions | null =
     season.crossFactionSupport === "complete"
       ? null
       : {
-        type: "line",
-        name: "Score Horde",
-        color: factionColors.horde,
-        data: season.dataByRegion[region]
-          .filter((dataset) => dataset.faction === "horde")
-          .map((dataset) => {
-            return [dataset.ts, dataset.score];
-          }),
-        dataLabels: {
-          formatter,
-        },
-      };
+          type: "line",
+          name: "Score Horde",
+          color: factionColors.horde,
+          data: season.dataByRegion[region]
+            .filter((dataset) => dataset.faction === "horde")
+            .map((dataset) => {
+              return [dataset.ts, dataset.score];
+            }),
+          dataLabels: {
+            formatter,
+          },
+        };
 
   const alliance: SeriesLineOptions | null =
     season.crossFactionSupport === "complete"
       ? null
       : {
-        type: "line",
-        name: "Score Alliance",
-        color: factionColors.alliance,
-        data: season.dataByRegion[region]
-          .filter((dataset) => dataset.faction === "alliance")
-          .map((dataset) => {
-            return [dataset.ts, dataset.score];
-          }),
-        dataLabels: {
-          formatter,
-        },
-      };
+          type: "line",
+          name: "Score Alliance",
+          color: factionColors.alliance,
+          data: season.dataByRegion[region]
+            .filter((dataset) => dataset.faction === "alliance")
+            .map((dataset) => {
+              return [dataset.ts, dataset.score];
+            }),
+          dataLabels: {
+            formatter,
+          },
+        };
 
   const xFaction: SeriesLineOptions | null =
     season.crossFactionSupport === "none"
       ? null
       : {
-        type: "line",
-        name: "Score X-Faction",
-        color: factionColors.xFaction,
-        data: season.dataByRegion[region]
-          .filter((dataset) => !("faction" in dataset))
-          .map((dataset) => {
-            return [dataset.ts, dataset.score];
-          }),
-        dataLabels: {
-          formatter,
-        },
-      };
+          type: "line",
+          name: "Score X-Faction",
+          color: factionColors.xFaction,
+          data: season.dataByRegion[region]
+            .filter((dataset) => !("faction" in dataset))
+            .map((dataset) => {
+              return [dataset.ts, dataset.score];
+            }),
+          dataLabels: {
+            formatter,
+          },
+        };
 
   const extrapolationData = season.extrapolation[region];
 
@@ -644,24 +683,24 @@ const createSeries = (
     extrapolationData === null
       ? null
       : {
-        type: "line",
-        name: "Score Extrapolated",
-        color: factionColors.xFaction,
-        data: Array.isArray(extrapolationData)
-          ? extrapolationData
-          : [
-            [extrapolationData.from.ts, extrapolationData.from.score],
-            [extrapolationData.to.ts, extrapolationData.to.score],
-          ],
-        dashStyle: "ShortDash",
-        dataLabels: {
-          formatter,
-        },
-        marker: {
-          enabled: true,
-        },
-        visible: true,
-      };
+          type: "line",
+          name: "Score Extrapolated",
+          color: factionColors.xFaction,
+          data: Array.isArray(extrapolationData)
+            ? extrapolationData
+            : [
+                [extrapolationData.from.ts, extrapolationData.from.score],
+                [extrapolationData.to.ts, extrapolationData.to.score],
+              ],
+          dashStyle: "ShortDash",
+          dataLabels: {
+            formatter,
+          },
+          marker: {
+            enabled: true,
+          },
+          visible: true,
+        };
 
   const ranks: SeriesLineOptions = {
     type: "line",
@@ -678,14 +717,14 @@ const createSeries = (
 
   return [horde, alliance, xFaction, extrapolation, ranks].filter(
     (series): series is SeriesLineOptions =>
-      series?.data !== undefined && series.data.length > 0
+      series?.data !== undefined && series.data.length > 0,
   );
 };
 
 const formatter = function (this: PointLabelObject) {
   const max = this.series.data.reduce(
     (acc, dataset) => (acc > dataset.x ? acc : dataset.x),
-    0
+    0,
   );
 
   return this.x === max ? this.y : null;
@@ -693,7 +732,7 @@ const formatter = function (this: PointLabelObject) {
 
 const createFactionCutoffPlotlines = (
   season: EnhancedSeason,
-  region: Regions
+  region: Regions,
 ): YAxisPlotLinesOptions[] => {
   const cutoffs = season.confirmedCutoffs[region];
 
@@ -739,7 +778,7 @@ const createFactionCutoffPlotlines = (
 
 const createPlotBands = (
   season: EnhancedSeason,
-  region: Regions
+  region: Regions,
 ): XAxisPlotBandsOptions[] => {
   const seasonStart = season.startDates[region];
 
@@ -748,13 +787,8 @@ const createPlotBands = (
   }
 
   const seasonEnd = season.endDates[region];
-  const {
-    startingPeriod,
-    affixes,
-    overlaysToDisplay,
-    dataByRegion,
-    crossFactionSupport,
-  } = season;
+  const { affixes, overlaysToDisplay, dataByRegion, crossFactionSupport } =
+    season;
 
   const weeks = seasonEnd
     ? (seasonEnd - seasonStart) / oneWeekInMs + 1
@@ -793,12 +827,12 @@ const createPlotBands = (
         },
         text: overlaysToDisplay.includes("affixes")
           ? relevantRotationSlice
-            .map((affix) => {
-              return `<img width="18" height="18" style="transform: rotate(-90deg); opacity: 0.75;" src="${getAffixIconUrl(
-                affix
-              )}"/>`;
-            })
-            .join("")
+              .map((affix) => {
+                return `<img width="18" height="18" style="transform: rotate(-90deg); opacity: 0.75;" src="${getAffixIconUrl(
+                  affix,
+                )}"/>`;
+              })
+              .join("")
           : undefined,
         rotation: 90,
         align: "left",
@@ -807,48 +841,33 @@ const createPlotBands = (
       },
     });
 
-    if (startingPeriod && from < now) {
-      const size = 36;
-
-      options.push({
-        from,
-        to,
-        color,
-        label: {
-          useHTML: true,
-          text: `<a href="https://mythicstats.com/period/${startingPeriod + index
-            }" target="_blank"><img class="md:inline hidden" style="border: 1px solid" title="MythicStats" height="${size}" width="${size}" src="/mythic-stats.png" /></a>`,
-          align: "left",
-          x: 20,
-          y: 15,
-        },
-      });
-    }
-
     const { allianceDiff, hordeDiff, xFactionDiff } =
       calculateFactionDiffForWeek(
         dataByRegion[region],
         crossFactionSupport,
         index === 0,
         from,
-        to
+        to,
       );
 
     const text = [
       crossFactionSupport === "complete"
         ? null
-        : `<span style="font-size: 10px; color: ${factionColors.horde}">${hordeDiff > 0 ? "+" : hordeDiff === 0 ? "±" : ""
-        }${hordeDiff.toFixed(1)}</span>`,
+        : `<span style="font-size: 10px; color: ${factionColors.horde}">${
+            hordeDiff > 0 ? "+" : hordeDiff === 0 ? "±" : ""
+          }${hordeDiff.toFixed(1)}</span>`,
       crossFactionSupport === "complete"
         ? null
-        : `<span style="font-size: 10px; color: ${factionColors.alliance}">${allianceDiff > 0 ? "+" : allianceDiff === 0 ? "±" : ""
-        }${allianceDiff.toFixed(1)}</span>`,
+        : `<span style="font-size: 10px; color: ${factionColors.alliance}">${
+            allianceDiff > 0 ? "+" : allianceDiff === 0 ? "±" : ""
+          }${allianceDiff.toFixed(1)}</span>`,
       from > now ||
-        crossFactionSupport === "none" ||
-        (crossFactionSupport === "partial" && xFactionDiff === 0)
+      crossFactionSupport === "none" ||
+      (crossFactionSupport === "partial" && xFactionDiff === 0)
         ? null
-        : `<span style="font-size: 10px; color: ${factionColors.xFaction}">${xFactionDiff > 0 ? "+" : xFactionDiff === 0 ? "±" : ""
-        }${xFactionDiff.toFixed(1)}</span>`,
+        : `<span style="font-size: 10px; color: ${factionColors.xFaction}">${
+            xFactionDiff > 0 ? "+" : xFactionDiff === 0 ? "±" : ""
+          }${xFactionDiff.toFixed(1)}</span>`,
     ].filter(Boolean);
 
     options.push({
@@ -864,7 +883,7 @@ const createPlotBands = (
     });
 
     return options.filter(
-      (options): options is XAxisPlotBandsOptions => options !== null
+      (options): options is XAxisPlotBandsOptions => options !== null,
     );
   });
 };

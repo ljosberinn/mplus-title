@@ -6,7 +6,7 @@ import { type Overlay, overlays, searchParamSeparator } from "~/utils";
 
 const addOverlaysToReferrerOrBaseUrl = (
   request: Request,
-  plotlines: readonly Overlay[]
+  plotlines: readonly Overlay[],
 ): { url: string; headers: HeadersInit } => {
   const referer = request.headers.get("Referer");
   const headers: HeadersInit = {};
@@ -19,7 +19,7 @@ const addOverlaysToReferrerOrBaseUrl = (
     } else {
       refererAsUrl.searchParams.set(
         "overlays",
-        plotlines.join(searchParamSeparator)
+        plotlines.join(searchParamSeparator),
       );
     }
 
@@ -28,7 +28,7 @@ const addOverlaysToReferrerOrBaseUrl = (
     headers["Set-Cookie"] = setCookie(
       "overlays",
       nextValue,
-      nextValue ? 365 * 24 * 60 * 60 * 1000 : 0
+      nextValue ? 365 * 24 * 60 * 60 * 1000 : 0,
     );
 
     return {
@@ -42,7 +42,7 @@ const addOverlaysToReferrerOrBaseUrl = (
       ? undefined
       : {
           overlays: plotlines.join(searchParamSeparator),
-        }
+        },
   );
   const paramsAsString = searchParams.toString();
 
@@ -51,7 +51,7 @@ const addOverlaysToReferrerOrBaseUrl = (
   headers["Set-Cookie"] = setCookie(
     "overlays",
     nextValue,
-    nextValue ? 365 * 24 * 60 * 60 * 1000 : 0
+    nextValue ? 365 * 24 * 60 * 60 * 1000 : 0,
   );
 
   return {
@@ -63,12 +63,12 @@ const addOverlaysToReferrerOrBaseUrl = (
 export const action: ActionFunction = async ({ request }) => {
   const bodyData = await request.formData();
   const activeOverlays = overlays.filter(
-    (plotline) => bodyData.get(plotline) === "on"
+    (plotline) => bodyData.get(plotline) === "on",
   );
 
   const { url, headers } = addOverlaysToReferrerOrBaseUrl(
     request,
-    activeOverlays
+    activeOverlays,
   );
 
   return redirect(url, { headers });

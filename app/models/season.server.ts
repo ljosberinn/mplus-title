@@ -46,14 +46,13 @@ export const getEnhancedSeason = async ({
 
   if (hasSeasonEndedForAllRegions(season.slug)) {
     const thirtyDays = 30 * 24 * 60 * 60;
-    headers[
-      cacheControl
-    ] = `public, max-age=${thirtyDays}, s-maxage=${thirtyDays}, immutable`;
+    headers[cacheControl] =
+      `public, max-age=${thirtyDays}, s-maxage=${thirtyDays}, immutable`;
   }
 
   const extrapolationEnd = await time(
     () => determineExtrapolationEnd(request),
-    { type: "determineExtrapolationEnd", timings }
+    { type: "determineExtrapolationEnd", timings },
   );
 
   const regions = pRegions ?? orderedRegionsBySize;
@@ -102,7 +101,7 @@ export const getEnhancedSeason = async ({
 
       const extrapolation = await time(
         () => calculateExtrapolation(season, region, data, extrapolationEnd),
-        { type: `calculateExtrapolation-${region}`, timings }
+        { type: `calculateExtrapolation-${region}`, timings },
       );
 
       enhancedSeason.xAxisPlotLines[region] = await time(
@@ -112,9 +111,9 @@ export const getEnhancedSeason = async ({
             region,
             data,
             extrapolation,
-            overlays
+            overlays,
           ),
-        { type: `calculateXAxisPlotLines-${region}`, timings }
+        { type: `calculateXAxisPlotLines-${region}`, timings },
       );
 
       const seasonEnding = season.endDates[region];
@@ -128,9 +127,9 @@ export const getEnhancedSeason = async ({
 
       enhancedSeason.initialZoom[region] = await time(
         () => calculateZoom(season, region, data, extrapolation),
-        { type: `calculateZoom-${region}`, timings }
+        { type: `calculateZoom-${region}`, timings },
       );
-    })
+    }),
   );
 
   const mostRecentDataset = Object.values(enhancedSeason.dataByRegion)
@@ -146,14 +145,14 @@ export const getEnhancedSeason = async ({
           determineExpirationTimestamp(
             season,
             region,
-            enhancedSeason.dataByRegion[region]
-          )
+            enhancedSeason.dataByRegion[region],
+          ),
         )
         .reduce(
           (acc, expiry) => (acc > expiry ? expiry : acc),
-          Number.POSITIVE_INFINITY
+          Number.POSITIVE_INFINITY,
         ),
-    { type: "shortestExpiry", timings }
+    { type: "shortestExpiry", timings },
   );
 
   headers[expires] = new Date(shortestExpiry * 1000 + Date.now()).toUTCString();

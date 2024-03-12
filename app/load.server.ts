@@ -18,7 +18,7 @@ const oneWeekInMs = 7 * 24 * 60 * 60 * 1000;
 const getCrossFactionHistory = (
   region: Regions,
   gte: number | null,
-  lte?: number
+  lte?: number,
 ) => {
   if (!gte) {
     return [];
@@ -100,7 +100,7 @@ const setupRedisProviders = () => {
 export const loadDataForRegion = async (
   region: Regions,
   season: Season,
-  timings: Timings
+  timings: Timings,
 ): Promise<Dataset[]> => {
   const gte = season.startDates[region];
   const lte = season.endDates[region] ?? undefined;
@@ -123,14 +123,14 @@ export const loadDataForRegion = async (
         season.crossFactionSupport === "complete"
           ? []
           : getHistory(region, gte, lte),
-      { type: `getHistory-${region}`, timings }
+      { type: `getHistory-${region}`, timings },
     ),
     time(
       () =>
         season.crossFactionSupport === "none"
           ? []
           : getCrossFactionHistory(region, gte, lte),
-      { type: `getCrossFactionHistory-${region}`, timings }
+      { type: `getCrossFactionHistory-${region}`, timings },
     ),
   ]);
 
@@ -155,7 +155,7 @@ export const loadDataForRegion = async (
           return dataset.score > 0;
         })
         .sort((a, b) => a.ts - b.ts),
-    { type: `normalizeDatasets-${region}`, timings }
+    { type: `normalizeDatasets-${region}`, timings },
   );
 
   await time(
@@ -163,9 +163,9 @@ export const loadDataForRegion = async (
       persist(
         datasets,
         key,
-        determineExpirationTimestamp(season, region, datasets)
+        determineExpirationTimestamp(season, region, datasets),
       ),
-    { type: `persist-${region}`, timings }
+    { type: `persist-${region}`, timings },
   );
 
   return datasets;
@@ -174,7 +174,7 @@ export const loadDataForRegion = async (
 export const determineExpirationTimestamp = (
   season: Season,
   region: Regions,
-  datasets: Dataset[]
+  datasets: Dataset[],
 ): number => {
   const latestDataset =
     datasets.length > 0 ? datasets[datasets.length - 1] : null;
@@ -199,7 +199,7 @@ export const determineExpirationTimestamp = (
 };
 
 export const determineRegionsToDisplayFromSearchParams = (
-  request: Request
+  request: Request,
 ): Regions[] | null => {
   const possiblyRegions = new URL(request.url).searchParams.get("regions");
 
@@ -244,7 +244,7 @@ export const calculateExtrapolation = (
   season: Season,
   region: Regions,
   data: Dataset[],
-  endOverride: number | null
+  endOverride: number | null,
 ):
   | null
   | [number, number][]
@@ -285,7 +285,7 @@ export const calculateExtrapolation = (
   const firstRelevantDataset = determineExtrapolationStart(
     data,
     season,
-    region
+    region,
   );
 
   if (!firstRelevantDataset) {
@@ -303,7 +303,7 @@ export const calculateExtrapolation = (
       season.crossFactionSupport,
       index === 0,
       from,
-      to
+      to,
     ).xFactionDiff;
   })
     .filter(Boolean)
@@ -341,13 +341,13 @@ export const calculateExtrapolation = (
             lastDataset.ts + interval * (i + 1),
             toOneDigit(lastDataset.score + scoreIncreaseSteps * (i + 1)),
           ];
-        }
+        },
       ),
       [
         to,
         toOneDigit(
           lastDataset.score +
-            scoreIncreaseSteps * daysUntilSeasonEndingOrFourWeeks
+            scoreIncreaseSteps * daysUntilSeasonEndingOrFourWeeks,
         ),
       ],
     ];
@@ -359,7 +359,7 @@ export const calculateExtrapolation = (
 
   const score = toOneDigit(
     lastDataset.score +
-      (lastDataset.score - firstRelevantDataset.score) * factor
+      (lastDataset.score - firstRelevantDataset.score) * factor,
   );
 
   if (timeUntilExtrapolationEnd > oneWeekInMs / 7) {
@@ -377,7 +377,7 @@ export const calculateExtrapolation = (
             lastDataset.ts + interval * (i + 1),
             toOneDigit(lastDataset.score + scoreIncreaseSteps * (i + 1)),
           ];
-        }
+        },
       ),
       [to, score],
     ];
@@ -395,7 +395,7 @@ export const calculateExtrapolation = (
 const determineExtrapolationStart = (
   data: Dataset[],
   season: Season,
-  region: Regions
+  region: Regions,
 ): Dataset | null => {
   const seasonStart = season.startDates[region];
 
@@ -418,7 +418,7 @@ export const calculateZoom = (
   season: Season,
   region: Regions,
   data: Dataset[],
-  extrapolation: EnhancedSeason["extrapolation"]["eu"]
+  extrapolation: EnhancedSeason["extrapolation"]["eu"],
 ): [number, number] => {
   const seasonEnding = season.endDates[region];
 
@@ -437,10 +437,10 @@ export const calculateZoom = (
       daysUntilSeasonEnding < 1
         ? 1.5
         : daysUntilSeasonEnding < 7
-        ? 2.5
-        : daysUntilSeasonEnding < 14
-        ? 3.5
-        : null;
+          ? 2.5
+          : daysUntilSeasonEnding < 14
+            ? 3.5
+            : null;
 
     if (offset) {
       const backThen = [...data]
@@ -462,7 +462,7 @@ export const calculateZoom = (
 };
 
 export const determineOverlaysToDisplayFromSearchParams = (
-  request: Request
+  request: Request,
 ): Overlay[] | null => {
   const params = new URL(request.url).searchParams;
 
@@ -478,7 +478,7 @@ export const determineOverlaysToDisplayFromSearchParams = (
 };
 
 export const determineOverlaysToDisplayFromCookies = (
-  request: Request
+  request: Request,
 ): Overlay[] | null => {
   const cookie = request.headers.get("Cookie") ?? request.headers.get("cookie");
 
@@ -495,7 +495,7 @@ export const determineOverlaysToDisplayFromCookies = (
   try {
     const values = raw.split("=")[1]?.split(searchParamSeparator);
     const filteredOverlays = overlays.filter((overlay) =>
-      values.includes(overlay)
+      values.includes(overlay),
     );
     return filteredOverlays.length > 0 ? filteredOverlays : null;
   } catch {
@@ -504,7 +504,7 @@ export const determineOverlaysToDisplayFromCookies = (
 };
 
 export const determineRegionsToDisplayFromCookies = (
-  request: Request
+  request: Request,
 ): Regions[] | null => {
   const cookie = request.headers.get("Cookie") ?? request.headers.get("cookie");
 
@@ -521,7 +521,7 @@ export const determineRegionsToDisplayFromCookies = (
   try {
     const values = raw.split("=")[1]?.split(searchParamSeparator);
     const filteredRegions = orderedRegionsBySize.filter((region) =>
-      values.includes(region)
+      values.includes(region),
     );
     return filteredRegions.length > 0 ? filteredRegions : null;
   } catch {
@@ -534,7 +534,7 @@ export const calculateXAxisPlotLines = (
   region: Regions,
   data: Dataset[],
   extrapolation: ReturnType<typeof calculateExtrapolation>,
-  overlays: readonly Overlay[]
+  overlays: readonly Overlay[],
 ): XAxisPlotLinesOptions[] => {
   const endDate = season.endDates[region];
   const startDate = season.startDates[region];
@@ -581,7 +581,7 @@ export const calculateXAxisPlotLines = (
           dashStyle: "Dash",
           color: "yellow",
         });
-      }
+      },
     );
   }
 
@@ -667,7 +667,7 @@ export const calculateXAxisPlotLines = (
       // reached during the extrapolation window
       if (!match && Array.isArray(extrapolation)) {
         const extrapolationMatchIndex = extrapolation.findIndex(
-          ([, score]) => score >= allDungeonsBothWeeks
+          ([, score]) => score >= allDungeonsBothWeeks,
         );
 
         if (extrapolationMatchIndex > -1) {
@@ -717,7 +717,7 @@ export const calculateXAxisPlotLines = (
 export const setCookie = (
   key: string,
   value?: string | null,
-  maxAge?: number
+  maxAge?: number,
 ): string => {
   return `${key}=${value ?? ""}; Max-Age=${maxAge ?? 0}`;
 };
@@ -758,7 +758,7 @@ export async function time<ReturnType>(
     type: string;
     desc?: string;
     timings?: Timings;
-  }
+  },
 ): Promise<ReturnType> {
   const start = performance.now();
   const promise = typeof fn === "function" ? fn() : fn;
