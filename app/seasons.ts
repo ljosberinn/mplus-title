@@ -220,6 +220,24 @@ export const seasons: Season[] = [
           "tw",
         ),
       },
+      "10.2.6": {
+        us: offsetByRegion(
+          1_699_974_000_000 + 18 * 7 * 24 * 60 * 60 * 1000,
+          "us",
+        ),
+        eu: offsetByRegion(
+          1_699_974_000_000 + 18 * 7 * 24 * 60 * 60 * 1000,
+          "eu",
+        ),
+        kr: offsetByRegion(
+          1_699_974_000_000 + 18 * 7 * 24 * 60 * 60 * 1000,
+          "kr",
+        ),
+        tw: offsetByRegion(
+          1_699_974_000_000 + 18 * 7 * 24 * 60 * 60 * 1000,
+          "tw",
+        ),
+      },
     },
     startingPeriod: 933,
   },
