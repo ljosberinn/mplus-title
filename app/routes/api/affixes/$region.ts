@@ -1,12 +1,9 @@
 import { Regions } from "@prisma/client";
-import { type LoaderArgs, type TypedResponse } from "@remix-run/node";
+import { type LoaderArgs } from "@remix-run/node";
 
 import { getAffixName } from "~/affixes";
+import { getEnhancedSeason } from "~/models/season.server";
 import { findSeasonByTimestamp } from "~/seasons";
-
-import { loader as enhancedSeasonLoader } from "../../$season/index";
-
-type AffixResponse = {};
 
 const CURRENT_WEEK_PH = "%current_week%";
 const NEXT_WEEK_PH = "%next_week%";
@@ -26,8 +23,7 @@ const regionisRegion = (region: string): region is Regions => region in Regions;
 export const loader = async ({
   params,
   request,
-  context,
-}: LoaderArgs): Promise<TypedResponse<AffixResponse>> => {
+}: LoaderArgs): Promise<Response> => {
   const { region } = params;
 
   if (!region || !regionisRegion(region)) {
@@ -46,25 +42,14 @@ export const loader = async ({
     });
   }
 
-  const enhancedSeasonUrl = new URL(request.url);
-  enhancedSeasonUrl.searchParams.set("regions", region);
-
-  const enhancedSeasonResponse = await enhancedSeasonLoader({
-    params: {
-      season: season.slug,
-    },
-    request: new Request(enhancedSeasonUrl),
-    context,
+  const { headers, season: enhancedSeason } = await getEnhancedSeason({
+    overlays: [],
+    regions: [region],
+    request,
+    season,
+    timings: {},
   });
 
-  if (!enhancedSeasonResponse.ok) {
-    return new Response(undefined, {
-      status: 400,
-      statusText: "Unable to load seasonal data.",
-    });
-  }
-
-  const enhancedSeason = await enhancedSeasonResponse.json();
   const locale = new URL(request.url).searchParams.get("locale") ?? "en";
 
   if (enhancedSeason.affixes.length === 0) {
@@ -73,6 +58,7 @@ export const loader = async ({
 
     return new Response(responseText, {
       headers: {
+        ...headers,
         "Content-Type": "text/html",
       },
     });
@@ -111,8 +97,8 @@ export const loader = async ({
 
   return new Response(response, {
     headers: {
+      ...headers,
       "Content-Type": "text/html",
-      Expires: new Date(Date.now() + 8 * 60 * 60 * 1000).toUTCString(),
     },
   });
 };
