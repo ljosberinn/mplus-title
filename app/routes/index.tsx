@@ -31,7 +31,10 @@ export const loader: LoaderFunction = ({ request }) => {
 
   const asString = params.toString();
 
-  return redirect(`/${latest.slug}${asString ? `?${asString}` : ""}`, 307);
+  return redirect(
+    `/season/${latest.slug}${asString ? `?${asString}` : ""}`,
+    307,
+  );
 };
 
 export default function Index(): JSX.Element {

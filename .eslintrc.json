@@ -1052,7 +1052,7 @@
     "promise/valid-params": "off",
     "import/consistent-type-specifier-style": ["warn", "prefer-inline"],
     "import/default": "warn",
-    "import/dynamic-import-chunkname": "warn",
+    "import/dynamic-import-chunkname": "off",
     "import/export": "off",
     "import/exports-last": "off",
     "import/extensions": "off",

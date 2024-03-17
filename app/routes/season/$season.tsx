@@ -14,8 +14,6 @@ import HighchartsReact from "highcharts-react-official";
 import { Fragment, lazy, Suspense, useEffect, useRef, useState } from "react";
 
 import { getAffixIconUrl, getAffixName } from "~/affixes";
-import { Footer } from "~/components/Footer";
-import { Header } from "~/components/Header";
 import { time, type Timings } from "~/load.server";
 import {
   determineOverlaysToDisplayFromCookies,
@@ -139,7 +137,7 @@ export const loader = async ({
       params.append("regions", cookieRegions.join(searchParamSeparator));
     }
 
-    return redirect(`/${season.slug}?${params.toString()}`, 307);
+    return redirect(`/season/${season.slug}?${params.toString()}`, 307);
   }
 
   const regions = searchParamRegions;
@@ -170,22 +168,18 @@ export default function Season(): JSX.Element | null {
 
   return (
     <>
-      <Header season={season} />
-      <main className="container mt-4 flex max-w-screen-2xl flex-1 flex-col space-y-4 px-4 md:mx-auto 2xl:px-0">
-        {season.regionsToDisplay.map((region) => {
-          return (
-            <Fragment key={region}>
-              <Card
-                season={season}
-                region={region}
-                onZoom={setExtremes}
-                extremes={extremes}
-              />
-            </Fragment>
-          );
-        })}
-      </main>
-      <Footer />
+      {season.regionsToDisplay.map((region) => {
+        return (
+          <Fragment key={region}>
+            <Card
+              season={season}
+              region={region}
+              onZoom={setExtremes}
+              extremes={extremes}
+            />
+          </Fragment>
+        );
+      })}
     </>
   );
 }

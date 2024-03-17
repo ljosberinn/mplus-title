@@ -10,6 +10,9 @@ import {
 
 import stylesheet from "~/tailwind.css";
 
+import { Footer } from "./components/Footer";
+import { Header } from "./components/Header";
+
 export const links: LinksFunction = () => {
   return [
     { rel: "stylesheet", href: stylesheet },
@@ -95,7 +98,11 @@ export default function App(): JSX.Element {
       </head>
       <body className="min-h-screen">
         <div className="flex min-h-screen flex-col">
-          <Outlet />
+          <Header />
+          <main className="container mt-4 flex max-w-screen-2xl flex-1 flex-col space-y-4 px-4 md:mx-auto 2xl:px-0">
+            <Outlet />
+          </main>
+          <Footer />
         </div>
         <ScrollRestoration />
         <Scripts />
