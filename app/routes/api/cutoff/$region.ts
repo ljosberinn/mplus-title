@@ -83,15 +83,17 @@ export const loader = async ({
       const [estimationEndTimestamp, estimatedScore] =
         estimation[estimation.length - 1];
 
+      const labels =
+        locale in estimationLabels
+          ? estimationLabels[locale]
+          : estimationLabels.en;
+
       if (endDate && estimationEndTimestamp === endDate) {
         responseText = responseText
-          .replace(ESTIMATION_LABEL, estimationLabels[locale].seasonEnd)
+          .replace(ESTIMATION_LABEL, labels.seasonEnd)
           .replace(NEXT_PH, estimatedScore.toString());
       } else {
-        responseText = responseText.replace(
-          ESTIMATION_LABEL,
-          estimationLabels[locale].twoWeeks,
-        );
+        responseText = responseText.replace(ESTIMATION_LABEL, labels.twoWeeks);
       }
 
       responseText = responseText.replace(NEXT_PH, estimatedScore.toString());
