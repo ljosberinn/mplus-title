@@ -51,9 +51,6 @@ export const loader = async ({
     });
   }
 
-  const enhancedSeasonUrl = new URL(request.url);
-  enhancedSeasonUrl.searchParams.set("regions", region);
-
   const { headers, season: enhancedSeason } = await getEnhancedSeason({
     overlays: [],
     request,
