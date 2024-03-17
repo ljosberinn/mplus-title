@@ -107,7 +107,7 @@ export function SeasonMenu(): JSX.Element {
                           "flex flex-1 space-x-2 bg-gray-700 px-4 py-2 text-white outline-none transition-all duration-200 ease-in-out hover:bg-gray-500",
                           isLast && "rounded-b-lg",
                         )}
-                        to={`/${season.slug}${paramsAsString}`}
+                        to={`/season/${season.slug}${paramsAsString}`}
                       >
                         <SeasonNavItemBody season={season} />
                       </NavLink>

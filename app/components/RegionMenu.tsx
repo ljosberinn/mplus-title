@@ -11,7 +11,7 @@ type RegionToggleProps = {
   season: EnhancedSeason;
 };
 
-export function RegionToggle({ season }: RegionToggleProps): JSX.Element {
+export default function RegionMenu({ season }: RegionToggleProps): JSX.Element {
   const submit = useSubmit();
   const { state: navigationState } = useNavigation();
 

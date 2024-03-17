@@ -10,7 +10,7 @@ type CustomExtrapolationFormProps = {
   season: EnhancedSeason;
 };
 
-export function CustomExtrapolationForm({
+export default function CustomExtrapolationForm({
   season,
 }: CustomExtrapolationFormProps): JSX.Element | null {
   const location = useLocation();

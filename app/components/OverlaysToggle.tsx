@@ -11,7 +11,9 @@ type OverlaysToggleProps = {
   season: EnhancedSeason;
 };
 
-export function OverlaysToggle({ season }: OverlaysToggleProps): JSX.Element {
+export default function OverlaysToggle({
+  season,
+}: OverlaysToggleProps): JSX.Element {
   const submit = useSubmit();
   const { state: navigationState } = useNavigation();
 
