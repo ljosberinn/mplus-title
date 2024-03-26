@@ -101,8 +101,12 @@ export const seasons: Season[] = [
     dungeons: 8,
     patches: {},
     seasonIcon:
-      "https://wow.zamimg.com/images/wow/icons/large/inv_misc_questionmark.jpg",
+      "https://assets.rpglogs.com/img/warcraft/zones/zone-37.png",
     startingPeriod: 0,
+    wcl: {
+      zoneId: 37,
+      weekIndexToAffixSetId: []
+    }
   },
   {
     name: "DF S3",
