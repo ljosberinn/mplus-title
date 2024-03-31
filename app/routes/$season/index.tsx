@@ -3,13 +3,7 @@ import { json, type LoaderArgs, type TypedResponse } from "@remix-run/node";
 import { useLoaderData, useNavigation } from "@remix-run/react";
 import { type HeadersFunction, redirect } from "@remix-run/server-runtime";
 import clsx from "clsx";
-import Highcharts, {
-  type Options,
-  type PointLabelObject,
-  type SeriesLineOptions,
-  type XAxisPlotBandsOptions,
-  type YAxisPlotLinesOptions,
-} from "highcharts";
+import Highcharts, { type Options, type PointLabelObject } from "highcharts";
 import HighchartsReact from "highcharts-react-official";
 import { Fragment, lazy, Suspense, useEffect, useRef, useState } from "react";
 
@@ -26,13 +20,7 @@ import {
 } from "~/load.server";
 import { getEnhancedSeason } from "~/models/season.server";
 import { type EnhancedSeason, findSeasonByName } from "~/seasons";
-import { calculateFactionDiffForWeek, searchParamSeparator } from "~/utils";
-
-const factionColors = {
-  alliance: "#60a5fa",
-  horde: "#f87171",
-  xFaction: "#B389AF",
-} as const;
+import { searchParamSeparator } from "~/utils";
 
 const lastModified = "Last-Modified";
 const cacheControl = "Cache-Control";
@@ -81,8 +69,6 @@ export const headers: HeadersFunction = ({ loaderHeaders }) => {
 
   return headers;
 };
-
-const oneWeekInMs = 7 * 24 * 60 * 60 * 1000;
 
 export const loader = async ({
   params,
@@ -165,7 +151,7 @@ export const loader = async ({
 type ZoomExtremes = null | { min: number; max: number };
 
 export default function Season(): JSX.Element | null {
-  const season = useLoaderData<typeof loader>();
+  const season = useLoaderData() as EnhancedSeason;
   const [extremes, setExtremes] = useState<ZoomExtremes>(null);
 
   return (
@@ -175,7 +161,7 @@ export default function Season(): JSX.Element | null {
         {season.regionsToDisplay.map((region) => {
           return (
             <Fragment key={region}>
-              <Card
+              <Region
                 season={season}
                 region={region}
                 onZoom={setExtremes}
@@ -231,7 +217,7 @@ const numberFormatParts = new Intl.NumberFormat().formatToParts(1234.5);
 
 const TempBanner = lazy(() => import("../../components/TempBanner"));
 
-function Card({ season, region, extremes, onZoom }: CardProps): JSX.Element {
+function Region({ season, region, extremes, onZoom }: CardProps): JSX.Element {
   const ref = useRef<HighchartsReact.RefObject | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
 
@@ -309,42 +295,15 @@ function Card({ season, region, extremes, onZoom }: CardProps): JSX.Element {
   }
 
   const options: Options = {
-    accessibility: {
-      enabled: true,
-    },
-    title: {
-      text: "",
-    },
-    chart: {
-      backgroundColor: "transparent",
-      zooming: {
-        type: "x",
-        resetButton: {
-          position: {
-            verticalAlign: "middle",
-          },
-        },
-      },
-    },
+    ...season.chartBlueprint,
     lang: {
       thousandsSep:
         numberFormatParts.find((i) => i.type === "group")?.value ?? ",",
       decimalPoint:
         numberFormatParts.find((i) => i.type === "decimal")?.value ?? ".",
     },
-    credits: {
-      enabled: false,
-    },
-    legend: {
-      itemStyle: {
-        color: "#c2c7d0",
-        fontSize: "15px",
-      },
-      itemHoverStyle: {
-        color: "#fff",
-      },
-    },
     xAxis: {
+      ...season.chartBlueprint.xAxis,
       events: {
         afterSetExtremes(event) {
           if (event.trigger !== "zoom") {
@@ -357,56 +316,19 @@ function Card({ season, region, extremes, onZoom }: CardProps): JSX.Element {
           });
         },
       },
-      title: {
-        text: "Day",
-        style: {
-          color: "#fff",
-          lineColor: "#333",
-          tickColor: "#333",
-        },
-      },
-      labels: {
-        style: {
-          color: "#fff",
-          fontWeight: "normal",
-        },
-      },
-      type: "datetime",
-      plotBands: createPlotBands(season, region),
+      plotBands: season.xAxisPlotBands[region],
       plotLines: season.xAxisPlotLines[region],
     },
     yAxis: {
-      title: {
-        text: "Score",
-        style: {
-          color: "#fff",
-        },
-      },
-      labels: {
-        style: {
-          color: "#fff",
-          fontWeight: "normal",
-        },
-      },
-      plotLines: createFactionCutoffPlotlines(season, region),
+      ...season.chartBlueprint.yAxis,
+      plotLines: season.yAxisPlotLines[region],
     },
-    tooltip: {
-      shared: true,
-      outside: true,
-    },
-    plotOptions: {
-      line: {
-        dataLabels: {
-          enabled: true,
-          color: "#fff",
-        },
-        marker: {
-          lineColor: "#333",
-          enabled: false,
-        },
+    series: season.series[region].map((series) => ({
+      ...series,
+      dataLabels: {
+        formatter,
       },
-    },
-    series: createSeries(season, region),
+    })),
   };
 
   const indexOfCurrentWeek = findIndexOfCurrentWeek(season, region);
@@ -622,105 +544,6 @@ function MythicStatsLink({ season, weekOffset }: MythicStatsLinkProps) {
   );
 }
 
-const createSeries = (
-  season: EnhancedSeason,
-  region: Regions,
-): SeriesLineOptions[] => {
-  const horde: SeriesLineOptions | null =
-    season.crossFactionSupport === "complete"
-      ? null
-      : {
-          type: "line",
-          name: "Score Horde",
-          color: factionColors.horde,
-          data: season.dataByRegion[region]
-            .filter((dataset) => dataset.faction === "horde")
-            .map((dataset) => {
-              return [dataset.ts, dataset.score];
-            }),
-          dataLabels: {
-            formatter,
-          },
-        };
-
-  const alliance: SeriesLineOptions | null =
-    season.crossFactionSupport === "complete"
-      ? null
-      : {
-          type: "line",
-          name: "Score Alliance",
-          color: factionColors.alliance,
-          data: season.dataByRegion[region]
-            .filter((dataset) => dataset.faction === "alliance")
-            .map((dataset) => {
-              return [dataset.ts, dataset.score];
-            }),
-          dataLabels: {
-            formatter,
-          },
-        };
-
-  const xFaction: SeriesLineOptions | null =
-    season.crossFactionSupport === "none"
-      ? null
-      : {
-          type: "line",
-          name: "Score X-Faction",
-          color: factionColors.xFaction,
-          data: season.dataByRegion[region]
-            .filter((dataset) => !("faction" in dataset))
-            .map((dataset) => {
-              return [dataset.ts, dataset.score];
-            }),
-          dataLabels: {
-            formatter,
-          },
-        };
-
-  const extrapolationData = season.extrapolation[region];
-
-  const extrapolation: SeriesLineOptions | null =
-    extrapolationData === null
-      ? null
-      : {
-          type: "line",
-          name: "Score Extrapolated",
-          color: factionColors.xFaction,
-          data: Array.isArray(extrapolationData)
-            ? extrapolationData
-            : [
-                [extrapolationData.from.ts, extrapolationData.from.score],
-                [extrapolationData.to.ts, extrapolationData.to.score],
-              ],
-          dashStyle: "ShortDash",
-          dataLabels: {
-            formatter,
-          },
-          marker: {
-            enabled: true,
-          },
-          visible: true,
-        };
-
-  const ranks: SeriesLineOptions = {
-    type: "line",
-    name: "Characters above Cutoff (default hidden)",
-    data: season.dataByRegion[region]
-      .filter((dataset) => dataset.rank !== null)
-      .map((dataset) => [dataset.ts, dataset.rank]),
-    dataLabels: {
-      formatter,
-    },
-    color: "white",
-    visible: false,
-  };
-
-  return [horde, alliance, xFaction, extrapolation, ranks].filter(
-    (series): series is SeriesLineOptions =>
-      series?.data !== undefined && series.data.length > 0,
-  );
-};
-
 const formatter = function (this: PointLabelObject) {
   const max = this.series.data.reduce(
     (acc, dataset) => (acc > dataset.x ? acc : dataset.x),
@@ -730,172 +553,24 @@ const formatter = function (this: PointLabelObject) {
   return this.x === max ? this.y : null;
 };
 
-const createFactionCutoffPlotlines = (
-  season: EnhancedSeason,
-  region: Regions,
-): YAxisPlotLinesOptions[] => {
-  const cutoffs = season.confirmedCutoffs[region];
-
-  if ("alliance" in cutoffs && "horde" in cutoffs) {
-    return [
-      {
-        label: {
-          text: `Confirmed cutoff for Alliance at ${cutoffs.alliance}`,
-          rotation: 0,
-          style: { color: factionColors.alliance },
-        },
-        value: cutoffs.alliance,
-        dashStyle: "Dash",
-      },
-      {
-        label: {
-          text: `Confirmed cutoff for Horde at ${cutoffs.horde}`,
-          rotation: 0,
-          style: { color: factionColors.horde },
-        },
-        value: cutoffs.horde,
-        dashStyle: "Dash",
-      },
-    ];
-  }
-
-  if (cutoffs.score === 0) {
-    return [];
-  }
-
-  return [
-    {
-      label: {
-        text: `Confirmed cutoff at ${cutoffs.score}`,
-        rotation: 0,
-        style: { color: factionColors.xFaction },
-      },
-      value: cutoffs.score,
-      dashStyle: "Dash",
-    },
-  ];
-};
-
-const createPlotBands = (
-  season: EnhancedSeason,
-  region: Regions,
-): XAxisPlotBandsOptions[] => {
-  const seasonStart = season.startDates[region];
-
-  if (!seasonStart) {
-    return [];
-  }
-
-  const seasonEnd = season.endDates[region];
-  const { affixes, overlaysToDisplay, dataByRegion, crossFactionSupport } =
-    season;
-
-  const weeks = seasonEnd
-    ? (seasonEnd - seasonStart) / oneWeekInMs + 1
-    : affixes.length * 3;
-
-  const now = Date.now();
-
-  return Array.from({
-    length: weeks,
-  }).flatMap<XAxisPlotBandsOptions>((_, index) => {
-    const options: XAxisPlotBandsOptions[] = [];
-
-    const from = seasonStart + index * oneWeekInMs;
-    const to = from + oneWeekInMs;
-    const color = index % 2 === 0 ? "#4b5563" : "#1f2937";
-
-    const rotation =
-      affixes[index >= affixes.length ? index % affixes.length : index] ?? [];
-
-    const relevantRotationSlice =
-      // for future weeks early into a season without a full rotation, default to -1 // questionmarks
-      from > now && affixes.length < 10
-        ? [-1, -1, -1]
-        : rotation.length === 3
-          ? rotation
-          : rotation.slice(0, 3);
-
-    options.push({
-      from,
-      to,
-      color,
-      label: {
-        useHTML: true,
-        style: {
-          display: "flex",
-        },
-        text: overlaysToDisplay.includes("affixes")
-          ? relevantRotationSlice
-              .map((affix) => {
-                return `<img width="18" height="18" style="transform: rotate(-90deg); opacity: 0.75;" src="${getAffixIconUrl(
-                  affix,
-                )}"/>`;
-              })
-              .join("")
-          : undefined,
-        rotation: 90,
-        align: "left",
-        x: 5,
-        y: 5,
-      },
-    });
-
-    const { allianceDiff, hordeDiff, xFactionDiff } =
-      calculateFactionDiffForWeek(
-        dataByRegion[region],
-        crossFactionSupport,
-        index === 0,
-        from,
-        to,
-      );
-
-    const text = [
-      crossFactionSupport === "complete"
-        ? null
-        : `<span style="font-size: 10px; color: ${factionColors.horde}">${
-            hordeDiff > 0 ? "+" : hordeDiff === 0 ? "±" : ""
-          }${hordeDiff.toFixed(1)}</span>`,
-      crossFactionSupport === "complete"
-        ? null
-        : `<span style="font-size: 10px; color: ${factionColors.alliance}">${
-            allianceDiff > 0 ? "+" : allianceDiff === 0 ? "±" : ""
-          }${allianceDiff.toFixed(1)}</span>`,
-      from > now ||
-      crossFactionSupport === "none" ||
-      (crossFactionSupport === "partial" && xFactionDiff === 0)
-        ? null
-        : `<span style="font-size: 10px; color: ${factionColors.xFaction}">${
-            xFactionDiff > 0 ? "+" : xFactionDiff === 0 ? "±" : ""
-          }${xFactionDiff.toFixed(1)}</span>`,
-    ].filter(Boolean);
-
-    options.push({
-      from,
-      to,
-      color: "transparent",
-      label: {
-        verticalAlign: "bottom",
-        text: text.join("<br />"),
-        useHTML: true,
-        y: text.length * -15,
-      },
-    });
-
-    return options.filter(
-      (options): options is XAxisPlotBandsOptions => options !== null,
-    );
-  });
-};
-
 type LocaleTimeProps = {
   date: Date;
 };
 
 function LocaleTime({ date }: LocaleTimeProps) {
+  const [render, setRender] = useState(false);
+
+  useEffect(() => {
+    setRender(true);
+  }, []);
+
+  if (!render) {
+    return null;
+  }
+
   return (
     <time className="text-xs" dateTime={date.toISOString()}>
-      {date.toLocaleString("en-US", {
+      {date.toLocaleString(undefined, {
         month: "numeric",
         day: "numeric",
       })}

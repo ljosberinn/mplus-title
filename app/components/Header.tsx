@@ -7,7 +7,11 @@ import { OverlaysToggle } from "./OverlaysToggle";
 import { RegionToggle } from "./RegionMenu";
 import { SeasonMenu } from "./SeasonMenu";
 
-export function Header({ season }: { season: EnhancedSeason }): JSX.Element {
+type HeaderProps = {
+  season: EnhancedSeason;
+};
+
+export function Header({ season }: HeaderProps): JSX.Element {
   return (
     <>
       <header className="flex h-20 items-center justify-between border-b  border-gray-700 p-6 text-stone-100 drop-shadow-sm print:hidden">

@@ -1,6 +1,11 @@
 import { type Regions } from "@prisma/client";
 
-import { type Timings } from "~/load.server";
+import {
+  calculateSeries,
+  calculateXAxisPlotBands,
+  calculateYAxisPlotLines,
+  type Timings,
+} from "~/load.server";
 import {
   calculateExtrapolation,
   calculateXAxisPlotLines,
@@ -86,6 +91,105 @@ export const getEnhancedSeason = async ({
       kr: [],
       tw: [],
     },
+    yAxisPlotLines: {
+      eu: [],
+      us: [],
+      kr: [],
+      tw: [],
+    },
+    xAxisPlotBands: {
+      eu: [],
+      us: [],
+      kr: [],
+      tw: [],
+    },
+    series: {
+      eu: [],
+      us: [],
+      kr: [],
+      tw: [],
+    },
+    chartBlueprint: {
+      accessibility: {
+        enabled: true,
+      },
+      title: {
+        text: "",
+      },
+      chart: {
+        backgroundColor: "transparent",
+        zooming: {
+          type: "x",
+          resetButton: {
+            position: {
+              verticalAlign: "middle",
+            },
+          },
+        },
+      },
+      credits: {
+        enabled: false,
+      },
+      legend: {
+        itemStyle: {
+          color: "#c2c7d0",
+          fontSize: "15px",
+        },
+        itemHoverStyle: {
+          color: "#fff",
+        },
+      },
+      xAxis: {
+        title: {
+          text: "Day",
+          style: {
+            color: "#fff",
+            lineColor: "#333",
+            tickColor: "#333",
+          },
+        },
+        labels: {
+          style: {
+            color: "#fff",
+            fontWeight: "normal",
+          },
+        },
+        type: "datetime",
+        plotBands: [],
+        plotLines: [],
+      },
+      yAxis: {
+        title: {
+          text: "Score",
+          style: {
+            color: "#fff",
+          },
+        },
+        labels: {
+          style: {
+            color: "#fff",
+            fontWeight: "normal",
+          },
+        },
+        plotLines: [],
+      },
+      tooltip: {
+        shared: true,
+        outside: true,
+      },
+      plotOptions: {
+        line: {
+          dataLabels: {
+            enabled: true,
+            color: "#fff",
+          },
+          marker: {
+            lineColor: "#333",
+            enabled: false,
+          },
+        },
+      },
+    },
   };
 
   const now = Date.now();
@@ -114,6 +218,21 @@ export const getEnhancedSeason = async ({
             overlays,
           ),
         { type: `calculateXAxisPlotLines-${region}`, timings },
+      );
+
+      enhancedSeason.yAxisPlotLines[region] = await time(
+        () => calculateYAxisPlotLines(season, region),
+        { type: `calculateYAxisPlotLines-${region}`, timings },
+      );
+
+      enhancedSeason.xAxisPlotBands[region] = await time(
+        () => calculateXAxisPlotBands(season, region, data, overlays),
+        { type: `calculateXAxisPlotBands-${region}`, timings },
+      );
+
+      enhancedSeason.series[region] = await time(
+        () => calculateSeries(season, data, extrapolation),
+        { type: `calculateSeries-${region}`, timings },
       );
 
       const seasonEnding = season.endDates[region];

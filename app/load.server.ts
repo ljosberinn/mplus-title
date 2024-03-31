@@ -1,9 +1,15 @@
 import { Regions } from "@prisma/client";
 import { Redis } from "@upstash/redis";
-import { type XAxisPlotLinesOptions } from "highcharts";
+import {
+  type SeriesLineOptions,
+  type XAxisPlotBandsOptions,
+  type XAxisPlotLinesOptions,
+  type YAxisPlotLinesOptions,
+} from "highcharts";
 
 import { env } from "~/env/server";
 
+import { getAffixIconUrl } from "./affixes";
 import { prisma } from "./prisma.server";
 import { type Dataset, type EnhancedSeason, type Season } from "./seasons";
 import { type Overlay, searchParamSeparator } from "./utils";
@@ -529,6 +535,248 @@ export const determineRegionsToDisplayFromCookies = (
   }
 };
 
+const factionColors = {
+  alliance: "#60a5fa",
+  horde: "#f87171",
+  xFaction: "#B389AF",
+} as const;
+
+export const calculateSeries = (
+  season: Season,
+  data: Dataset[],
+  extrapolation: ReturnType<typeof calculateExtrapolation>,
+): SeriesLineOptions[] => {
+  const options: SeriesLineOptions[] = [];
+
+  if (season.crossFactionSupport !== "complete") {
+    options.push(
+      {
+        type: "line",
+        name: "Score Horde",
+        color: factionColors.horde,
+        data: data
+          .filter((dataset) => dataset.faction === "horde")
+          .map((dataset) => {
+            return [dataset.ts, dataset.score];
+          }),
+      },
+      {
+        type: "line",
+        name: "Score Alliance",
+        color: factionColors.alliance,
+        data: data
+          .filter((dataset) => dataset.faction === "alliance")
+          .map((dataset) => {
+            return [dataset.ts, dataset.score];
+          }),
+      },
+    );
+  }
+
+  if (season.crossFactionSupport !== "none") {
+    options.push({
+      type: "line",
+      name: "Score X-Faction",
+      color: factionColors.xFaction,
+      data: data
+        .filter((dataset) => !("faction" in dataset))
+        .map((dataset) => {
+          return [dataset.ts, dataset.score];
+        }),
+    });
+  }
+
+  if (extrapolation !== null) {
+    options.push({
+      type: "line",
+      name: "Score Extrapolated",
+      color: factionColors.xFaction,
+      data: Array.isArray(extrapolation)
+        ? extrapolation
+        : [
+            [extrapolation.from.ts, extrapolation.from.score],
+            [extrapolation.to.ts, extrapolation.to.score],
+          ],
+      dashStyle: "ShortDash",
+      marker: {
+        enabled: true,
+      },
+      visible: true,
+    });
+  }
+
+  options.push({
+    type: "line",
+    name: "Characters above Cutoff (default hidden)",
+    data: data
+      .filter((dataset) => dataset.rank !== null)
+      .map((dataset) => [dataset.ts, dataset.rank]),
+    color: "white",
+    visible: false,
+  });
+
+  return options;
+};
+
+export const calculateXAxisPlotBands = (
+  season: Season,
+  region: Regions,
+  data: Dataset[],
+  overlays: readonly Overlay[],
+): XAxisPlotBandsOptions[] => {
+  const seasonStart = season.startDates[region];
+
+  if (!seasonStart) {
+    return [];
+  }
+
+  const seasonEnd = season.endDates[region];
+  const { affixes, crossFactionSupport } = season;
+
+  const weeks = seasonEnd
+    ? (seasonEnd - seasonStart) / oneWeekInMs + 1
+    : affixes.length * 3;
+
+  const now = Date.now();
+
+  return Array.from({
+    length: weeks,
+  }).flatMap<XAxisPlotBandsOptions>((_, index) => {
+    const options: XAxisPlotBandsOptions[] = [];
+
+    const from = seasonStart + index * oneWeekInMs;
+    const to = from + oneWeekInMs;
+    const color = index % 2 === 0 ? "#4b5563" : "#1f2937";
+
+    const rotation =
+      affixes[index >= affixes.length ? index % affixes.length : index] ?? [];
+
+    const relevantRotationSlice =
+      // for future weeks early into a season without a full rotation, default to -1 // questionmarks
+      from > now && affixes.length < 10
+        ? [-1, -1, -1]
+        : rotation.length === 3
+          ? rotation
+          : rotation.slice(0, 3);
+
+    options.push({
+      from,
+      to,
+      color,
+      label: {
+        useHTML: true,
+        style: {
+          display: "flex",
+        },
+        text: overlays.includes("affixes")
+          ? relevantRotationSlice
+              .map((affix) => {
+                return `<img width="18" height="18" style="transform: rotate(-90deg); opacity: 0.75;" src="${getAffixIconUrl(
+                  affix,
+                )}"/>`;
+              })
+              .join("")
+          : undefined,
+        rotation: 90,
+        align: "left",
+        x: 5,
+        y: 5,
+      },
+    });
+
+    const { allianceDiff, hordeDiff, xFactionDiff } =
+      calculateFactionDiffForWeek(
+        data,
+        crossFactionSupport,
+        index === 0,
+        from,
+        to,
+      );
+
+    const text = [
+      crossFactionSupport === "complete"
+        ? null
+        : `<span style="font-size: 10px; color: ${factionColors.horde}">${
+            hordeDiff > 0 ? "+" : hordeDiff === 0 ? "±" : ""
+          }${hordeDiff.toFixed(1)}</span>`,
+      crossFactionSupport === "complete"
+        ? null
+        : `<span style="font-size: 10px; color: ${factionColors.alliance}">${
+            allianceDiff > 0 ? "+" : allianceDiff === 0 ? "±" : ""
+          }${allianceDiff.toFixed(1)}</span>`,
+      from > now ||
+      crossFactionSupport === "none" ||
+      (crossFactionSupport === "partial" && xFactionDiff === 0)
+        ? null
+        : `<span style="font-size: 10px; color: ${factionColors.xFaction}">${
+            xFactionDiff > 0 ? "+" : xFactionDiff === 0 ? "±" : ""
+          }${xFactionDiff.toFixed(1)}</span>`,
+    ].filter(Boolean);
+
+    options.push({
+      from,
+      to,
+      color: "transparent",
+      label: {
+        verticalAlign: "bottom",
+        text: text.join("<br />"),
+        useHTML: true,
+        y: text.length * -15,
+      },
+    });
+
+    return options.filter(
+      (options): options is XAxisPlotBandsOptions => options !== null,
+    );
+  });
+};
+
+export const calculateYAxisPlotLines = (
+  season: Season,
+  region: Regions,
+): YAxisPlotLinesOptions[] => {
+  const cutoffs = season.confirmedCutoffs[region];
+
+  if ("alliance" in cutoffs && "horde" in cutoffs) {
+    return [
+      {
+        label: {
+          text: `Confirmed cutoff for Alliance at ${cutoffs.alliance}`,
+          rotation: 0,
+          style: { color: factionColors.alliance },
+        },
+        value: cutoffs.alliance,
+        dashStyle: "Dash",
+      },
+      {
+        label: {
+          text: `Confirmed cutoff for Horde at ${cutoffs.horde}`,
+          rotation: 0,
+          style: { color: factionColors.horde },
+        },
+        value: cutoffs.horde,
+        dashStyle: "Dash",
+      },
+    ];
+  }
+
+  if (cutoffs.score === 0) {
+    return [];
+  }
+
+  return [
+    {
+      label: {
+        text: `Confirmed cutoff at ${cutoffs.score}`,
+        rotation: 0,
+        style: { color: factionColors.xFaction },
+      },
+      value: cutoffs.score,
+      dashStyle: "Dash",
+    },
+  ];
+};
+
 export const calculateXAxisPlotLines = (
   season: Season,
   region: Regions,
@@ -706,6 +954,30 @@ export const calculateXAxisPlotLines = (
           value: match.ts,
           dashStyle: "Dash",
           color: "white",
+        });
+      }
+    }
+  }
+
+  if (startDate) {
+    const end = endDate ?? Date.now();
+    for (let i = startDate; i <= end; i += oneWeekInMs) {
+      const match = data.find((dataset) => dataset.ts >= i);
+
+      if (match) {
+        lines.push({
+          zIndex: 100,
+          label: {
+            text: `${match.score}`,
+            align: "center",
+            rotation: 0,
+            y: 265,
+            style: {
+              color: "lightgreen",
+            },
+          },
+          color: "transparent",
+          value: i,
         });
       }
     }
