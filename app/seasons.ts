@@ -1,5 +1,11 @@
 import { type Factions, type Regions } from "@prisma/client";
-import { type XAxisPlotLinesOptions } from "highcharts";
+import {
+  type Options,
+  type SeriesLineOptions,
+  type XAxisPlotBandsOptions,
+  type XAxisPlotLinesOptions,
+  type YAxisPlotLinesOptions,
+} from "highcharts";
 
 import { type Overlay } from "~/utils";
 
@@ -46,8 +52,12 @@ export type EnhancedSeason = Season & {
   >;
   initialZoom: Record<Regions, null | [number, number]>;
   xAxisPlotLines: Record<Regions, XAxisPlotLinesOptions[]>;
+  xAxisPlotBands: Record<Regions, XAxisPlotBandsOptions[]>;
+  yAxisPlotLines: Record<Regions, YAxisPlotLinesOptions[]>;
   regionsToDisplay: Regions[];
   overlaysToDisplay: Overlay[];
+  series: Record<Regions, SeriesLineOptions[]>;
+  chartBlueprint: Options;
 };
 
 export type Dataset = {
@@ -100,9 +110,12 @@ export const seasons: Season[] = [
     dungeonHotfixes: {},
     dungeons: 8,
     patches: {},
-    seasonIcon:
-      "https://wow.zamimg.com/images/wow/icons/large/inv_misc_questionmark.jpg",
+    seasonIcon: "https://assets.rpglogs.com/img/warcraft/zones/zone-37.png",
     startingPeriod: 0,
+    wcl: {
+      zoneId: 37,
+      weekIndexToAffixSetId: [],
+    },
   },
   {
     name: "DF S3",

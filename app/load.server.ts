@@ -1,25 +1,27 @@
 import { Regions } from "@prisma/client";
 import { Redis } from "@upstash/redis";
-import { type XAxisPlotLinesOptions } from "highcharts";
+import {
+  type SeriesLineOptions,
+  type XAxisPlotBandsOptions,
+  type XAxisPlotLinesOptions,
+  type YAxisPlotLinesOptions,
+} from "highcharts";
 
 import { env } from "~/env/server";
 
+import { getAffixIconUrl } from "./affixes";
 import { prisma } from "./prisma.server";
 import { type Dataset, type EnhancedSeason, type Season } from "./seasons";
 import { type Overlay, searchParamSeparator } from "./utils";
-import {
-  calculateFactionDiffForWeek,
-  orderedRegionsBySize,
-  overlays,
-} from "./utils";
+import { orderedRegionsBySize, overlays } from "./utils";
 
 const oneWeekInMs = 7 * 24 * 60 * 60 * 1000;
 
-const getCrossFactionHistory = (
+function getCrossFactionHistory(
   region: Regions,
   gte: number | null,
   lte?: number,
-) => {
+) {
   if (!gte) {
     return [];
   }
@@ -41,9 +43,9 @@ const getCrossFactionHistory = (
       timestamp: "desc",
     },
   });
-};
+}
 
-const getHistory = (region: Regions, gte: number | null, lte?: number) => {
+function getHistory(region: Regions, gte: number | null, lte?: number) {
   if (!gte) {
     return [];
   }
@@ -65,9 +67,9 @@ const getHistory = (region: Regions, gte: number | null, lte?: number) => {
       timestamp: "desc",
     },
   });
-};
+}
 
-const setupRedisProviders = () => {
+function setupRedisProviders() {
   const upstash = new Redis({
     url: env.UPSTASH_REDIS_REST_URL,
     token: env.UPSTASH_REDIS_REST_TOKEN,
@@ -95,13 +97,13 @@ const setupRedisProviders = () => {
     persist,
     load,
   };
-};
+}
 
-export const loadDataForRegion = async (
+export async function loadDataForRegion(
   region: Regions,
   season: Season,
   timings: Timings,
-): Promise<Dataset[]> => {
+): Promise<Dataset[]> {
   const gte = season.startDates[region];
   const lte = season.endDates[region] ?? undefined;
   const key = [season.slug, region].join(searchParamSeparator);
@@ -169,13 +171,13 @@ export const loadDataForRegion = async (
   );
 
   return datasets;
-};
+}
 
-export const determineExpirationTimestamp = (
+export function determineExpirationTimestamp(
   season: Season,
   region: Regions,
   datasets: Dataset[],
-): number => {
+): number {
   const latestDataset =
     datasets.length > 0 ? datasets[datasets.length - 1] : null;
 
@@ -196,11 +198,11 @@ export const determineExpirationTimestamp = (
   const remaining = Math.round((threshold - timeSinceUpdate) / 1000 / 60) * 60;
 
   return remaining > 0 ? remaining : expiry;
-};
+}
 
-export const determineRegionsToDisplayFromSearchParams = (
+export function determineRegionsToDisplayFromSearchParams(
   request: Request,
-): Regions[] | null => {
+): Regions[] | null {
   const possiblyRegions = new URL(request.url).searchParams.get("regions");
 
   if (!possiblyRegions) {
@@ -216,9 +218,9 @@ export const determineRegionsToDisplayFromSearchParams = (
   }
 
   return maybeRegions;
-};
+}
 
-export const determineExtrapolationEnd = (request: Request): number | null => {
+export function determineExtrapolationEnd(request: Request): number | null {
   const params = new URL(request.url).searchParams;
 
   const maybeDate = params.get("extrapolationEndDate");
@@ -238,9 +240,9 @@ export const determineExtrapolationEnd = (request: Request): number | null => {
   } catch {
     return null;
   }
-};
+}
 
-export const calculateExtrapolation = (
+export function calculateExtrapolation(
   season: Season,
   region: Regions,
   data: Dataset[],
@@ -248,7 +250,7 @@ export const calculateExtrapolation = (
 ):
   | null
   | [number, number][]
-  | { from: Omit<Dataset, "rank">; to: Omit<Dataset, "rank"> } => {
+  | { from: Omit<Dataset, "rank">; to: Omit<Dataset, "rank"> } {
   let seasonEnding = season.endDates[region];
 
   if (seasonEnding && Date.now() >= seasonEnding) {
@@ -390,13 +392,13 @@ export const calculateExtrapolation = (
       ts: to,
     },
   };
-};
+}
 
-const determineExtrapolationStart = (
+function determineExtrapolationStart(
   data: Dataset[],
   season: Season,
   region: Regions,
-): Dataset | null => {
+): Dataset | null {
   const seasonStart = season.startDates[region];
 
   if (!seasonStart) {
@@ -408,18 +410,18 @@ const determineExtrapolationStart = (
   });
 
   return firstDataset ?? null;
-};
+}
 
-const toOneDigit = (int: number) => {
+function toOneDigit(int: number) {
   return Number.parseFloat(int.toFixed(1));
-};
+}
 
-export const calculateZoom = (
+export function calculateZoom(
   season: Season,
   region: Regions,
   data: Dataset[],
   extrapolation: EnhancedSeason["extrapolation"]["eu"],
-): [number, number] => {
+): [number, number] {
   const seasonEnding = season.endDates[region];
 
   const daysUntilSeasonEnding =
@@ -459,11 +461,11 @@ export const calculateZoom = (
     .find((dataset) => dataset.ts < zoomEnd - offset);
 
   return [backThen ? backThen.ts : 0, zoomEnd];
-};
+}
 
-export const determineOverlaysToDisplayFromSearchParams = (
+export function determineOverlaysToDisplayFromSearchParams(
   request: Request,
-): Overlay[] | null => {
+): Overlay[] | null {
   const params = new URL(request.url).searchParams;
 
   const maybeOverlays = params.get("overlays");
@@ -475,11 +477,11 @@ export const determineOverlaysToDisplayFromSearchParams = (
   const fromSearchParams = maybeOverlays.split(searchParamSeparator);
 
   return overlays.filter((plotline) => fromSearchParams.includes(plotline));
-};
+}
 
-export const determineOverlaysToDisplayFromCookies = (
+export function determineOverlaysToDisplayFromCookies(
   request: Request,
-): Overlay[] | null => {
+): Overlay[] | null {
   const cookie = request.headers.get("Cookie") ?? request.headers.get("cookie");
 
   if (!cookie) {
@@ -501,11 +503,11 @@ export const determineOverlaysToDisplayFromCookies = (
   } catch {
     return null;
   }
-};
+}
 
-export const determineRegionsToDisplayFromCookies = (
+export function determineRegionsToDisplayFromCookies(
   request: Request,
-): Regions[] | null => {
+): Regions[] | null {
   const cookie = request.headers.get("Cookie") ?? request.headers.get("cookie");
 
   if (!cookie) {
@@ -527,15 +529,258 @@ export const determineRegionsToDisplayFromCookies = (
   } catch {
     return null;
   }
-};
+}
 
-export const calculateXAxisPlotLines = (
+const factionColors = {
+  alliance: "#60a5fa",
+  horde: "#f87171",
+  xFaction: "#EEE7D8",
+  extrapolation: "#C8BEAE50",
+} as const;
+
+export function calculateSeries(
+  season: Season,
+  data: Dataset[],
+  extrapolation: ReturnType<typeof calculateExtrapolation>,
+): SeriesLineOptions[] {
+  const options: SeriesLineOptions[] = [];
+
+  if (season.crossFactionSupport !== "complete") {
+    options.push(
+      {
+        type: "line",
+        name: "Score Horde",
+        color: factionColors.horde,
+        data: data
+          .filter((dataset) => dataset.faction === "horde")
+          .map((dataset) => {
+            return [dataset.ts, dataset.score];
+          }),
+      },
+      {
+        type: "line",
+        name: "Score Alliance",
+        color: factionColors.alliance,
+        data: data
+          .filter((dataset) => dataset.faction === "alliance")
+          .map((dataset) => {
+            return [dataset.ts, dataset.score];
+          }),
+      },
+    );
+  }
+
+  if (season.crossFactionSupport !== "none") {
+    options.push({
+      type: "line",
+      name: "Score X-Faction",
+      color: factionColors.xFaction,
+      data: data
+        .filter((dataset) => !("faction" in dataset))
+        .map((dataset) => {
+          return [dataset.ts, dataset.score];
+        }),
+    });
+  }
+
+  if (extrapolation !== null) {
+    options.push({
+      type: "line",
+      name: "Score Extrapolated",
+      color: factionColors.extrapolation,
+      data: Array.isArray(extrapolation)
+        ? extrapolation
+        : [
+            [extrapolation.from.ts, extrapolation.from.score],
+            [extrapolation.to.ts, extrapolation.to.score],
+          ],
+      dashStyle: "ShortDash",
+      marker: {
+        enabled: true,
+      },
+      visible: true,
+    });
+  }
+
+  options.push({
+    type: "line",
+    name: "Characters above Cutoff (default hidden)",
+    data: data
+      .filter((dataset) => dataset.rank !== null)
+      .map((dataset) => [dataset.ts, dataset.rank]),
+    color: "white",
+    visible: false,
+  });
+
+  return options;
+}
+
+export function calculateXAxisPlotBands(
+  season: Season,
+  region: Regions,
+  data: Dataset[],
+  overlays: readonly Overlay[],
+): XAxisPlotBandsOptions[] {
+  const seasonStart = season.startDates[region];
+
+  if (!seasonStart) {
+    return [];
+  }
+
+  const seasonEnd = season.endDates[region];
+  const { affixes, crossFactionSupport } = season;
+
+  const weeks = seasonEnd
+    ? (seasonEnd - seasonStart) / oneWeekInMs + 1
+    : affixes.length * 3;
+
+  const now = Date.now();
+
+  return Array.from({
+    length: weeks,
+  }).flatMap<XAxisPlotBandsOptions>((_, index) => {
+    const options: XAxisPlotBandsOptions[] = [];
+
+    const from = seasonStart + index * oneWeekInMs;
+    const to = from + oneWeekInMs;
+    const color = index % 2 === 0 ? "#4b5563" : "#1f2937";
+
+    const rotation =
+      affixes[index >= affixes.length ? index % affixes.length : index] ?? [];
+
+    const relevantRotationSlice =
+      // for future weeks early into a season without a full rotation, default to -1 // questionmarks
+      from > now && affixes.length < 10
+        ? [-1, -1, -1]
+        : rotation.length === 3
+          ? rotation
+          : rotation.slice(0, 3);
+
+    options.push({
+      from,
+      to,
+      color: from > now ? `${color}50` : color,
+      label: {
+        useHTML: true,
+        style: {
+          display: "flex",
+        },
+        text: overlays.includes("affixes")
+          ? relevantRotationSlice
+              .map((affix) => {
+                return `<img width="18" height="18" style="transform: rotate(-90deg); opacity: 0.75;" src="${getAffixIconUrl(
+                  affix,
+                )}"/>`;
+              })
+              .join("")
+          : undefined,
+        rotation: 90,
+        align: "left",
+        x: 5,
+        y: 5,
+      },
+    });
+
+    const { allianceDiff, hordeDiff, xFactionDiff } =
+      calculateFactionDiffForWeek(
+        data,
+        crossFactionSupport,
+        index === 0,
+        from,
+        to,
+      );
+
+    const text = [
+      crossFactionSupport === "complete"
+        ? null
+        : `<span style="font-size: 10px; color: ${factionColors.horde}">${
+            hordeDiff > 0 ? "+" : hordeDiff === 0 ? "±" : ""
+          }${hordeDiff.toFixed(1)}</span>`,
+      crossFactionSupport === "complete"
+        ? null
+        : `<span style="font-size: 10px; color: ${factionColors.alliance}">${
+            allianceDiff > 0 ? "+" : allianceDiff === 0 ? "±" : ""
+          }${allianceDiff.toFixed(1)}</span>`,
+      from > now ||
+      crossFactionSupport === "none" ||
+      (crossFactionSupport === "partial" && xFactionDiff === 0)
+        ? null
+        : `<span style="font-size: 10px; color: ${factionColors.xFaction}">${
+            xFactionDiff > 0 ? "+" : xFactionDiff === 0 ? "±" : ""
+          }${xFactionDiff.toFixed(1)}</span>`,
+    ].filter(Boolean);
+
+    options.push({
+      from,
+      to,
+      color: "transparent",
+      label: {
+        verticalAlign: "bottom",
+        text: text.join("<br />"),
+        useHTML: true,
+        y: text.length * -15,
+      },
+    });
+
+    return options.filter(
+      (options): options is XAxisPlotBandsOptions => options !== null,
+    );
+  });
+}
+
+export function calculateYAxisPlotLines(
+  season: Season,
+  region: Regions,
+): YAxisPlotLinesOptions[] {
+  const cutoffs = season.confirmedCutoffs[region];
+
+  if ("alliance" in cutoffs && "horde" in cutoffs) {
+    return [
+      {
+        label: {
+          text: `Confirmed cutoff for Alliance at ${cutoffs.alliance}`,
+          rotation: 0,
+          style: { color: factionColors.alliance },
+        },
+        value: cutoffs.alliance,
+        dashStyle: "Dash",
+      },
+      {
+        label: {
+          text: `Confirmed cutoff for Horde at ${cutoffs.horde}`,
+          rotation: 0,
+          style: { color: factionColors.horde },
+        },
+        value: cutoffs.horde,
+        dashStyle: "Dash",
+      },
+    ];
+  }
+
+  if (cutoffs.score === 0) {
+    return [];
+  }
+
+  return [
+    {
+      label: {
+        text: `Confirmed cutoff at ${cutoffs.score}`,
+        rotation: 0,
+        style: { color: factionColors.xFaction },
+      },
+      value: cutoffs.score,
+      dashStyle: "Dash",
+    },
+  ];
+}
+
+export function calculateXAxisPlotLines(
   season: Season,
   region: Regions,
   data: Dataset[],
   extrapolation: ReturnType<typeof calculateExtrapolation>,
   overlays: readonly Overlay[],
-): XAxisPlotLinesOptions[] => {
+): XAxisPlotLinesOptions[] {
   const endDate = season.endDates[region];
   const startDate = season.startDates[region];
 
@@ -614,9 +859,17 @@ export const calculateXAxisPlotLines = (
     const base = 25;
     const affixPoints = 25;
 
+    let startLevel = 15;
+    let endLevel = 23;
+
+    if (season.wcl && season.wcl.zoneId >= 37) {
+      startLevel -= 10;
+      endLevel -= 10;
+    }
+
     // calculate thresholds for week 1 separeately in order to show low key levels again across both weeks
-    for (let level = 15; level <= 23; level++) {
-      const levelPoints = 5 * level + (level - 10) * 2;
+    for (let level = startLevel; level <= endLevel; level++) {
+      const levelPoints = 5 * level + (level - (level > 10 ? 10 : 0)) * 2;
       const total = base + levelPoints + affixPoints;
       // week 1 naturally has only 1 affix set
       const firstWeek = total * 1.5 * season.dungeons;
@@ -647,8 +900,8 @@ export const calculateXAxisPlotLines = (
       }
     }
 
-    for (let level = 16; level <= 35; level++) {
-      const levelPoints = 5 * level + (level - 10) * 2;
+    for (let level = startLevel + 1; level <= 35; level++) {
+      const levelPoints = 5 * level + (level - (level > 10 ? 10 : 0)) * 2;
 
       const total = base + levelPoints + affixPoints;
 
@@ -711,16 +964,40 @@ export const calculateXAxisPlotLines = (
     }
   }
 
-  return lines;
-};
+  if (startDate) {
+    const end = endDate ?? Date.now();
+    for (let i = startDate; i <= end; i += oneWeekInMs) {
+      const match = data.find((dataset) => dataset.ts >= i);
 
-export const setCookie = (
+      if (match) {
+        lines.push({
+          zIndex: 100,
+          label: {
+            text: `${match.score}`,
+            align: "center",
+            rotation: 0,
+            y: 265,
+            style: {
+              color: "lightgreen",
+            },
+          },
+          color: "transparent",
+          value: i,
+        });
+      }
+    }
+  }
+
+  return lines;
+}
+
+export function setCookie(
   key: string,
   value?: string | null,
   maxAge?: number,
-): string => {
+): string {
   return `${key}=${value ?? ""}; Max-Age=${maxAge ?? 0}`;
-};
+}
 
 export type Timings = Record<
   string,
@@ -774,4 +1051,80 @@ export async function time<ReturnType>(
 
   timingType.push({ desc, type, time: performance.now() - start });
   return result;
+}
+
+function calculateFactionDiffForWeek(
+  data: Dataset[],
+  crossFactionSupport: Season["crossFactionSupport"],
+  isFirstWeek: boolean,
+  from: number,
+  to: number,
+): { hordeDiff: number; allianceDiff: number; xFactionDiff: number } {
+  const hasCompleteXFactionSupport = crossFactionSupport === "complete";
+  const thisWeeksData = data.filter(
+    (dataset) => dataset.ts >= from && dataset.ts <= to,
+  );
+
+  let horde = [];
+  let alliance = [];
+  let hordeEndMatch = null;
+  let hordeStartMatch = null;
+  let allianceEndMatch = null;
+  let allianceStartMatch = null;
+  let xFactionEndMatch = null;
+  let xFactionStartMatch = null;
+
+  if (hasCompleteXFactionSupport) {
+    xFactionEndMatch = thisWeeksData[thisWeeksData.length - 1];
+    xFactionStartMatch = thisWeeksData[0];
+  } else {
+    horde = thisWeeksData.filter((dataset) => dataset.faction === "horde");
+    alliance = thisWeeksData.filter(
+      (dataset) => dataset.faction === "alliance",
+    );
+
+    hordeEndMatch = [...horde].reverse()[0];
+    hordeStartMatch = horde[0];
+    allianceEndMatch = [...alliance].reverse()[0];
+    allianceStartMatch = alliance[0];
+
+    if (crossFactionSupport === "partial") {
+      xFactionEndMatch = [...thisWeeksData]
+        .reverse()
+        .find((dataset) => !dataset.faction);
+      xFactionStartMatch = thisWeeksData.find((dataset) => !dataset.faction);
+    }
+  }
+
+  let hordeDiff = 0;
+  let allianceDiff = 0;
+  let xFactionDiff = 0;
+
+  if (hordeEndMatch && hordeStartMatch) {
+    hordeDiff =
+      hordeEndMatch.score -
+      (isFirstWeek && hordeStartMatch === data[0] ? 0 : hordeStartMatch.score);
+  }
+
+  if (allianceEndMatch && allianceStartMatch) {
+    allianceDiff =
+      allianceEndMatch.score -
+      (isFirstWeek && allianceStartMatch === data[0]
+        ? 0
+        : allianceStartMatch.score);
+  }
+
+  if (xFactionEndMatch && xFactionStartMatch) {
+    xFactionDiff =
+      xFactionEndMatch.score -
+      (isFirstWeek && xFactionStartMatch === data[0]
+        ? 0
+        : xFactionStartMatch.score);
+  }
+
+  return {
+    hordeDiff,
+    allianceDiff,
+    xFactionDiff,
+  };
 }

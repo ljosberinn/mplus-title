@@ -1,6 +1,8 @@
 import { useRouteLoaderData } from "@remix-run/react";
 import { lazy, Suspense } from "react";
 
+import  { type EnhancedSeason } from "~/seasons";
+
 import { Logo } from "./Logo";
 import { BuyMeACoffee, RaiderPatreon, Twitter, WCLPatreon } from "./NavLink";
 import { SeasonMenu } from "./SeasonMenu";
@@ -10,7 +12,20 @@ const OverlaysToggle = lazy(() => import("./OverlaysToggle"));
 const CustomExtrapolationForm = lazy(() => import("./CustomExtrapolationForm"));
 
 export function Header(): JSX.Element {
-  const season = useRouteLoaderData("routes/season/$season");
+  const season = useRouteLoaderData("routes/season/$season") as EnhancedSeason|null;
+
+  let seasonHasStarted = false;
+  let seasonHasEndedInEveryRegion = false;
+
+  if (season) {
+    seasonHasStarted = Object.values(season.startDates).some(
+      (maybeDate) => maybeDate !== null && maybeDate <= Date.now(),
+    );
+
+    seasonHasEndedInEveryRegion = Object.values(season.endDates).every(
+      (maybeDate) => maybeDate !== null && maybeDate <= Date.now(),
+    );
+  }
 
   return (
     <>
@@ -40,15 +55,16 @@ export function Header(): JSX.Element {
           ) : null}
         </div>
       </div>
-      <div className="mx-auto flex w-full max-w-screen-2xl items-center justify-between">
-        <div className="flex w-full flex-col flex-wrap justify-between gap-3 md:flex-row">
-          {season ? (
-            <Suspense>
-              <CustomExtrapolationForm season={season} />{" "}
-            </Suspense>
-          ) : null}
+
+      <Suspense>
+        <div className="mx-auto flex w-full max-w-screen-2xl items-center justify-between">
+          <div className="flex w-full flex-col flex-wrap justify-between gap-3 md:flex-row">
+            {season && seasonHasStarted && !seasonHasEndedInEveryRegion ? (
+              <CustomExtrapolationForm season={season} />
+            ) : null}
+          </div>
         </div>
-      </div>
+      </Suspense>
     </>
   );
 }
