@@ -165,6 +165,7 @@ export const getEnhancedSeason = async ({
             color: "#fff",
           },
         },
+        gridLineColor: `rgba(255, 255, 255, 0.25)`,
         labels: {
           style: {
             color: "#fff",

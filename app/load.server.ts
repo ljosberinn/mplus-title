@@ -534,8 +534,8 @@ export function determineRegionsToDisplayFromCookies(
 const factionColors = {
   alliance: "#60a5fa",
   horde: "#f87171",
-  xFaction: "#EEE7D8", // "#B389AF",
-  extrapolation: "#C8BEAE",
+  xFaction: "#EEE7D8",
+  extrapolation: "#C8BEAE50",
 } as const;
 
 export function calculateSeries(
@@ -659,7 +659,7 @@ export function calculateXAxisPlotBands(
     options.push({
       from,
       to,
-      color,
+      color: from > now ? `${color}50` : color,
       label: {
         useHTML: true,
         style: {
