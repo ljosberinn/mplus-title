@@ -153,10 +153,14 @@ type ZoomExtremes = null | { min: number; max: number };
 export default function Season(): JSX.Element | null {
   const season = useLoaderData() as EnhancedSeason;
   const prevSeason = useRef(season.slug);
+  const prevExtrapolation = useRef(season.extrapolation);
   const [extremes, setExtremes] = useState<ZoomExtremes>(null);
 
   useEffect(() => {
-    if (prevSeason.current === season.slug) {
+    if (
+      prevSeason.current === season.slug &&
+      prevExtrapolation.current === season.extrapolation
+    ) {
       return;
     }
 
