@@ -141,7 +141,7 @@ export const getEnhancedSeason = async ({
       },
       xAxis: {
         title: {
-          text: "Day",
+          text: "Date",
           style: {
             color: "#fff",
             lineColor: "#333",
