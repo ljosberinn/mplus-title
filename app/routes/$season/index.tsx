@@ -309,6 +309,9 @@ function Region({ season, region, extremes, onZoom }: CardProps): JSX.Element {
 
   const options: Options = {
     ...season.chartBlueprint,
+    time: {
+      timezoneOffset: new Date().getTimezoneOffset()
+    },
     lang: {
       thousandsSep:
         numberFormatParts.find((i) => i.type === "group")?.value ?? ",",
