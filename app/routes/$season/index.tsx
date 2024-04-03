@@ -269,12 +269,14 @@ function Region({ season, region, extremes, onZoom }: CardProps): JSX.Element {
     ref.current.chart.showResetZoom();
   }, [region, season.initialZoom, extremes]);
 
+  const now = Date.now();
+
   if (season.dataByRegion[region].length === 0) {
     const startDate = season.startDates[region];
-    const seasonHasNotStartedForRegion = !startDate || startDate > Date.now();
+    const seasonHasNotStartedForRegion = !startDate || startDate > now;
     const hoursUntilSeasonStart =
       seasonHasNotStartedForRegion && startDate
-        ? Math.max(Math.round((startDate - Date.now()) / 1000 / 60 / 60), 1)
+        ? Math.max(Math.round((startDate - now) / 1000 / 60 / 60), 1)
         : 0;
 
     return (
@@ -310,7 +312,7 @@ function Region({ season, region, extremes, onZoom }: CardProps): JSX.Element {
   const options: Options = {
     ...season.chartBlueprint,
     time: {
-      timezoneOffset: new Date().getTimezoneOffset()
+      timezoneOffset: new Date().getTimezoneOffset(),
     },
     lang: {
       thousandsSep:
@@ -349,8 +351,11 @@ function Region({ season, region, extremes, onZoom }: CardProps): JSX.Element {
 
   const indexOfCurrentWeek = findIndexOfCurrentWeek(season, region);
   const seasonStartForRegion = season.startDates[region];
+  const seasonEndForRegion = season.endDates[region];
   const timePassedSinceSeasonStart = seasonStartForRegion
-    ? Date.now() - seasonStartForRegion
+    ? (seasonEndForRegion && seasonEndForRegion < now
+        ? seasonEndForRegion
+        : now) - seasonStartForRegion
     : 0;
   const weeksPassedSinceSeasonStart =
     timePassedSinceSeasonStart / 1000 / 60 / 60 / 24 / 7;
@@ -415,7 +420,28 @@ function Region({ season, region, extremes, onZoom }: CardProps): JSX.Element {
           let endTime = null;
           let weekOffset = 0;
 
-          if (seasonStartForRegion) {
+          // to properly adjust weeks in past seasons
+          if (seasonEndForRegion && seasonEndForRegion < now) {
+            const rollover =
+              season.affixes.length -
+              Math.ceil(
+                ((weeksPassedSinceSeasonStart / season.affixes.length) * 10) %
+                  season.affixes.length,
+              );
+            let offset = season.affixes.length - index - rollover;
+
+            if (offset <= 0) {
+              offset += season.affixes.length;
+            }
+
+            startTimeOfWeek =
+              seasonEndForRegion - offset * 7 * 24 * 60 * 60 * 1000;
+
+            endTimeOfWeek = startTimeOfWeek + 7 * 24 * 60 * 60 * 1000;
+
+            startTime = new Date(startTimeOfWeek);
+            endTime = new Date(endTimeOfWeek);
+          } else if (seasonStartForRegion) {
             // adjust week offset by cycles - 1 for future weeks to show MythicStats link for the last time this affix set came around
             weekOffset =
               (cycles - (isFutureWeek ? 1 : 0)) * season.affixes.length + index;
@@ -429,7 +455,7 @@ function Region({ season, region, extremes, onZoom }: CardProps): JSX.Element {
                 1000;
 
             // move date of past week to the future indicating when it comes around next
-            if (!isCurrentWeek && startTimeOfWeek <= Date.now()) {
+            if (!isCurrentWeek && startTimeOfWeek <= now) {
               startTimeOfWeek =
                 seasonStartForRegion +
                 (index + (cycles + 1) * season.affixes.length) *
@@ -446,18 +472,35 @@ function Region({ season, region, extremes, onZoom }: CardProps): JSX.Element {
             endTime = new Date(endTimeOfWeek);
           }
 
+          let omitGrayscale = false;
+
+          if (startTime && endTime && seasonEndForRegion) {
+            const isLastWeekOfTheSeason =
+              startTime.getTime() < seasonEndForRegion &&
+              endTime.getTime() > seasonEndForRegion;
+
+            const isWeekBeforeLastWeekOfTheSeason =
+              (startTime.getTime() >= now &&
+                endTime.getTime() < seasonEndForRegion) ||
+              isCurrentWeek;
+
+            if (isLastWeekOfTheSeason || isWeekBeforeLastWeekOfTheSeason) {
+              omitGrayscale = true;
+            }
+          }
+
           return (
             <div
               className={clsx(
                 "flex flex-1 flex-col items-center space-y-1",
                 isCurrentWeek
-                  ? "opacity-100"
+                  ? null
                   : isNextWeek
                     ? "opacity-75 hover:opacity-100"
                     : "opacity-50 hover:opacity-100",
                 isCurrentWeek
                   ? undefined
-                  : "grayscale transition-opacity hover:filter-none",
+                  : `${omitGrayscale ? "" : "grayscale"} transition-opacity hover:filter-none`,
                 isNextWeek ? "filter-none" : null,
               )}
               key={[...set, index].join("-")}
