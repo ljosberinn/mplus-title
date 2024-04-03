@@ -111,7 +111,7 @@ export const seasons: Season[] = [
     dungeons: 8,
     patches: {},
     seasonIcon: "https://assets.rpglogs.com/img/warcraft/zones/zone-37.png",
-    startingPeriod: 0,
+    startingPeriod: 956,
     wcl: {
       zoneId: 37,
       weekIndexToAffixSetId: [],
@@ -129,10 +129,10 @@ export const seasons: Season[] = [
       tw: offsetByRegion(1_699_974_000_000, "tw"),
     },
     endDates: {
-      us: offsetByRegion(1_713_852_000_000, "us"),
-      eu: offsetByRegion(1_713_852_000_000, "eu"),
-      kr: offsetByRegion(1_713_852_000_000, "kr"),
-      tw: offsetByRegion(1_713_852_000_000, "tw"),
+      us: offsetByRegion(1_713_848_400_000, "us"),
+      eu: offsetByRegion(1_713_848_400_000, "eu"),
+      kr: offsetByRegion(1_713_848_400_000, "kr"),
+      tw: offsetByRegion(1_713_848_400_000, "tw"),
     },
     confirmedCutoffs: {
       eu: { score: 0, source: null },
