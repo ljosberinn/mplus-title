@@ -310,7 +310,7 @@ export function calculateExtrapolation(
   })
     .filter(Boolean)
     .slice(4)
-    .slice(-10);
+    .slice(-season.affixes.length);
 
   const daysUntilSeasonEndingOrFourWeeks = daysUntilSeasonEnding ?? 21;
   const to =
