@@ -309,7 +309,8 @@ export function calculateExtrapolation(
     ).xFactionDiff;
   })
     .filter(Boolean)
-    .slice(4);
+    .slice(4)
+    .slice(-10);
 
   const daysUntilSeasonEndingOrFourWeeks = daysUntilSeasonEnding ?? 21;
   const to =
@@ -325,12 +326,27 @@ export function calculateExtrapolation(
     const interval =
       timeUntilExtrapolationEnd / daysUntilSeasonEndingOrFourWeeks;
     const scoreIncreaseSteps =
-      passedWeeksDiff.reduce((acc, diff, index) => {
-        // looking at week 5 in week 10 means its 5 weeks ago, applying a weight of 0.5
-        // looking at week 10 in week 10 means its the current week, applying a weight of 1
-        const factor = 1 - (passedWeeksDiff.length - index - 1) / 10;
-        return acc + diff * (factor > 0 ? factor : 0.1);
-      }) /
+      [...passedWeeksDiff].reverse().reduce((acc, diff, index, arr) => {
+        // applies a <1 factor on the total increase a week saw based on how far
+        // it was in the past. e.g. the current week should never be penalized
+        // as its most indicative of the near future development. however, the
+        // further the week is in the past, the less relevant we consider it due
+        // to:
+        // - gearing
+        // - dungeon and class tuning
+        // - routes developing
+        // - simple experience
+        // - meta development
+        // - tech discoveries
+        // the downside of it is naturally, it's never aware of affix set
+        // dynamics, e.g. multiple bad weeks in a row will skew prediction if
+        // there's good weeks coming up.
+
+        const factor =
+          index === 0 ? 1 : 1 - (1 - 0.5) * (index / (arr.length - 1)) ** 1.5;
+
+        return acc + diff * factor;
+      }, 0) /
       passedWeeksDiff.length /
       7;
 
