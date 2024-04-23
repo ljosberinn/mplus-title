@@ -29,7 +29,6 @@ if (!String.prototype.replaceAll) {
 }
 
 const regions = [Regions.us, Regions.eu, Regions.kr, Regions.tw];
-const threshold = Math.round(Date.now() / 1000 - 1 * 60 * 60);
 
 export const action: ActionFunction = async ({ request }) => {
   if (request.method !== "POST") {
@@ -72,32 +71,34 @@ export const action: ActionFunction = async ({ request }) => {
       distinct: ["region"],
     });
 
-    if (latestPerRegion.length === 0) {
-      return json([]);
-    }
+    const mostOutdatedRegion = latestPerRegion.reduce((acc, dataset) => {
+      if (acc.timestamp < dataset.timestamp) {
+        return acc;
+      }
 
-    const outdatedRegions = latestPerRegion.filter(
-      (dataset) => dataset.timestamp <= threshold,
-    );
+      return dataset;
+    }, latestPerRegion[0]);
 
-    if (outdatedRegions.length === 0) {
-      return json([]);
-    }
+    console.info("most outdated region:", mostOutdatedRegion.region);
 
-    const [{ region }] = outdatedRegions;
-    const season = findSeasonForRegion(region);
+    const season = findSeasonForRegion(mostOutdatedRegion.region);
 
     if (!season) {
       return json([]);
     }
+    
+    console.info("using season:", season.name);
 
     console.time("parseRegionData");
-    const regionData = await parseRegionData(region, season.rioKey);
+    const regionData = await parseRegionData(
+      mostOutdatedRegion.region,
+      season.rioKey,
+    );
     console.timeEnd("parseRegionData");
 
     await prisma.crossFactionHistory.create({ data: regionData });
 
-    return json({ region, regionData });
+    return json({ region: mostOutdatedRegion.region, regionData });
   } catch (error) {
     console.error("yikes", error);
     return json([], 500);
