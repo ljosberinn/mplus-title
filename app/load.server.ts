@@ -872,111 +872,14 @@ export function calculateXAxisPlotLines(
     data.length > 0 &&
     startDate
   ) {
-    const base = 25;
-    const affixPoints = 25;
-
-    let startLevel = 15;
-    let endLevel = 23;
-
-    if (season.wcl && season.wcl.zoneId >= 37) {
-      startLevel -= 10;
-      endLevel -= 10;
-    }
-
-    // calculate thresholds for week 1 separeately in order to show low key levels again across both weeks
-    for (let level = startLevel; level <= endLevel; level++) {
-      const levelPoints = 5 * level + (level - (level > 10 ? 10 : 0)) * 2;
-      const total = base + levelPoints + affixPoints;
-      // week 1 naturally has only 1 affix set
-      const firstWeek = total * 1.5 * season.dungeons;
-
-      const match: Omit<Dataset, "rank"> | undefined = data.find((dataset) => {
-        if (dataset.ts - startDate < oneWeekInMs) {
-          return dataset.score >= firstWeek;
-        }
-
-        return false;
-      });
-
-      if (match) {
-        lines.push({
-          zIndex: 100,
-          label: {
-            text: `All ${level}`,
-            rotation: 0,
-            y: 200,
-            style: {
-              color: "white",
-            },
-          },
-          value: match.ts,
-          dashStyle: "Dash",
-          color: "white",
-        });
-      }
-    }
-
-    for (let level = startLevel + 1; level <= 35; level++) {
-      const levelPoints = 5 * level + (level - (level > 10 ? 10 : 0)) * 2;
-
-      const total = base + levelPoints + affixPoints;
-
-      const set1 = total * 1.5; // basically tyrannical only
-      const set2 = total * 0.5; // fort
-
-      // week 1 naturally has only 1 affix set
-      const bothWeeks = set1 + set2;
-      const allDungeonsBothWeeks = bothWeeks * season.dungeons;
-
-      let match: Omit<Dataset, "rank"> | undefined = data.find((dataset) => {
-        return dataset.score >= allDungeonsBothWeeks;
-      });
-
-      // if we have an extrapolation, check whether a key level threshold is
-      // reached during the extrapolation window
-      if (!match && Array.isArray(extrapolation)) {
-        const extrapolationMatchIndex = extrapolation.findIndex(
-          ([, score]) => score >= allDungeonsBothWeeks,
-        );
-
-        if (extrapolationMatchIndex > -1) {
-          const last = data[data.length - 1];
-          const extrapolationMatch = extrapolation[extrapolationMatchIndex];
-
-          const timeDiff = extrapolationMatch[0] - last.ts;
-          const scoreDiff = extrapolationMatch[1] - last.score;
-
-          const step = scoreDiff / timeDiff;
-
-          // expensive, but a lot more precise than just picking next match
-          for (let i = 0; i < timeDiff; i += 60_000) {
-            if (last.score + step * i > allDungeonsBothWeeks) {
-              match = {
-                ts: last.ts + i,
-                score: allDungeonsBothWeeks,
-              };
-              break;
-            }
-          }
-        }
-      }
-
-      if (match) {
-        lines.push({
-          zIndex: 100,
-          label: {
-            text: `All ${level}`,
-            rotation: 0,
-            y: 200,
-            style: {
-              color: "white",
-            },
-          },
-          value: match.ts,
-          dashStyle: "Dash",
-          color: "white",
-        });
-      }
+    if ((season.wcl?.zoneId ?? 0) < 37) {
+      lines.push(
+        ...calcOldLevelCompletionLines(season, data, startDate, extrapolation),
+      );
+    } else {
+      lines.push(
+        ...calcNewLevelCompletionLines(season, data, startDate, extrapolation),
+      );
     }
   }
 
@@ -1143,4 +1046,231 @@ function calculateFactionDiffForWeek(
     allianceDiff,
     xFactionDiff,
   };
+}
+
+// TODO: merge these eventually
+function calcNewLevelCompletionLines(
+  season: Season,
+  data: Dataset[],
+  startDate: number,
+  extrapolation: ReturnType<typeof calculateExtrapolation>,
+): XAxisPlotLinesOptions[] {
+  const lines: XAxisPlotLinesOptions[] = [];
+  const base = 75;
+  const baseAffixPoints = 5;
+
+  const startLevel = 5;
+  const endLevel = 13;
+
+  for (let level = startLevel; level <= endLevel; level++) {
+    const levelPoints = 7 * level;
+    const affixPoints =
+      baseAffixPoints + (level >= 5 ? 10 : 0) + (level >= 10 ? 10 : 0);
+    const total = base + levelPoints + affixPoints;
+
+    const firstWeek = total * 1.5 * season.dungeons;
+
+    const match: Omit<Dataset, "rank"> | undefined = data.find((dataset) => {
+      if (dataset.ts - startDate < oneWeekInMs) {
+        return dataset.score >= firstWeek;
+      }
+
+      return false;
+    });
+
+    if (match) {
+      lines.push({
+        zIndex: 100,
+        label: {
+          text: `All ${level}`,
+          rotation: 0,
+          y: 200,
+          style: {
+            color: "white",
+          },
+        },
+        value: match.ts,
+        dashStyle: "Dash",
+        color: "white",
+      });
+    }
+  }
+
+  for (let level = endLevel - 3; level <= 35; level++) {
+    const levelPoints = 7 * level;
+    const affixPoints =
+      baseAffixPoints + (level >= 5 ? 10 : 0) + (level >= 10 ? 10 : 0);
+    const total = base + levelPoints + affixPoints;
+
+    const set1 = total * 1.5; // basically tyrannical only
+    const set2 = total * 0.5; // fort
+
+    // week 1 naturally has only 1 affix set
+    const bothWeeks = set1 + set2;
+    const allDungeonsBothWeeks = bothWeeks * season.dungeons;
+
+    let match: Omit<Dataset, "rank"> | undefined = data.find((dataset) => {
+      return dataset.score >= allDungeonsBothWeeks;
+    });
+
+    // if we have an extrapolation, check whether a key level threshold is
+    // reached during the extrapolation window
+    if (!match && Array.isArray(extrapolation)) {
+      const extrapolationMatchIndex = extrapolation.findIndex(
+        ([, score]) => score >= allDungeonsBothWeeks,
+      );
+
+      if (extrapolationMatchIndex > -1) {
+        const last = data[data.length - 1];
+        const extrapolationMatch = extrapolation[extrapolationMatchIndex];
+
+        const timeDiff = extrapolationMatch[0] - last.ts;
+        const scoreDiff = extrapolationMatch[1] - last.score;
+
+        const step = scoreDiff / timeDiff;
+
+        // expensive, but a lot more precise than just picking next match
+        for (let i = 0; i < timeDiff; i += 60_000) {
+          if (last.score + step * i > allDungeonsBothWeeks) {
+            match = {
+              ts: last.ts + i,
+              score: allDungeonsBothWeeks,
+            };
+            break;
+          }
+        }
+      }
+    }
+
+    if (match) {
+      lines.push({
+        zIndex: 100,
+        label: {
+          text: `All ${level}`,
+          rotation: 0,
+          y: 200,
+          style: {
+            color: "white",
+          },
+        },
+        value: match.ts,
+        dashStyle: "Dash",
+        color: "white",
+      });
+    }
+  }
+
+  return lines;
+}
+
+function calcOldLevelCompletionLines(
+  season: Season,
+  data: Dataset[],
+  startDate: number,
+  extrapolation: ReturnType<typeof calculateExtrapolation>,
+): XAxisPlotLinesOptions[] {
+  const lines: XAxisPlotLinesOptions[] = [];
+  const base = 25;
+  const affixPoints = 25;
+
+  const startLevel = 15;
+  const endLevel = 23;
+
+  // calculate thresholds for week 1 separeately in order to show low key levels again across both weeks
+  for (let level = startLevel; level <= endLevel; level++) {
+    const levelPoints = 5 * level + (level - (level > 10 ? 10 : 0)) * 2;
+    const total = base + levelPoints + affixPoints;
+    // week 1 naturally has only 1 affix set
+    const firstWeek = total * 1.5 * season.dungeons;
+
+    const match: Omit<Dataset, "rank"> | undefined = data.find((dataset) => {
+      if (dataset.ts - startDate < oneWeekInMs) {
+        return dataset.score >= firstWeek;
+      }
+
+      return false;
+    });
+
+    if (match) {
+      lines.push({
+        zIndex: 100,
+        label: {
+          text: `All ${level}`,
+          rotation: 0,
+          y: 200,
+          style: {
+            color: "white",
+          },
+        },
+        value: match.ts,
+        dashStyle: "Dash",
+        color: "white",
+      });
+    }
+  }
+
+  for (let level = startLevel + 1; level <= 35; level++) {
+    const levelPoints = 5 * level + (level - (level > 10 ? 10 : 0)) * 2;
+
+    const total = base + levelPoints + affixPoints;
+
+    const set1 = total * 1.5; // basically tyrannical only
+    const set2 = total * 0.5; // fort
+
+    // week 1 naturally has only 1 affix set
+    const bothWeeks = set1 + set2;
+    const allDungeonsBothWeeks = bothWeeks * season.dungeons;
+
+    let match: Omit<Dataset, "rank"> | undefined = data.find((dataset) => {
+      return dataset.score >= allDungeonsBothWeeks;
+    });
+
+    // if we have an extrapolation, check whether a key level threshold is
+    // reached during the extrapolation window
+    if (!match && Array.isArray(extrapolation)) {
+      const extrapolationMatchIndex = extrapolation.findIndex(
+        ([, score]) => score >= allDungeonsBothWeeks,
+      );
+
+      if (extrapolationMatchIndex > -1) {
+        const last = data[data.length - 1];
+        const extrapolationMatch = extrapolation[extrapolationMatchIndex];
+
+        const timeDiff = extrapolationMatch[0] - last.ts;
+        const scoreDiff = extrapolationMatch[1] - last.score;
+
+        const step = scoreDiff / timeDiff;
+
+        // expensive, but a lot more precise than just picking next match
+        for (let i = 0; i < timeDiff; i += 60_000) {
+          if (last.score + step * i > allDungeonsBothWeeks) {
+            match = {
+              ts: last.ts + i,
+              score: allDungeonsBothWeeks,
+            };
+            break;
+          }
+        }
+      }
+    }
+
+    if (match) {
+      lines.push({
+        zIndex: 100,
+        label: {
+          text: `All ${level}`,
+          rotation: 0,
+          y: 200,
+          style: {
+            color: "white",
+          },
+        },
+        value: match.ts,
+        dashStyle: "Dash",
+        color: "white",
+      });
+    }
+  }
+
+  return lines;
 }

@@ -83,6 +83,41 @@ function offsetByRegion(timestamp: number, region: Regions): number {
 }
 
 export const seasons: Season[] = [
+  // {
+  //   name: "TWW S1",
+  //   slug: "tww-season-1",
+  //   rioKey: "",
+  //   crossFactionSupport: "complete",
+  //   startDates: {
+  //     us: UNKNOWN_SEASON_START_OR_ENDING,
+  //     eu: UNKNOWN_SEASON_START_OR_ENDING,
+  //     kr: UNKNOWN_SEASON_START_OR_ENDING,
+  //     tw: UNKNOWN_SEASON_START_OR_ENDING,
+  //   },
+  //   endDates: {
+  //     us: UNKNOWN_SEASON_START_OR_ENDING,
+  //     eu: UNKNOWN_SEASON_START_OR_ENDING,
+  //     kr: UNKNOWN_SEASON_START_OR_ENDING,
+  //     tw: UNKNOWN_SEASON_START_OR_ENDING,
+  //   },
+  //   affixes: [],
+  //   confirmedCutoffs: {
+  //     eu: { score: 0, source: null },
+  //     us: { score: 0, source: null },
+  //     kr: { score: 0, source: null },
+  //     tw: { score: 0, source: null },
+  //   },
+  //   dungeonHotfixes: {},
+  //   dungeons: 8,
+  //   patches: {},
+  //   seasonIcon:
+  //     "https://assets.rpglogs.com/img/warcraft/abilities/inv_misc_questionmark.jpg",
+  //   startingPeriod: 0,
+  //   wcl: {
+  //     zoneId: 39,
+  //     weekIndexToAffixSetId: [],
+  //   },
+  // },
   {
     name: "DF S4",
     slug: "df-season-4",
@@ -135,8 +170,16 @@ export const seasons: Season[] = [
       tw: offsetByRegion(1_713_848_400_000, "tw"),
     },
     confirmedCutoffs: {
-      eu: { score: 0, source: "https://eu.forums.blizzard.com/en/wow/t/m-dreaming-hero-title-updated-16-april/507523" },
-      us: { score: 0, source: "https://us.forums.blizzard.com/en/wow/t/m-dreaming-hero-title-updated-april-16/1831618" },
+      eu: {
+        score: 0,
+        source:
+          "https://eu.forums.blizzard.com/en/wow/t/m-dreaming-hero-title-updated-16-april/507523",
+      },
+      us: {
+        score: 0,
+        source:
+          "https://us.forums.blizzard.com/en/wow/t/m-dreaming-hero-title-updated-april-16/1831618",
+      },
       kr: { score: 0, source: null },
       tw: { score: 0, source: null },
     },
