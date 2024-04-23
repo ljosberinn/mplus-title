@@ -10,12 +10,6 @@ import { findSeasonByName } from "~/seasons";
 import { searchParamSeparator } from "~/utils";
 
 export const loader: LoaderFunction = ({ request }) => {
-  const latest = findSeasonByName("latest");
-
-  if (!latest) {
-    throw new Error("Couldn't determine latest season.");
-  }
-
   const overlays = determineOverlaysToDisplayFromCookies(request);
   const regions = determineRegionsToDisplayFromCookies(request);
 
@@ -27,6 +21,12 @@ export const loader: LoaderFunction = ({ request }) => {
 
   if (regions) {
     params.append("regions", regions.join(searchParamSeparator));
+  }
+
+  const latest = findSeasonByName("latest", regions);
+
+  if (!latest) {
+    throw new Error("Couldn't determine latest season.");
   }
 
   const asString = params.toString();

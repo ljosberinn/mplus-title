@@ -662,24 +662,37 @@ export const hasSeasonEndedForAllRegions = (slug: string): boolean => {
 };
 
 export const findSeasonByTimestamp = (
+  regions: Regions[] | null,
   timestamp = Date.now(),
 ): Season | null => {
-  const season = seasons.find(
-    (season) =>
+  const season = seasons.find((season) => {
+    if (regions) {
+      return regions.every((region) => {
+        const startDate = season.startDates[region];
+
+        return startDate && startDate < timestamp;
+      });
+    }
+
+    return (
       Object.values(season.startDates).some(
         (start) => start && timestamp >= start,
       ) &&
       Object.values(season.endDates).some(
         (end) => end === UNKNOWN_SEASON_START_OR_ENDING || end > timestamp,
-      ),
-  );
+      )
+    );
+  });
 
   return season ?? null;
 };
 
-export const findSeasonByName = (slug: string): Season | null => {
+export const findSeasonByName = (
+  slug: string,
+  regions: Regions[] | null,
+): Season | null => {
   if (slug === "latest") {
-    const ongoingSeason = findSeasonByTimestamp();
+    const ongoingSeason = findSeasonByTimestamp(regions);
 
     if (ongoingSeason) {
       return ongoingSeason;
