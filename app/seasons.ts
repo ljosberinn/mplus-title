@@ -662,7 +662,7 @@ export const hasSeasonEndedForAllRegions = (slug: string): boolean => {
 };
 
 export const findSeasonByTimestamp = (
-  regions: Regions[] | null,
+  regions: Regions[] | null = null,
   timestamp = Date.now(),
 ): Season | null => {
   const season = seasons.find((season) => {
