@@ -643,7 +643,7 @@ export const seasons: Season[] = [
   },
 ];
 
-export const hasSeasonEndedForAllRegions = (slug: string): boolean => {
+export function hasSeasonEndedForAllRegions(slug: string): boolean {
   const season = seasons.find((season) => season.slug === slug);
 
   if (!season) {
@@ -659,12 +659,12 @@ export const hasSeasonEndedForAllRegions = (slug: string): boolean => {
   const now = Date.now();
 
   return endDates.every((date) => now >= (date ?? 0));
-};
+}
 
-export const findSeasonByTimestamp = (
+export function findSeasonByTimestamp(
   regions: Regions[] | null = null,
   timestamp = Date.now(),
-): Season | null => {
+): Season | null {
   const season = seasons.find((season) => {
     if (regions) {
       return regions.every((region) => {
@@ -685,12 +685,12 @@ export const findSeasonByTimestamp = (
   });
 
   return season ?? null;
-};
+}
 
-export const findSeasonByName = (
+export function findSeasonByName(
   slug: string,
   regions: Regions[] | null,
-): Season | null => {
+): Season | null {
   if (slug === "latest") {
     const ongoingSeason = findSeasonByTimestamp(regions);
 
@@ -713,4 +713,4 @@ export const findSeasonByName = (
   });
 
   return match ?? null;
-};
+}

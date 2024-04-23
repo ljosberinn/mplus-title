@@ -7,8 +7,7 @@ import { load } from "cheerio";
 
 import { env } from "~/env/server";
 import { prisma } from "~/prisma.server";
-import { type Season } from "~/seasons";
-import { findSeasonByTimestamp } from "~/seasons";
+import { type Season, seasons } from "~/seasons";
 
 const rioBaseUrl = "https://raider.io";
 
@@ -28,6 +27,9 @@ if (!String.prototype.replaceAll) {
     return this.replaceAll(new RegExp(str, "gu"), newStr);
   };
 }
+
+const regions = [Regions.us, Regions.eu, Regions.kr, Regions.tw];
+const threshold = Math.round(Date.now() / 1000 - 1 * 60 * 60);
 
 export const action: ActionFunction = async ({ request }) => {
   if (request.method !== "POST") {
@@ -54,28 +56,48 @@ export const action: ActionFunction = async ({ request }) => {
       console.info("Skipping verification of secret.");
     }
 
-    const season = findSeasonByTimestamp();
+    const latestPerRegion = await prisma.crossFactionHistory.findMany({
+      where: {
+        region: {
+          in: regions,
+        },
+      },
+      orderBy: {
+        timestamp: "desc",
+      },
+      select: {
+        timestamp: true,
+        region: true,
+      },
+      distinct: ["region"],
+    });
 
-    if (!season) {
-      return json({ info: "No ongoing season, bailing." });
+    if (latestPerRegion.length === 0) {
+      return json([]);
     }
 
-    console.time("getMostOutdatedRegionForSeason");
-    const mostOutdatedRegion = await getMostOutdatedRegionForSeason(season);
-    console.timeEnd("getMostOutdatedRegionForSeason");
+    const outdatedRegions = latestPerRegion.filter(
+      (dataset) => dataset.timestamp <= threshold,
+    );
 
-    if (!mostOutdatedRegion) {
-      console.info("ending request early, nothing to update");
-      return json([], 204);
+    if (outdatedRegions.length === 0) {
+      return json([]);
+    }
+
+    const [{ region }] = outdatedRegions;
+    const season = findSeasonForRegion(region);
+
+    if (!season) {
+      return json([]);
     }
 
     console.time("parseRegionData");
-    const regionData = await parseRegionData(mostOutdatedRegion, season.rioKey);
+    const regionData = await parseRegionData(region, season.rioKey);
     console.timeEnd("parseRegionData");
 
     await prisma.crossFactionHistory.create({ data: regionData });
 
-    return json({ mostOutdatedRegion, regionData });
+    return json({ region, regionData });
   } catch (error) {
     console.error("yikes", error);
     return json([], 500);
@@ -86,86 +108,21 @@ export const loader: LoaderFunction = () => {
   return json([], 405);
 };
 
-const getMostOutdatedRegionForSeason = async (season: Season) => {
-  const regionsWithSeasonStarted = Object.entries(season.startDates)
-    .filter(([, timestamp]) => timestamp && timestamp < Date.now())
-    .map(([region]) => region)
-    .filter((region): region is Regions => region in Regions);
+function findSeasonForRegion(region: Regions): Season | null {
+  for (const season of seasons) {
+    const startDate = season.startDates[region];
 
-  if (regionsWithSeasonStarted.length === 1) {
-    return regionsWithSeasonStarted[0];
-  }
-
-  const threshold = Math.round(Date.now() / 1000 - 1 * 60 * 60);
-
-  const mostRecentData = await prisma.crossFactionHistory.findMany({
-    where: {
-      timestamp: {
-        gte: threshold,
-      },
-      region: {
-        in:
-          regionsWithSeasonStarted.length === 4
-            ? undefined
-            : regionsWithSeasonStarted,
-      },
-    },
-    orderBy: {
-      timestamp: "desc",
-    },
-    select: {
-      region: true,
-      timestamp: true,
-    },
-  });
-
-  const mostRecentlyUpdatedRegions = new Set(
-    mostRecentData.map((dataset) => dataset.region),
-  );
-
-  const datasets = await prisma.crossFactionHistory.findMany({
-    where: {
-      timestamp: {
-        lte: threshold,
-      },
-      region: {
-        in:
-          regionsWithSeasonStarted.length === 4
-            ? undefined
-            : regionsWithSeasonStarted,
-      },
-    },
-    orderBy: {
-      timestamp: "desc",
-    },
-    select: {
-      region: true,
-      timestamp: true,
-    },
-  });
-
-  if (datasets.length === 0) {
-    return null;
-  }
-
-  const mostOutdated = datasets.reduce((acc, dataset) => {
-    if (mostRecentlyUpdatedRegions.has(dataset.region)) {
-      return acc;
+    if (startDate && startDate < Date.now()) {
+      return season;
     }
-
-    return acc.timestamp < dataset.timestamp ? acc : dataset;
-  }, datasets[0]);
-
-  if (mostRecentlyUpdatedRegions.has(mostOutdated.region)) {
-    return null;
   }
 
-  return mostOutdated.region;
-};
+  return null;
+}
 
-const createPageUrl = (rioSeasonName: string, region: Regions, page = 0) => {
+function createPageUrl(rioSeasonName: string, region: Regions, page = 0) {
   return `${rioBaseUrl}/mythic-plus-character-rankings/${rioSeasonName}/${region}/all/all/${page}`;
-};
+}
 
 type LastPageUrlParams = {
   url: string;
@@ -173,10 +130,10 @@ type LastPageUrlParams = {
   initialPage: number;
 };
 
-const retrieveLastPageUrl = async (
+async function retrieveLastPageUrl(
   rioSeasonName: string,
   region: Regions,
-): Promise<LastPageUrlParams> => {
+): Promise<LastPageUrlParams> {
   const firstPageUrl = createPageUrl(rioSeasonName, region);
   const firstPageResponse = await fetch(firstPageUrl);
   const firstPageText = await firstPageResponse.text();
@@ -204,20 +161,20 @@ const retrieveLastPageUrl = async (
     page,
     initialPage: page,
   };
-};
+}
 
-const parsePage = (str: string) => {
+function parsePage(str: string) {
   const parts = str.split("/");
 
   return {
     page: Number.parseInt(parts[parts.length - 1]),
     url: parts.slice(0, -1).join("/"),
   };
-};
+}
 
-const determineLastEligibleRank = async (
+async function determineLastEligibleRank(
   lastPageParams: LastPageUrlParams,
-): Promise<number> => {
+): Promise<number> {
   const retryDiff = lastPageParams.initialPage - lastPageParams.page;
 
   if (retryDiff === 3) {
@@ -256,13 +213,13 @@ const determineLastEligibleRank = async (
   console.debug({ totalRankedCharacters });
 
   return Math.floor(totalRankedCharacters * 0.001);
-};
+}
 
-const retrieveScore = async (
+async function retrieveScore(
   rioSeasonName: string,
   region: Regions,
   lastEligibleRank: number,
-) => {
+) {
   const scorePage =
     lastEligibleRank <= 40 ? 0 : Math.floor(lastEligibleRank / 40);
 
@@ -294,12 +251,12 @@ const retrieveScore = async (
   );
 
   return Number.isNaN(maybeScore) ? 0 : maybeScore;
-};
+}
 
-const parseRegionData = async (
+async function parseRegionData(
   region: Regions,
   rioSeasonName: string,
-): Promise<Prisma.CrossFactionHistoryCreateInput> => {
+): Promise<Prisma.CrossFactionHistoryCreateInput> {
   const now = Math.round(Date.now() / 1000);
 
   console.time("retrieveLastPageUrl");
@@ -340,4 +297,4 @@ const parseRegionData = async (
     timestamp: now,
     region,
   };
-};
+}
