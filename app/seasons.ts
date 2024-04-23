@@ -176,7 +176,7 @@ export const seasons: Season[] = [
     startingPeriod: 956,
     wcl: {
       zoneId: 37,
-      weekIndexToAffixSetId: [],
+      weekIndexToAffixSetId: [706, 762, 765, 767, 769, 419, 771, 775, 785, 502]
     },
   },
   {
