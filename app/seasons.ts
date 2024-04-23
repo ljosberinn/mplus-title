@@ -176,7 +176,7 @@ export const seasons: Season[] = [
           "https://eu.forums.blizzard.com/en/wow/t/m-dreaming-hero-title-updated-16-april/507523",
       },
       us: {
-        score: 0,
+        score: 3684,
         source:
           "https://us.forums.blizzard.com/en/wow/t/m-dreaming-hero-title-updated-april-16/1831618",
       },
