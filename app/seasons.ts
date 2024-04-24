@@ -198,7 +198,7 @@ export const seasons: Season[] = [
     },
     confirmedCutoffs: {
       eu: {
-        score: 0,
+        score: 3719,
         source:
           "https://eu.forums.blizzard.com/en/wow/t/m-dreaming-hero-title-updated-16-april/507523",
       },
