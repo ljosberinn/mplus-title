@@ -28,7 +28,7 @@ export const loader = async ({
     });
   }
 
-  const season = findSeasonByName(params.season);
+  const season = findSeasonByName(params.season, null);
 
   if (!season) {
     throw new Response(undefined, {
