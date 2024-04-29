@@ -122,15 +122,15 @@ export const loader = async ({
   const cookieRegions = searchParamRegions
     ? null
     : await time(() => determineRegionsToDisplayFromCookies(request), {
-        type: "determineRegionsToDisplayFromCookies",
-        timings,
-      });
+      type: "determineRegionsToDisplayFromCookies",
+      timings,
+    });
   const cookieOverlays = searchParamOverlays
     ? null
     : await time(() => determineOverlaysToDisplayFromCookies(request), {
-        type: "determineOverlaysToDisplayFromCookies",
-        timings,
-      });
+      type: "determineOverlaysToDisplayFromCookies",
+      timings,
+    });
 
   if (cookieRegions || cookieOverlays) {
     const params = new URLSearchParams();
@@ -372,8 +372,8 @@ function Region({ season, region, extremes, onZoom }: CardProps): JSX.Element {
   const seasonEndForRegion = season.endDates[region];
   const timePassedSinceSeasonStart = seasonStartForRegion
     ? (seasonEndForRegion && seasonEndForRegion < now
-        ? seasonEndForRegion
-        : now) - seasonStartForRegion
+      ? seasonEndForRegion
+      : now) - seasonStartForRegion
     : 0;
   const weeksPassedSinceSeasonStart =
     timePassedSinceSeasonStart / 1000 / 60 / 60 / 24 / 7;
@@ -381,7 +381,7 @@ function Region({ season, region, extremes, onZoom }: CardProps): JSX.Element {
   const cycles =
     weeksPassedSinceSeasonStart > season.affixes.length
       ? Math.ceil(weeksPassedSinceSeasonStart / season.affixes.length) - 1
-      : 1;
+      : 0;
 
   const needsTempBanner = season.slug === "df-season-2" && region === "us";
 
@@ -444,7 +444,7 @@ function Region({ season, region, extremes, onZoom }: CardProps): JSX.Element {
               season.affixes.length -
               Math.ceil(
                 ((weeksPassedSinceSeasonStart / season.affixes.length) * 10) %
-                  season.affixes.length,
+                season.affixes.length,
               );
             let offset = season.affixes.length - index - rollover;
 
@@ -466,22 +466,22 @@ function Region({ season, region, extremes, onZoom }: CardProps): JSX.Element {
             startTimeOfWeek =
               seasonStartForRegion +
               (index + cycles * season.affixes.length) *
-                7 *
-                24 *
-                60 *
-                60 *
-                1000;
+              7 *
+              24 *
+              60 *
+              60 *
+              1000;
 
             // move date of past week to the future indicating when it comes around next
             if (!isCurrentWeek && startTimeOfWeek <= now) {
               startTimeOfWeek =
                 seasonStartForRegion +
                 (index + (cycles + 1) * season.affixes.length) *
-                  7 *
-                  24 *
-                  60 *
-                  60 *
-                  1000;
+                7 *
+                24 *
+                60 *
+                60 *
+                1000;
             }
 
             endTimeOfWeek = startTimeOfWeek + 7 * 24 * 60 * 60 * 1000;
@@ -528,13 +528,11 @@ function Region({ season, region, extremes, onZoom }: CardProps): JSX.Element {
                 <span className="hidden items-center space-x-1 md:flex lg:space-x-2">
                   {affixSetId && season.wcl ? (
                     <a
-                      href={`https://www.warcraftlogs.com/zone/rankings/${
-                        season.wcl.zoneId
-                      }#affixes=${affixSetId}&leaderboards=1${
-                        season.wcl.partition
+                      href={`https://www.warcraftlogs.com/zone/rankings/${season.wcl.zoneId
+                        }#affixes=${affixSetId}&leaderboards=1${season.wcl.partition
                           ? `&partition=${season.wcl.partition}`
                           : ""
-                      }`}
+                        }`}
                       rel="noopener noreferrer"
                       target="_blank"
                       className="italic text-blue-400 underline"
