@@ -69,14 +69,14 @@ export type Dataset = {
 
 function offsetStartDateForRegion(timestamp: number, region: Regions): number {
   switch (region) {
-    case "us": {
+    case "US": {
       return timestamp;
     }
-    case "eu": {
+    case "EU": {
       return timestamp + 46_800_000;
     }
-    case "kr":
-    case "tw": {
+    case "KR":
+    case "TW": {
       return timestamp + 111_600_000;
     }
   }
@@ -84,14 +84,14 @@ function offsetStartDateForRegion(timestamp: number, region: Regions): number {
 
 function offsetEndDateForRegion(timestamp: number, region: Regions): number {
   switch (region) {
-    case "us": {
+    case "US": {
       return timestamp;
     }
-    case "eu": {
+    case "EU": {
       return timestamp + 61_200_000;
     }
-    case "kr":
-    case "tw": {
+    case "KR":
+    case "TW": {
       return timestamp + 129_600_000;
     }
   }
@@ -101,27 +101,27 @@ function offsetEndDateForRegion(timestamp: number, region: Regions): number {
 export const seasons: Season[] = [
   // {
   //   name: "TWW S1",
-  //   slug: "tww-season-1",
+  //   slug: "TW:w-season-1",
   //   rioKey: "",
   //   crossFactionSupport: "complete",
   //   startDates: {
-  //     us: UNKNOWN_SEASON_START_OR_ENDING,
-  //     eu: UNKNOWN_SEASON_START_OR_ENDING,
-  //     kr: UNKNOWN_SEASON_START_OR_ENDING,
-  //     tw: UNKNOWN_SEASON_START_OR_ENDING,
+  //     US: UNKNOWN_SEASON_START_OR_ENDING,
+  //     EU: UNKNOWN_SEASON_START_OR_ENDING,
+  //     KR: UNKNOWN_SEASON_START_OR_ENDING,
+  //     TW: UNKNOWN_SEASON_START_OR_ENDING,
   //   },
   //   endDates: {
-  //     us: UNKNOWN_SEASON_START_OR_ENDING,
-  //     eu: UNKNOWN_SEASON_START_OR_ENDING,
-  //     kr: UNKNOWN_SEASON_START_OR_ENDING,
-  //     tw: UNKNOWN_SEASON_START_OR_ENDING,
+  //     US: UNKNOWN_SEASON_START_OR_ENDING,
+  //     EU: UNKNOWN_SEASON_START_OR_ENDING,
+  //     KR: UNKNOWN_SEASON_START_OR_ENDING,
+  //     TW: UNKNOWN_SEASON_START_OR_ENDING,
   //   },
   //   affixes: [],
   //   confirmedCutoffs: {
-  //     eu: { score: 0, source: null },
-  //     us: { score: 0, source: null },
-  //     kr: { score: 0, source: null },
-  //     tw: { score: 0, source: null },
+  //     EU: { score: 0, source: null },
+  //     US: { score: 0, source: null },
+  //     KR: { score: 0, source: null },
+  //     TW: { score: 0, source: null },
   //   },
   //   dungeonHotfixes: {},
   //   dungeons: 8,
@@ -140,16 +140,16 @@ export const seasons: Season[] = [
     rioKey: "season-df-4",
     crossFactionSupport: "complete",
     startDates: {
-      us: offsetStartDateForRegion(1_713_884_400_000, "us"),
-      eu: offsetStartDateForRegion(1_713_884_400_000, "eu"),
-      kr: offsetStartDateForRegion(1_713_884_400_000, "kr"),
-      tw: offsetStartDateForRegion(1_713_884_400_000, "tw"),
+      US: offsetStartDateForRegion(1_713_884_400_000, "US"),
+      EU: offsetStartDateForRegion(1_713_884_400_000, "EU"),
+      KR: offsetStartDateForRegion(1_713_884_400_000, "KR"),
+      TW: offsetStartDateForRegion(1_713_884_400_000, "TW"),
     },
     endDates: {
-      us: UNKNOWN_SEASON_START_OR_ENDING,
-      eu: UNKNOWN_SEASON_START_OR_ENDING,
-      kr: UNKNOWN_SEASON_START_OR_ENDING,
-      tw: UNKNOWN_SEASON_START_OR_ENDING,
+      US: UNKNOWN_SEASON_START_OR_ENDING,
+      EU: UNKNOWN_SEASON_START_OR_ENDING,
+      KR: UNKNOWN_SEASON_START_OR_ENDING,
+      TW: UNKNOWN_SEASON_START_OR_ENDING,
     },
     affixes: [
       [Affix.Tyrannical, Affix.Storming, Affix.Raging],
@@ -164,10 +164,10 @@ export const seasons: Season[] = [
       [Affix.Fortified, Affix.Volcanic, Affix.Spiteful],
     ],
     confirmedCutoffs: {
-      eu: { score: 0, source: null },
-      us: { score: 0, source: null },
-      kr: { score: 0, source: null },
-      tw: { score: 0, source: null },
+      EU: { score: 0, source: null },
+      US: { score: 0, source: null },
+      KR: { score: 0, source: null },
+      TW: { score: 0, source: null },
     },
     dungeonHotfixes: {},
     dungeons: 8,
@@ -185,30 +185,30 @@ export const seasons: Season[] = [
     rioKey: "season-df-3",
     crossFactionSupport: "complete",
     startDates: {
-      us: offsetStartDateForRegion(1_699_974_000_000, "us"),
-      eu: offsetStartDateForRegion(1_699_974_000_000, "eu"),
-      kr: offsetStartDateForRegion(1_699_974_000_000, "kr"),
-      tw: offsetStartDateForRegion(1_699_974_000_000, "tw"),
+      US: offsetStartDateForRegion(1_699_974_000_000, "US"),
+      EU: offsetStartDateForRegion(1_699_974_000_000, "EU"),
+      KR: offsetStartDateForRegion(1_699_974_000_000, "KR"),
+      TW: offsetStartDateForRegion(1_699_974_000_000, "TW"),
     },
     endDates: {
-      us: offsetEndDateForRegion(1_713_848_400_000, 'us'),
-      eu: offsetEndDateForRegion(1_713_848_400_000, 'eu'),
-      kr: offsetEndDateForRegion(1_713_848_400_000, 'kr'),
-      tw: offsetEndDateForRegion(1_713_848_400_000, 'tw'),
+      US: offsetEndDateForRegion(1_713_848_400_000, 'US'),
+      EU: offsetEndDateForRegion(1_713_848_400_000, 'EU'),
+      KR: offsetEndDateForRegion(1_713_848_400_000, 'KR'),
+      TW: offsetEndDateForRegion(1_713_848_400_000, 'TW'),
     },
     confirmedCutoffs: {
-      eu: {
+      EU: {
         score: 3719,
         source:
-          "https://eu.forums.blizzard.com/en/wow/t/m-dreaming-hero-title-updated-16-april/507523",
+          "https://EU:.forums.blizzard.com/en/wow/t/m-dreaming-hero-title-updated-16-april/507523",
       },
-      us: {
+      US: {
         score: 3684,
         source:
           "https://us.forums.blizzard.com/en/wow/t/m-dreaming-hero-title-updated-april-16/1831618",
       },
-      kr: { score: 0, source: null },
-      tw: { score: 0, source: null },
+      KR: { score: 0, source: null },
+      TW: { score: 0, source: null },
     },
     affixes: [
       [Affix.Fortified, Affix.Incorporeal, Affix.Sanguine],
@@ -229,96 +229,96 @@ export const seasons: Season[] = [
     seasonIcon: "https://assets.rpglogs.com/img/warcraft/zones/zone-36.png",
     dungeonHotfixes: {
       "Rise +1 min": {
-        us: offsetStartDateForRegion(
+        US: offsetStartDateForRegion(
           1_699_974_000_000 + 2 * 7 * 24 * 60 * 60 * 1000,
-          "us",
+          "US",
         ),
-        eu: offsetStartDateForRegion(
+        EU: offsetStartDateForRegion(
           1_699_974_000_000 + 2 * 7 * 24 * 60 * 60 * 1000,
-          "eu",
+          "EU",
         ),
-        kr: offsetStartDateForRegion(
+        KR: offsetStartDateForRegion(
           1_699_974_000_000 + 2 * 7 * 24 * 60 * 60 * 1000,
-          "kr",
+          "KR",
         ),
-        tw: offsetStartDateForRegion(
+        TW: offsetStartDateForRegion(
           1_699_974_000_000 + 2 * 7 * 24 * 60 * 60 * 1000,
-          "tw",
+          "TW",
         ),
       },
       "WCM Thorns -35% hp": {
-        us: offsetStartDateForRegion(
+        US: offsetStartDateForRegion(
           1_699_974_000_000 + 7 * 7 * 24 * 60 * 60 * 1000,
-          "us",
+          "US",
         ),
-        eu: offsetStartDateForRegion(
+        EU: offsetStartDateForRegion(
           1_699_974_000_000 + 7 * 7 * 24 * 60 * 60 * 1000,
-          "eu",
+          "EU",
         ),
-        kr: offsetStartDateForRegion(
+        KR: offsetStartDateForRegion(
           1_699_974_000_000 + 7 * 7 * 24 * 60 * 60 * 1000,
-          "kr",
+          "KR",
         ),
-        tw: offsetStartDateForRegion(
+        TW: offsetStartDateForRegion(
           1_699_974_000_000 + 7 * 7 * 24 * 60 * 60 * 1000,
-          "tw",
+          "TW",
         ),
       },
       "Spec Tuning & Rise nerfs": {
-        us: offsetStartDateForRegion(
+        US: offsetStartDateForRegion(
           1_699_974_000_000 + 10 * 7 * 24 * 60 * 60 * 1000,
-          "us",
+          "US",
         ),
-        eu: offsetStartDateForRegion(
+        EU: offsetStartDateForRegion(
           1_699_974_000_000 + 10 * 7 * 24 * 60 * 60 * 1000,
-          "eu",
+          "EU",
         ),
-        kr: offsetStartDateForRegion(
+        KR: offsetStartDateForRegion(
           1_699_974_000_000 + 10 * 7 * 24 * 60 * 60 * 1000,
-          "kr",
+          "KR",
         ),
-        tw: offsetStartDateForRegion(
+        TW: offsetStartDateForRegion(
           1_699_974_000_000 + 10 * 7 * 24 * 60 * 60 * 1000,
-          "tw",
+          "TW",
         ),
       },
     },
     dungeons: 8,
     patches: {
       "10.2.5": {
-        us: offsetStartDateForRegion(
+        US: offsetStartDateForRegion(
           1_699_974_000_000 + 9 * 7 * 24 * 60 * 60 * 1000,
-          "us",
+          "US",
         ),
-        eu: offsetStartDateForRegion(
+        EU: offsetStartDateForRegion(
           1_699_974_000_000 + 9 * 7 * 24 * 60 * 60 * 1000,
-          "eu",
+          "EU",
         ),
-        kr: offsetStartDateForRegion(
+        KR: offsetStartDateForRegion(
           1_699_974_000_000 + 9 * 7 * 24 * 60 * 60 * 1000,
-          "kr",
+          "KR",
         ),
-        tw: offsetStartDateForRegion(
+        TW: offsetStartDateForRegion(
           1_699_974_000_000 + 9 * 7 * 24 * 60 * 60 * 1000,
-          "tw",
+          "TW",
         ),
       },
       "10.2.6": {
-        us: offsetStartDateForRegion(
+        US: offsetStartDateForRegion(
           1_699_974_000_000 + 18 * 7 * 24 * 60 * 60 * 1000,
-          "us",
+          "US",
         ),
-        eu: offsetStartDateForRegion(
+        EU: offsetStartDateForRegion(
           1_699_974_000_000 + 18 * 7 * 24 * 60 * 60 * 1000,
-          "eu",
+          "EU",
         ),
-        kr: offsetStartDateForRegion(
+        KR: offsetStartDateForRegion(
           1_699_974_000_000 + 18 * 7 * 24 * 60 * 60 * 1000,
-          "kr",
+          "KR",
         ),
-        tw: offsetStartDateForRegion(
+        TW: offsetStartDateForRegion(
           1_699_974_000_000 + 18 * 7 * 24 * 60 * 60 * 1000,
-          "tw",
+          "TW",
         ),
       },
     },
@@ -330,30 +330,30 @@ export const seasons: Season[] = [
     rioKey: "season-df-2",
     crossFactionSupport: "complete",
     startDates: {
-      us: offsetStartDateForRegion(1_683_644_400_000, "us"),
-      eu: offsetStartDateForRegion(1_683_644_400_000, "eu"),
-      kr: offsetStartDateForRegion(1_683_644_400_000, "kr"),
-      tw: offsetStartDateForRegion(1_683_644_400_000, "tw"),
+      US: offsetStartDateForRegion(1_683_644_400_000, "US"),
+      EU: offsetStartDateForRegion(1_683_644_400_000, "EU"),
+      KR: offsetStartDateForRegion(1_683_644_400_000, "KR"),
+      TW: offsetStartDateForRegion(1_683_644_400_000, "TW"),
     },
     endDates: {
-      us: offsetStartDateForRegion(1_699_336_800_000, "us"),
-      eu: offsetStartDateForRegion(1_699_336_800_000, "eu"),
-      kr: offsetStartDateForRegion(1_699_336_800_000, "kr"),
-      tw: offsetStartDateForRegion(1_699_336_800_000, "tw"),
+      US: offsetStartDateForRegion(1_699_336_800_000, "US"),
+      EU: offsetStartDateForRegion(1_699_336_800_000, "EU"),
+      KR: offsetStartDateForRegion(1_699_336_800_000, "KR"),
+      TW: offsetStartDateForRegion(1_699_336_800_000, "TW"),
     },
     confirmedCutoffs: {
-      eu: {
+      EU: {
         score: 0,
         source:
-          "https://eu.forums.blizzard.com/en/wow/t/m-smoldering-hero-title-updated-november-2/474193",
+          "https://EU:.forums.blizzard.com/en/wow/t/m-smoldering-hero-title-updated-november-2/474193",
       },
-      us: {
+      US: {
         score: 0,
         source:
           "https://us.forums.blizzard.com/en/wow/t/m-smoldering-hero-title-updated-november-2/1697884",
       },
-      kr: { score: 0, source: null },
-      tw: { score: 0, source: null },
+      KR: { score: 0, source: null },
+      TW: { score: 0, source: null },
     },
     affixes: [
       [Affix.Tyrannical, Affix.Storming, Affix.Raging],
@@ -374,42 +374,42 @@ export const seasons: Season[] = [
     seasonIcon: "https://assets.rpglogs.com/img/warcraft/zones/zone-34.png",
     dungeonHotfixes: {
       "Scaling Adjustment": {
-        us: offsetStartDateForRegion(1_692_716_400_000, "us"),
-        eu: offsetStartDateForRegion(1_692_716_400_000, "eu"),
-        kr: offsetStartDateForRegion(1_692_716_400_000, "kr"),
-        tw: offsetStartDateForRegion(1_692_716_400_000, "tw"),
+        US: offsetStartDateForRegion(1_692_716_400_000, "US"),
+        EU: offsetStartDateForRegion(1_692_716_400_000, "EU"),
+        KR: offsetStartDateForRegion(1_692_716_400_000, "KR"),
+        TW: offsetStartDateForRegion(1_692_716_400_000, "TW"),
       },
       "Larger Class Tuning": {
-        us: offsetStartDateForRegion(1_691_506_800_000, "us"),
-        eu: offsetStartDateForRegion(1_691_506_800_000, "eu"),
-        kr: offsetStartDateForRegion(1_691_506_800_000, "kr"),
-        tw: offsetStartDateForRegion(1_691_506_800_000, "tw"),
+        US: offsetStartDateForRegion(1_691_506_800_000, "US"),
+        EU: offsetStartDateForRegion(1_691_506_800_000, "EU"),
+        KR: offsetStartDateForRegion(1_691_506_800_000, "KR"),
+        TW: offsetStartDateForRegion(1_691_506_800_000, "TW"),
       },
       "Small Class Tuning": {
-        us: offsetStartDateForRegion(1_690_297_200_000, "us"),
-        eu: offsetStartDateForRegion(1_690_297_200_000, "eu"),
-        kr: offsetStartDateForRegion(1_690_297_200_000, "kr"),
-        tw: offsetStartDateForRegion(1_690_297_200_000, "tw"),
+        US: offsetStartDateForRegion(1_690_297_200_000, "US"),
+        EU: offsetStartDateForRegion(1_690_297_200_000, "EU"),
+        KR: offsetStartDateForRegion(1_690_297_200_000, "KR"),
+        TW: offsetStartDateForRegion(1_690_297_200_000, "TW"),
       },
       "Various Nerfs": {
-        us: offsetStartDateForRegion(1_688_130_000_000, "us"),
-        eu: offsetStartDateForRegion(1_688_130_000_000, "eu"),
-        kr: offsetStartDateForRegion(1_688_130_000_000, "kr"),
-        tw: offsetStartDateForRegion(1_688_130_000_000, "tw"),
+        US: offsetStartDateForRegion(1_688_130_000_000, "US"),
+        EU: offsetStartDateForRegion(1_688_130_000_000, "EU"),
+        KR: offsetStartDateForRegion(1_688_130_000_000, "KR"),
+        TW: offsetStartDateForRegion(1_688_130_000_000, "TW"),
       },
     },
     patches: {
       "10.1.5": {
-        us: offsetStartDateForRegion(1_689_087_600_000, "us"),
-        eu: offsetStartDateForRegion(1_689_087_600_000, "eu"),
-        kr: offsetStartDateForRegion(1_689_087_600_000, "kr"),
-        tw: offsetStartDateForRegion(1_689_087_600_000, "tw"),
+        US: offsetStartDateForRegion(1_689_087_600_000, "US"),
+        EU: offsetStartDateForRegion(1_689_087_600_000, "EU"),
+        KR: offsetStartDateForRegion(1_689_087_600_000, "KR"),
+        TW: offsetStartDateForRegion(1_689_087_600_000, "TW"),
       },
       "10.1.7": {
-        us: offsetStartDateForRegion(1_693_926_000_000, "us"),
-        eu: offsetStartDateForRegion(1_693_926_000_000, "eu"),
-        kr: offsetStartDateForRegion(1_693_926_000_000, "kr"),
-        tw: offsetStartDateForRegion(1_693_926_000_000, "tw"),
+        US: offsetStartDateForRegion(1_693_926_000_000, "US"),
+        EU: offsetStartDateForRegion(1_693_926_000_000, "EU"),
+        KR: offsetStartDateForRegion(1_693_926_000_000, "KR"),
+        TW: offsetStartDateForRegion(1_693_926_000_000, "TW"),
       },
     },
     dungeons: 8,
@@ -421,30 +421,30 @@ export const seasons: Season[] = [
     rioKey: "season-df-1",
     crossFactionSupport: "complete",
     startDates: {
-      us: offsetStartDateForRegion(1_670_943_600_000, "us"),
-      eu: offsetStartDateForRegion(1_670_943_600_000, "eu"),
-      kr: offsetStartDateForRegion(1_670_943_600_000, "kr"),
-      tw: offsetStartDateForRegion(1_670_943_600_000, "tw"),
+      US: offsetStartDateForRegion(1_670_943_600_000, "US"),
+      EU: offsetStartDateForRegion(1_670_943_600_000, "EU"),
+      KR: offsetStartDateForRegion(1_670_943_600_000, "KR"),
+      TW: offsetStartDateForRegion(1_670_943_600_000, "TW"),
     },
     endDates: {
-      us: offsetStartDateForRegion(1_683_007_200_000, "us"),
-      eu: offsetStartDateForRegion(1_683_007_200_000, "eu"),
-      kr: offsetStartDateForRegion(1_683_007_200_000, "kr"),
-      tw: offsetStartDateForRegion(1_683_007_200_000, "tw"),
+      US: offsetStartDateForRegion(1_683_007_200_000, "US"),
+      EU: offsetStartDateForRegion(1_683_007_200_000, "EU"),
+      KR: offsetStartDateForRegion(1_683_007_200_000, "KR"),
+      TW: offsetStartDateForRegion(1_683_007_200_000, "TW"),
     },
     confirmedCutoffs: {
-      eu: {
+      EU: {
         score: 0,
         source:
-          "https://eu.forums.blizzard.com/en/wow/t/m-thundering-hero-title-updated-27-april/444828",
+          "https://EU:.forums.blizzard.com/en/wow/t/m-thundering-hero-title-updated-27-april/444828",
       },
-      us: {
+      US: {
         score: 0,
         source:
           "https://us.forums.blizzard.com/en/wow/t/m-thundering-hero-title-updated-april-27/1576546/1",
       },
-      kr: { score: 0, source: null },
-      tw: { score: 0, source: null },
+      KR: { score: 0, source: null },
+      TW: { score: 0, source: null },
     },
     affixes: [
       [Affix.Fortified, Affix.Raging, Affix.Quaking, Affix.Thundering],
@@ -465,24 +465,24 @@ export const seasons: Season[] = [
     seasonIcon: getAffixIconUrl(Affix.Thundering),
     dungeonHotfixes: {
       "Azure Vault +1.5 Minutes": {
-        us: offsetStartDateForRegion(1_678_798_800_000, "us"),
-        eu: offsetStartDateForRegion(1_678_798_800_000, "eu"),
-        kr: offsetStartDateForRegion(1_678_798_800_000, "kr"),
-        tw: offsetStartDateForRegion(1_678_798_800_000, "tw"),
+        US: offsetStartDateForRegion(1_678_798_800_000, "US"),
+        EU: offsetStartDateForRegion(1_678_798_800_000, "EU"),
+        KR: offsetStartDateForRegion(1_678_798_800_000, "KR"),
+        TW: offsetStartDateForRegion(1_678_798_800_000, "TW"),
       },
     },
     patches: {
       "10.0.7": {
-        us: offsetStartDateForRegion(1_679_410_800_000, "us"),
-        eu: offsetStartDateForRegion(1_679_410_800_000, "eu"),
-        kr: offsetStartDateForRegion(1_679_410_800_000, "kr"),
-        tw: offsetStartDateForRegion(1_679_410_800_000, "tw"),
+        US: offsetStartDateForRegion(1_679_410_800_000, "US"),
+        EU: offsetStartDateForRegion(1_679_410_800_000, "EU"),
+        KR: offsetStartDateForRegion(1_679_410_800_000, "KR"),
+        TW: offsetStartDateForRegion(1_679_410_800_000, "TW"),
       },
       "10.0.5": {
-        us: offsetStartDateForRegion(1_675_177_200_000, "us"),
-        eu: offsetStartDateForRegion(1_675_177_200_000, "eu"),
-        kr: offsetStartDateForRegion(1_675_177_200_000, "kr"),
-        tw: offsetStartDateForRegion(1_675_177_200_000, "tw"),
+        US: offsetStartDateForRegion(1_675_177_200_000, "US"),
+        EU: offsetStartDateForRegion(1_675_177_200_000, "EU"),
+        KR: offsetStartDateForRegion(1_675_177_200_000, "KR"),
+        TW: offsetStartDateForRegion(1_675_177_200_000, "TW"),
       },
     },
     dungeons: 8,
@@ -494,30 +494,30 @@ export const seasons: Season[] = [
     rioKey: "season-sl-4",
     crossFactionSupport: "complete",
     startDates: {
-      us: offsetStartDateForRegion(1_659_452_400_000, "us"),
-      eu: offsetStartDateForRegion(1_659_452_400_000, "eu"),
-      kr: offsetStartDateForRegion(1_659_452_400_000, "kr"),
-      tw: offsetStartDateForRegion(1_659_452_400_000, "tw"),
+      US: offsetStartDateForRegion(1_659_452_400_000, "US"),
+      EU: offsetStartDateForRegion(1_659_452_400_000, "EU"),
+      KR: offsetStartDateForRegion(1_659_452_400_000, "KR"),
+      TW: offsetStartDateForRegion(1_659_452_400_000, "TW"),
     },
     endDates: {
-      us: offsetStartDateForRegion(1_666_710_000_000, "us"),
-      eu: offsetStartDateForRegion(1_666_710_000_000, "eu"),
-      kr: offsetStartDateForRegion(1_666_710_000_000, "kr"),
-      tw: offsetStartDateForRegion(1_666_710_000_000, "tw"),
+      US: offsetStartDateForRegion(1_666_710_000_000, "US"),
+      EU: offsetStartDateForRegion(1_666_710_000_000, "EU"),
+      KR: offsetStartDateForRegion(1_666_710_000_000, "KR"),
+      TW: offsetStartDateForRegion(1_666_710_000_000, "TW"),
     },
     confirmedCutoffs: {
-      eu: {
+      EU: {
         score: 3120,
         source:
-          "https://eu.forums.blizzard.com/en/wow/t/m-shrouded-hero-title-november-16-update/395176/19",
+          "https://EU:.forums.blizzard.com/en/wow/t/m-shrouded-hero-title-november-16-update/395176/19",
       },
-      us: {
+      US: {
         score: 3087,
         source:
           "https://www.bluetracker.gg/wow/topic/us-en/1374207-m-shrouded-hero-title-updated-november-16/",
       },
-      kr: { score: 0, source: null },
-      tw: { score: 0, source: null },
+      KR: { score: 0, source: null },
+      TW: { score: 0, source: null },
     },
     affixes: [
       [Affix.Tyrannical, Affix.Inspiring, Affix.Quaking, Affix.Shrouded],
@@ -551,26 +551,26 @@ export const seasons: Season[] = [
     rioKey: "season-sl-3",
     crossFactionSupport: "partial",
     startDates: {
-      us: offsetStartDateForRegion(1_646_146_800_000, "us"),
-      eu: offsetStartDateForRegion(1_646_146_800_000, "eu"),
-      kr: offsetStartDateForRegion(1_646_146_800_000, "kr"),
-      tw: offsetStartDateForRegion(1_646_146_800_000, "tw"),
+      US: offsetStartDateForRegion(1_646_146_800_000, "US"),
+      EU: offsetStartDateForRegion(1_646_146_800_000, "EU"),
+      KR: offsetStartDateForRegion(1_646_146_800_000, "KR"),
+      TW: offsetStartDateForRegion(1_646_146_800_000, "TW"),
     },
     endDates: {
-      us: offsetStartDateForRegion(1_659_452_400_000, "us"),
-      eu: offsetStartDateForRegion(1_659_452_400_000, "eu"),
-      kr: offsetStartDateForRegion(1_659_452_400_000, "kr"),
-      tw: offsetStartDateForRegion(1_659_452_400_000, "tw"),
+      US: offsetStartDateForRegion(1_659_452_400_000, "US"),
+      EU: offsetStartDateForRegion(1_659_452_400_000, "EU"),
+      KR: offsetStartDateForRegion(1_659_452_400_000, "KR"),
+      TW: offsetStartDateForRegion(1_659_452_400_000, "TW"),
     },
     confirmedCutoffs: {
-      eu: {
+      EU: {
         score: 3725,
         source:
-          "https://eu.forums.blizzard.com/en/wow/t/m-cryptic-hero-title-score-updated-daily/371434",
+          "https://EU:.forums.blizzard.com/en/wow/t/m-cryptic-hero-title-score-updated-daily/371434",
       },
-      us: { score: 0, source: null },
-      kr: { score: 0, source: null },
-      tw: { score: 0, source: null },
+      US: { score: 0, source: null },
+      KR: { score: 0, source: null },
+      TW: { score: 0, source: null },
     },
     affixes: [
       [Affix.Tyrannical, Affix.Bolstering, Affix.Explosive, Affix.Encrypted],
@@ -605,36 +605,36 @@ export const seasons: Season[] = [
     rioKey: "season-sl-2",
     crossFactionSupport: "none",
     startDates: {
-      us: offsetStartDateForRegion(1_625_583_600_000, "us"),
-      eu: offsetStartDateForRegion(1_625_583_600_000, "eu"),
-      kr: offsetStartDateForRegion(1_625_583_600_000, "kr"),
-      tw: offsetStartDateForRegion(1_625_583_600_000, "tw"),
+      US: offsetStartDateForRegion(1_625_583_600_000, "US"),
+      EU: offsetStartDateForRegion(1_625_583_600_000, "EU"),
+      KR: offsetStartDateForRegion(1_625_583_600_000, "KR"),
+      TW: offsetStartDateForRegion(1_625_583_600_000, "TW"),
     },
     endDates: {
-      us: offsetStartDateForRegion(1_645_542_000_000, "us"),
-      eu: offsetStartDateForRegion(1_645_542_000_000, "eu"),
-      kr: offsetStartDateForRegion(1_645_542_000_000, "kr"),
-      tw: offsetStartDateForRegion(1_645_542_000_000, "tw"),
+      US: offsetStartDateForRegion(1_645_542_000_000, "US"),
+      EU: offsetStartDateForRegion(1_645_542_000_000, "EU"),
+      KR: offsetStartDateForRegion(1_645_542_000_000, "KR"),
+      TW: offsetStartDateForRegion(1_645_542_000_000, "TW"),
     },
     confirmedCutoffs: {
-      eu: {
+      EU: {
         source:
-          "https://eu.forums.blizzard.com/en/wow/t/m-tormented-hero-title-score-updated-daily/341108",
+          "https://EU:.forums.blizzard.com/en/wow/t/m-tormented-hero-title-score-updated-daily/341108",
         alliance: 2788,
         horde: 2875,
       },
-      us: {
+      US: {
         source:
           "https://us.forums.blizzard.com/en/wow/t/m-tormented-hero-title-score-updated-daily/1184111",
         alliance: 2768,
         horde: 2847,
       },
-      kr: {
+      KR: {
         source: null,
         alliance: 0,
         horde: 0,
       },
-      tw: {
+      TW: {
         source: null,
         alliance: 0,
         horde: 0,
@@ -727,7 +727,7 @@ export function findSeasonByName(
 
     const mostRecentlyStartedSeason = seasons.find(
       (season) =>
-        season.startDates.us !== null && Date.now() >= season.startDates.us,
+        season.startDates.US !== null && Date.now() >= season.startDates.US,
     );
 
     if (mostRecentlyStartedSeason) {

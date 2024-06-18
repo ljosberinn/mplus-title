@@ -436,7 +436,7 @@ export function calculateZoom(
   season: Season,
   region: Regions,
   data: Dataset[],
-  extrapolation: EnhancedSeason["extrapolation"]["eu"],
+  extrapolation: EnhancedSeason["extrapolation"]["EU"],
 ): [number, number] {
   const seasonEnding = season.endDates[region];
 

@@ -383,7 +383,7 @@ function Region({ season, region, extremes, onZoom }: CardProps): JSX.Element {
       ? Math.ceil(weeksPassedSinceSeasonStart / season.affixes.length) - 1
       : 0;
 
-  const needsTempBanner = season.slug === "df-season-2" && region === "us";
+  const needsTempBanner = season.slug === "df-season-2" && region === "US";
 
   return (
     <section

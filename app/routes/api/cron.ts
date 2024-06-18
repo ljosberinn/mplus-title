@@ -28,7 +28,7 @@ if (!String.prototype.replaceAll) {
   };
 }
 
-const regions = [Regions.us, Regions.eu, Regions.kr, Regions.tw];
+const regions = [Regions.US, Regions.EU, Regions.KR, Regions.TW];
 
 export const action: ActionFunction = async ({ request }) => {
   if (request.method !== "POST") {
@@ -86,7 +86,7 @@ export const action: ActionFunction = async ({ request }) => {
     if (!season) {
       return json([]);
     }
-    
+
     console.info("using season:", season.name);
 
     console.time("parseRegionData");

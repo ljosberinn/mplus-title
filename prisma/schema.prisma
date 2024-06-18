@@ -32,8 +32,8 @@ enum Factions {
 }
 
 enum Regions {
-  eu
-  kr
-  tw
-  us
+  EU
+  KR
+  TW
+  US
 }

@@ -1,8 +1,8 @@
-import { type Regions } from "@prisma/client";
+import { Regions } from "@prisma/client";
 
 export const searchParamSeparator = "~";
 
-export const orderedRegionsBySize: Regions[] = ["eu", "us", "tw", "kr"];
+export const orderedRegionsBySize = [Regions.EU, Regions.US, Regions.TW, Regions.KR];
 
 export const overlays = [
   "patches",
