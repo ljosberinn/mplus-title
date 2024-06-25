@@ -99,41 +99,41 @@ function offsetEndDateForRegion(timestamp: number, region: Regions): number {
 
 
 export const seasons: Season[] = [
-  // {
-  //   name: "TWW S1",
-  //   slug: "TW:w-season-1",
-  //   rioKey: "",
-  //   crossFactionSupport: "complete",
-  //   startDates: {
-  //     US: UNKNOWN_SEASON_START_OR_ENDING,
-  //     EU: UNKNOWN_SEASON_START_OR_ENDING,
-  //     KR: UNKNOWN_SEASON_START_OR_ENDING,
-  //     TW: UNKNOWN_SEASON_START_OR_ENDING,
-  //   },
-  //   endDates: {
-  //     US: UNKNOWN_SEASON_START_OR_ENDING,
-  //     EU: UNKNOWN_SEASON_START_OR_ENDING,
-  //     KR: UNKNOWN_SEASON_START_OR_ENDING,
-  //     TW: UNKNOWN_SEASON_START_OR_ENDING,
-  //   },
-  //   affixes: [],
-  //   confirmedCutoffs: {
-  //     EU: { score: 0, source: null },
-  //     US: { score: 0, source: null },
-  //     KR: { score: 0, source: null },
-  //     TW: { score: 0, source: null },
-  //   },
-  //   dungeonHotfixes: {},
-  //   dungeons: 8,
-  //   patches: {},
-  //   seasonIcon:
-  //     "https://assets.rpglogs.com/img/warcraft/abilities/inv_misc_questionmark.jpg",
-  //   startingPeriod: 0,
-  //   wcl: {
-  //     zoneId: 39,
-  //     weekIndexToAffixSetId: [],
-  //   },
-  // },
+  {
+    name: "TWW S1",
+    slug: "tww-season-1",
+    rioKey: "",
+    crossFactionSupport: "complete",
+    startDates: {
+      US: offsetEndDateForRegion(1_725_980_400_000, "US"),
+      EU: offsetEndDateForRegion(1_725_980_400_000, "EU"),
+      KR: offsetEndDateForRegion(1_725_980_400_000, "KR"),
+      TW: offsetEndDateForRegion(1_725_980_400_000, "TW"),
+    },
+    endDates: {
+      US: UNKNOWN_SEASON_START_OR_ENDING,
+      EU: UNKNOWN_SEASON_START_OR_ENDING,
+      KR: UNKNOWN_SEASON_START_OR_ENDING,
+      TW: UNKNOWN_SEASON_START_OR_ENDING,
+    },
+    affixes: [],
+    confirmedCutoffs: {
+      EU: { score: 0, source: null },
+      US: { score: 0, source: null },
+      KR: { score: 0, source: null },
+      TW: { score: 0, source: null },
+    },
+    dungeonHotfixes: {},
+    dungeons: 8,
+    patches: {},
+    seasonIcon:
+      "https://assets.rpglogs.com/img/warcraft/abilities/inv_misc_questionmark.jpg",
+    startingPeriod: 0,
+    wcl: {
+      zoneId: 39,
+      weekIndexToAffixSetId: [],
+    },
+  },
   {
     name: "DF S4",
     slug: "df-season-4",
