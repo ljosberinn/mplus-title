@@ -8,7 +8,7 @@ import { prisma } from "~/prisma.server";
 import { findSeasonByName } from "../seasons";
 
 function createEndpointUrl(season: string, slug: string): string {
-  return `https://raider.io/api/mythic-plus/rankings/runs?region=world&season=${season}&dungeon=${slug}&strict=true&page=0&limit=0&minMythicLevel=0&maxMythicLevel=0&eventId=0&faction=&realm=&period=0&recent=false`;
+  return `https://raider.io/api/v1/mythic-plus/runs?season=${season}&region=world&dungeon=${slug}&page=0`;
 }
 
 type Record = {
@@ -46,16 +46,15 @@ export const action: ActionFunction = async ({ request }) => {
         const response = await fetch(url);
         const json = await response.json();
 
-        if (json.rankings.rankedGroups.length === 0) {
+        if (json.rankings.length === 0) {
           return { slug: dungeon.slug, keyLevel: 0, timestamp: 0 };
         }
 
         return {
           slug: dungeon.slug,
-          keyLevel: json.rankings.rankedGroups[0].run.mythic_level,
+          keyLevel: json.rankings[0].run.mythic_level,
           timestamp: Math.round(
-            new Date(json.rankings.rankedGroups[0].run.completed_at).getTime() /
-              1000,
+            new Date(json.rankings[0].run.completed_at).getTime() / 1000,
           ),
         };
       } catch {
