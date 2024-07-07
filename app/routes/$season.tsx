@@ -5,7 +5,7 @@ import { type HeadersFunction, redirect } from "@remix-run/server-runtime";
 import clsx from "clsx";
 import { type Options, type PointLabelObject } from "highcharts";
 import { type HighchartsReactRefObject } from 'highcharts-react-official'
-import React, { Fragment, lazy, Suspense, useEffect, useRef, useState } from "react";
+import { Fragment, lazy, Suspense, useEffect, useRef, useState } from "react";
 import { ClientOnly } from 'remix-utils/client-only';
 
 import { getAffixIconUrl, getAffixName } from "../affixes";
