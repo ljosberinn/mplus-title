@@ -209,7 +209,7 @@ export default function Season(): JSX.Element | null {
   );
 }
 
-const findIndexOfCurrentWeek = (season: EnhancedSeason, region: Regions) => {
+function findIndexOfCurrentWeek(season: EnhancedSeason, region: Regions) {
   if (!season.startDates[region] || season.dataByRegion[region].length === 0) {
     return null;
   }
@@ -307,12 +307,16 @@ function Region({ season, region, extremes, onZoom }: CardProps): JSX.Element {
               The season has not started in <b>{region.toUpperCase()}</b> yet.
               Data will appear as soon as possible after{" "}
               {startDate ? (
-                <time dateTime={new Date(startDate).toISOString()}>
-                  <b suppressHydrationWarning>
-                    {new Date(startDate).toLocaleString()} (T-
-                    {hoursUntilSeasonStart} hours)
-                  </b>
-                </time>
+                <ClientOnly fallback={null}>
+                  {() => (
+                    <time dateTime={new Date(startDate).toISOString()}>
+                      <b>
+                        {new Date(startDate).toLocaleString()} (T-
+                        {hoursUntilSeasonStart} hours)
+                      </b>
+                    </time>
+                  )}
+                </ClientOnly>
               ) : (
                 "it started"
               )}
@@ -642,12 +646,13 @@ type LocaleTimeProps = {
 function LocaleTime({ date }: LocaleTimeProps) {
   return (
     <ClientOnly fallback={null}>
-      {() => <time className="text-xs" dateTime={date.toISOString()}>
-        {date.toLocaleString(undefined, {
-          month: "numeric",
-          day: "numeric",
-        })}
-      </time>}
+      {() => (
+        <time className="text-xs" dateTime={date.toISOString()}>
+          {date.toLocaleString(undefined, {
+            month: "numeric",
+            day: "numeric",
+          })}
+        </time>)}
     </ClientOnly>
   );
 }
