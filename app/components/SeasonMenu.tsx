@@ -27,6 +27,7 @@ import {
   useMenuTriggerState,
   useTreeState,
 } from "react-stately";
+import { ClientOnly } from "remix-utils/client-only";
 
 import { type Season } from "~/seasons";
 import { seasons } from "~/seasons";
@@ -43,82 +44,84 @@ export function SeasonMenu(): JSX.Element {
     (season) => season.slug === selectedSeasonSlug,
   );
 
+  const label = selectedSeason ? (
+    <SeasonNavItemBody season={selectedSeason} />
+  ) : (
+    <>Seasons</>
+  )
+
+  const fallback = <Button buttonRef={{ current: null }}>{label}</Button>
+
   return (
-    <MenuButton
-      label={
-        selectedSeason ? (
-          <SeasonNavItemBody season={selectedSeason} />
-        ) : (
-          <>Seasons</>
-        )
-      }
-    >
-      {seasons
-        .reduce<{ label: string; seasons: Season[] }[]>((acc, season) => {
-          const lastSection = acc[acc.length - 1];
-          const [prefix] = season.slug.split("-");
+    <ClientOnly fallback={fallback}>
+      {() => <MenuButton label={label}>
+        {seasons
+          .reduce<{ label: string; seasons: Season[] }[]>((acc, season) => {
+            const lastSection = acc[acc.length - 1];
+            const [prefix] = season.slug.split("-");
 
-          if (lastSection) {
-            const lastSeasonOfLastSection =
-              lastSection.seasons[lastSection.seasons.length - 1];
-            const [otherPrefix] = lastSeasonOfLastSection.slug.split("-");
+            if (lastSection) {
+              const lastSeasonOfLastSection =
+                lastSection.seasons[lastSection.seasons.length - 1];
+              const [otherPrefix] = lastSeasonOfLastSection.slug.split("-");
 
-            if (prefix === otherPrefix) {
-              lastSection.seasons.push(season);
-              return acc;
+              if (prefix === otherPrefix) {
+                lastSection.seasons.push(season);
+                return acc;
+              }
             }
-          }
 
-          acc.push({ label: prefix, seasons: [season] });
+            acc.push({ label: prefix, seasons: [season] });
 
-          return acc;
-        }, [])
-        .map((section, sectionIndex, sections) => {
-          const isLastSection = sectionIndex === sections.length - 1;
+            return acc;
+          }, [])
+          .map((section, sectionIndex, sections) => {
+            const isLastSection = sectionIndex === sections.length - 1;
 
-          return (
-            <Section key={section.label} title={section.label.toUpperCase()}>
-              {section.seasons.map((season, index, seasons) => {
-                const disabled =
-                  selectedSeason?.slug === season.slug ||
-                  season.startDates.us === null ||
-                  season.startDates.us > now ||
-                  navigation.state !== "idle";
+            return (
+              <Section key={section.label} title={section.label.toUpperCase()}>
+                {section.seasons.map((season, index, seasons) => {
+                  const disabled =
+                    selectedSeason?.slug === season.slug ||
+                    season.startDates.US === null ||
+                    season.startDates.US > now ||
+                    navigation.state !== "idle";
 
-                const isLast = isLastSection && index === seasons.length - 1;
+                  const isLast = isLastSection && index === seasons.length - 1;
 
-                return (
-                  <Item key={season.slug} textValue={season.name}>
-                    {disabled ? (
-                      <span
-                        className={clsx(
-                          "flex flex-1 space-x-2 bg-gray-800 px-4 py-2 text-white outline-none grayscale transition-all duration-200 ease-in-out",
-                          navigation.state === "idle"
-                            ? "cursor-not-allowed"
-                            : "cursor-wait",
-                          isLast && "rounded-b-lg",
-                        )}
-                      >
-                        <SeasonNavItemBody season={season} />
-                      </span>
-                    ) : (
-                      <NavLink
-                        className={clsx(
-                          "flex flex-1 space-x-2 bg-gray-700 px-4 py-2 text-white outline-none transition-all duration-200 ease-in-out hover:bg-gray-500",
-                          isLast && "rounded-b-lg",
-                        )}
-                        to={`/${season.slug}${paramsAsString}`}
-                      >
-                        <SeasonNavItemBody season={season} />
-                      </NavLink>
-                    )}
-                  </Item>
-                );
-              })}
-            </Section>
-          );
-        })}
-    </MenuButton>
+                  return (
+                    <Item key={season.slug} textValue={season.name}>
+                      {disabled ? (
+                        <span
+                          className={clsx(
+                            "flex flex-1 space-x-2 bg-gray-800 px-4 py-2 text-white outline-none grayscale transition-all duration-200 ease-in-out",
+                            navigation.state === "idle"
+                              ? "cursor-not-allowed"
+                              : "cursor-wait",
+                            isLast && "rounded-b-lg",
+                          )}
+                        >
+                          <SeasonNavItemBody season={season} />
+                        </span>
+                      ) : (
+                        <NavLink
+                          className={clsx(
+                            "flex flex-1 space-x-2 bg-gray-700 px-4 py-2 text-white outline-none transition-all duration-200 ease-in-out hover:bg-gray-500",
+                            isLast && "rounded-b-lg",
+                          )}
+                          to={`/${season.slug}${paramsAsString}`}
+                        >
+                          <SeasonNavItemBody season={season} />
+                        </NavLink>
+                      )}
+                    </Item>
+                  );
+                })}
+              </Section>
+            );
+          })}
+      </MenuButton>}
+    </ClientOnly>
   );
 }
 

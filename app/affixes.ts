@@ -29,12 +29,26 @@ export enum Affix {
   Entangling = 134,
   Afflicted = 135,
   Incorporeal = 136,
+  BargainFrenzied = 153,
+  BargainAscendant = 148,
 }
 
 export const affixes: Record<
   Affix,
   { icon: string; locales: Record<string, string> }
 > = {
+  [Affix.BargainFrenzied]: {
+    locales: {
+      en: "Xal'atath's Bargain: Frenzied",
+    },
+    icon: "spell_shadow_unholyfrenzy",
+  },
+  [Affix.BargainAscendant]: {
+    locales: {
+      en: "Xal'atath's Bargain: Ascendant",
+    },
+    icon: "inv_nullstone_cosmicvoid",
+  },
   [Affix.Overflowing]: {
     locales: { en: "Overflowing", de: "Überschüssig" },
     icon: "inv_misc_volatilewater",

@@ -1,4 +1,5 @@
 import { lazy, Suspense } from "react";
+import { ClientOnly } from "remix-utils/client-only";
 
 import { type EnhancedSeason } from "~/seasons";
 
@@ -12,7 +13,7 @@ type HeaderProps = {
   season: EnhancedSeason;
 };
 
-const CustomExtrapolationForm = lazy(() => import("./CustomExtrapolationForm"));
+const CustomExtrapolationForm = lazy(() => import("./CustomExtrapolationForm.client"));
 
 export function Header({ season }: HeaderProps): JSX.Element {
   const seasonHasStarted = Object.values(season.startDates).some(
@@ -48,14 +49,18 @@ export function Header({ season }: HeaderProps): JSX.Element {
         </div>
       </div>
       {seasonHasStarted && !seasonHasEndedInEveryRegion ? (
-        <Suspense fallback={null}>
-          <div className="mx-auto flex w-full max-w-screen-2xl items-center justify-between">
-            <div className="flex w-full flex-col flex-wrap justify-between gap-3 md:flex-row">
-              <CustomExtrapolationForm season={season} />
-            </div>
-          </div>
-        </Suspense>
-      ) : null}
+        <ClientOnly>
+          {() => (
+            <Suspense fallback={null}>
+              <div className="mx-auto flex w-full max-w-screen-2xl items-center justify-between">
+                <div className="flex w-full flex-col flex-wrap justify-between gap-3 md:flex-row">
+                  <CustomExtrapolationForm season={season} />
+                </div>
+              </div>
+            </Suspense>)}
+        </ClientOnly >
+      ) : null
+      }
     </>
   );
 }

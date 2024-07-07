@@ -5,9 +5,9 @@ import { Outlet } from "@remix-run/react";
 import {
   determineOverlaysToDisplayFromCookies,
   determineRegionsToDisplayFromCookies,
-} from "~/load.server";
-import { findSeasonByName } from "~/seasons";
-import { searchParamSeparator } from "~/utils";
+} from "../load.server";
+import { findSeasonByName } from "../seasons";
+import { searchParamSeparator } from "../utils";
 
 export const loader: LoaderFunction = ({ request }) => {
   const overlays = determineOverlaysToDisplayFromCookies(request);

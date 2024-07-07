@@ -1,6 +1,6 @@
 import { type Regions } from "@prisma/client";
 
-import { type Season } from "~/seasons";
+import { type Season } from "../seasons";
 
 export type TempBannerProps = {
   season: Season;

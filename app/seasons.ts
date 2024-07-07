@@ -24,7 +24,7 @@ export type Season = {
     Regions,
     CutoffSource | ({ source: string | null } & Record<Factions, number>)
   >;
-  affixes: [Affix, Affix, Affix, Affix][] | [Affix, Affix, Affix][];
+  affixes: [Affix, Affix, Affix, Affix][] | [Affix, Affix, Affix][] | [Affix][];
   rioKey: string;
   crossFactionSupport: "complete" | "none" | "partial";
   wcl?: {
@@ -97,12 +97,11 @@ function offsetEndDateForRegion(timestamp: number, region: Regions): number {
   }
 }
 
-
 export const seasons: Season[] = [
   {
     name: "TWW S1",
     slug: "tww-season-1",
-    rioKey: "",
+    rioKey: "season-tww-1",
     crossFactionSupport: "complete",
     startDates: {
       US: offsetEndDateForRegion(1_725_980_400_000, "US"),
@@ -116,7 +115,7 @@ export const seasons: Season[] = [
       KR: UNKNOWN_SEASON_START_OR_ENDING,
       TW: UNKNOWN_SEASON_START_OR_ENDING,
     },
-    affixes: [],
+    affixes: [[Affix.BargainAscendant], [Affix.BargainFrenzied]],
     confirmedCutoffs: {
       EU: { score: 0, source: null },
       US: { score: 0, source: null },
@@ -176,7 +175,7 @@ export const seasons: Season[] = [
     startingPeriod: 956,
     wcl: {
       zoneId: 37,
-      weekIndexToAffixSetId: [706, 762, 765, 767, 769, 419, 771, 775, 785, 502]
+      weekIndexToAffixSetId: [706, 762, 765, 767, 769, 419, 771, 775, 785, 502],
     },
   },
   {
@@ -191,10 +190,10 @@ export const seasons: Season[] = [
       TW: offsetStartDateForRegion(1_699_974_000_000, "TW"),
     },
     endDates: {
-      US: offsetEndDateForRegion(1_713_848_400_000, 'US'),
-      EU: offsetEndDateForRegion(1_713_848_400_000, 'EU'),
-      KR: offsetEndDateForRegion(1_713_848_400_000, 'KR'),
-      TW: offsetEndDateForRegion(1_713_848_400_000, 'TW'),
+      US: offsetEndDateForRegion(1_713_848_400_000, "US"),
+      EU: offsetEndDateForRegion(1_713_848_400_000, "EU"),
+      KR: offsetEndDateForRegion(1_713_848_400_000, "KR"),
+      TW: offsetEndDateForRegion(1_713_848_400_000, "TW"),
     },
     confirmedCutoffs: {
       EU: {
