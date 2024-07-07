@@ -253,12 +253,13 @@ const TempBanner = lazy(() => import("../components/TempBanner.client"));
 function Region({ season, region, extremes, onZoom }: CardProps): JSX.Element {
   const ref = useRef<HighchartsReactRefObject | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const [isClient, setIsClient] = useState(false)
 
   const confirmedCutoffUrl = season.confirmedCutoffs[region].source;
   const navigation = useNavigation();
 
   useEffect(() => {
-    if (!ref.current) {
+    if (!isClient || !ref.current) {
       return;
     }
 
@@ -287,7 +288,11 @@ function Region({ season, region, extremes, onZoom }: CardProps): JSX.Element {
 
     ref.current.chart.xAxis[0].setExtremes(start, end);
     ref.current.chart.showResetZoom();
-  }, [region, season.initialZoom, extremes]);
+  }, [region, season.initialZoom, extremes, isClient]);
+
+  useEffect(() => {
+    setIsClient(true)
+  }, [])
 
   const now = Date.now();
 
