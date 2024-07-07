@@ -3741,7 +3741,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@sentry/remix@npm:^8.15.0":
+"@sentry/remix@npm:8.15.0":
   version: 8.15.0
   resolution: "@sentry/remix@npm:8.15.0"
   dependencies:
@@ -9765,7 +9765,7 @@ __metadata:
     "@remix-run/react": "npm:2.10.2"
     "@remix-run/serve": "npm:2.10.2"
     "@remix-run/server-runtime": "npm:2.10.2"
-    "@sentry/remix": "npm:^8.15.0"
+    "@sentry/remix": "npm:8.15.0"
     "@types/react": "npm:18.3.3"
     "@types/react-dom": "npm:18.3.0"
     "@types/tailwindcss": "npm:3.1.0"
