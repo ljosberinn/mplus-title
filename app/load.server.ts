@@ -108,7 +108,8 @@ export async function loadRecordsForSeason(
     typeof season.dungeons === "number" ||
     season.dungeons.length === 0 ||
     season.startDates.US === null ||
-    !overlays.includes("records")
+    !overlays.includes("records") ||
+    season.slug === "df-season-4"
   ) {
     return [];
   }
@@ -129,17 +130,8 @@ export async function loadRecordsForSeason(
     },
   });
 
-  const testData = [
-    ...data.map((dataset) => ({
-      ...dataset,
-      keyLevel: dataset.keyLevel - Math.random() >= 0.5 ? 7 : 3,
-      timestamp: dataset.timestamp - 7 * 24 * 60 * 60,
-    })),
-    ...data,
-  ];
-
   return Object.values(
-    testData.reduce<Record<string, SeriesLineOptions>>((acc, dataset) => {
+    data.reduce<Record<string, SeriesLineOptions>>((acc, dataset) => {
       if (!(dataset.slug in acc)) {
         const dungeonMetaInformation =
           dataset.slug in dungeonSlugMetaMap
