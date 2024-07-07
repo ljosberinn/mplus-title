@@ -192,10 +192,10 @@ export const seasons: Season[] = [
       TW: offsetStartDateForRegion(1_713_884_400_000, "TW"),
     },
     endDates: {
-      US: offsetStartDateForRegion(1_721_746_800_000, "US"),
-      EU: offsetStartDateForRegion(1_721_746_800_000, "EU"),
-      KR: offsetStartDateForRegion(1_721_746_800_000, "KR"),
-      TW: offsetStartDateForRegion(1_721_746_800_000, "TW"),
+      US: UNKNOWN_SEASON_START_OR_ENDING,
+      EU: UNKNOWN_SEASON_START_OR_ENDING,
+      KR: UNKNOWN_SEASON_START_OR_ENDING,
+      TW: UNKNOWN_SEASON_START_OR_ENDING,
     },
     affixes: [
       [Affix.Tyrannical, Affix.Storming, Affix.Raging],
