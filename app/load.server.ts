@@ -10,6 +10,7 @@ import {
 import { env } from "~/env/server";
 
 import { getAffixIconUrl } from "./affixes";
+import { dungeonSlugMetaMap } from "./dungeons";
 import { prisma } from "./prisma.server";
 import { type Dataset, type EnhancedSeason, type Season } from "./seasons";
 import { type Overlay, searchParamSeparator } from "./utils";
@@ -97,6 +98,71 @@ function setupRedisProviders() {
     persist,
     load,
   };
+}
+
+export async function loadRecordsForSeason(
+  season: Season,
+  overlays: readonly Overlay[],
+): Promise<SeriesLineOptions[]> {
+  if (
+    typeof season.dungeons === "number" ||
+    season.dungeons.length === 0 ||
+    season.startDates.US === null ||
+    !overlays.includes("records") ||
+    season.slug === "df-season-4"
+  ) {
+    return [];
+  }
+
+  const data = await prisma.dungeonHistory.findMany({
+    orderBy: {
+      timestamp: "desc",
+    },
+    where: {
+      timestamp: {
+        gte: Math.round(season.startDates.US / 1000),
+      },
+    },
+    select: {
+      slug: true,
+      keyLevel: true,
+      timestamp: true,
+    },
+  });
+
+  return Object.values(
+    data.reduce<Record<string, SeriesLineOptions>>((acc, dataset) => {
+      if (!(dataset.slug in acc)) {
+        const dungeonMetaInformation =
+          dataset.slug in dungeonSlugMetaMap
+            ? dungeonSlugMetaMap[dataset.slug]
+            : null;
+
+        const name = (dungeonMetaInformation?.name ?? dataset.slug).replace(
+          "The ",
+          "",
+        );
+
+        acc[dataset.slug] = {
+          type: "line",
+          data: [],
+          name,
+          // @ts-expect-error doesn't matter
+          iconUrl: dungeonMetaInformation
+            ? `https://wow.zamimg.com/images/wow/icons/medium/${dungeonMetaInformation.icon}.jpg`
+            : null,
+        };
+      }
+
+      const arr = acc[dataset.slug].data;
+
+      if (Array.isArray(arr)) {
+        arr.push([dataset.timestamp * 1000, dataset.keyLevel]);
+      }
+
+      return acc;
+    }, {}),
+  );
 }
 
 export async function loadDataForRegion(
@@ -436,7 +502,7 @@ export function calculateZoom(
   season: Season,
   region: Regions,
   data: Dataset[],
-  extrapolation: EnhancedSeason["extrapolation"]["EU"],
+  extrapolation: EnhancedSeason["score"]["extrapolation"]["EU"],
 ): [number, number] {
   const seasonEnding = season.endDates[region];
 
@@ -1061,6 +1127,10 @@ function calcNewLevelCompletionLines(
 
   const startLevel = 5;
   const endLevel = 13;
+  const numberOfDungeons =
+    typeof season.dungeons === "number"
+      ? season.dungeons
+      : season.dungeons.length;
 
   for (let level = startLevel; level <= endLevel; level++) {
     const levelPoints = 7 * level;
@@ -1068,7 +1138,7 @@ function calcNewLevelCompletionLines(
       baseAffixPoints + (level >= 5 ? 10 : 0) + (level >= 10 ? 10 : 0);
     const total = base + levelPoints + affixPoints;
 
-    const firstWeek = total * 1.5 * season.dungeons;
+    const firstWeek = total * 1.5 * numberOfDungeons;
 
     const match: Omit<Dataset, "rank"> | undefined = data.find((dataset) => {
       if (dataset.ts - startDate < oneWeekInMs) {
@@ -1107,7 +1177,7 @@ function calcNewLevelCompletionLines(
 
     // week 1 naturally has only 1 affix set
     const bothWeeks = set1 + set2;
-    const allDungeonsBothWeeks = bothWeeks * season.dungeons;
+    const allDungeonsBothWeeks = bothWeeks * numberOfDungeons;
 
     let match: Omit<Dataset, "rank"> | undefined = data.find((dataset) => {
       return dataset.score >= allDungeonsBothWeeks;
@@ -1175,13 +1245,17 @@ function calcOldLevelCompletionLines(
 
   const startLevel = 15;
   const endLevel = 23;
+  const numberOfDungeons =
+    typeof season.dungeons === "number"
+      ? season.dungeons
+      : season.dungeons.length;
 
   // calculate thresholds for week 1 separeately in order to show low key levels again across both weeks
   for (let level = startLevel; level <= endLevel; level++) {
     const levelPoints = 5 * level + (level - (level > 10 ? 10 : 0)) * 2;
     const total = base + levelPoints + affixPoints;
     // week 1 naturally has only 1 affix set
-    const firstWeek = total * 1.5 * season.dungeons;
+    const firstWeek = total * 1.5 * numberOfDungeons;
 
     const match: Omit<Dataset, "rank"> | undefined = data.find((dataset) => {
       if (dataset.ts - startDate < oneWeekInMs) {
@@ -1219,7 +1293,7 @@ function calcOldLevelCompletionLines(
 
     // week 1 naturally has only 1 affix set
     const bothWeeks = set1 + set2;
-    const allDungeonsBothWeeks = bothWeeks * season.dungeons;
+    const allDungeonsBothWeeks = bothWeeks * numberOfDungeons;
 
     let match: Omit<Dataset, "rank"> | undefined = data.find((dataset) => {
       return dataset.score >= allDungeonsBothWeeks;
@@ -1273,4 +1347,30 @@ function calcOldLevelCompletionLines(
   }
 
   return lines;
+}
+
+export async function protectCronRoute(request: Request): Promise<null | {
+  status: number;
+  payload: Record<string, string>;
+}> {
+  if (env.NODE_ENV === "production") {
+    const body = await request.text();
+    const payload = JSON.parse(body);
+
+    const secret = env.SECRET;
+
+    if (!secret) {
+      return { payload: { error: "secret missing" }, status: 500 };
+    }
+
+    const maybeSecret = payload.secret;
+
+    if (!maybeSecret || secret !== maybeSecret) {
+      return { payload: { error: "secret missing" }, status: 204 };
+    }
+
+    return null;
+  }
+  console.info("Skipping verification of secret.");
+  return null;
 }

@@ -90,10 +90,6 @@ export function Footer(): JSX.Element {
             <Tailwind />
           </ExternalLink>
 
-          <ExternalLink href="https://supabase.io/" aria-label="Supabase">
-            <Supabase />
-          </ExternalLink>
-
           <ExternalLink href="https://upstash.com/" aria-label="Upstash">
             <Upstash />
           </ExternalLink>
@@ -270,54 +266,6 @@ function Vercel() {
       className="h-4"
     >
       <path fill="white" d="m577.344 0 577.346 1000H0L577.344 0Z" />
-    </svg>
-  );
-}
-
-function Supabase() {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 109 113"
-      className="h-4"
-    >
-      <path
-        fill="url(#supabase-a)"
-        d="M63.7076 110.284c-2.8595 3.601-8.6574 1.628-8.7263-2.97l-1.0075-67.2513h45.2197c8.1905 0 12.7585 9.4601 7.6655 15.8747L63.7076 110.284Z"
-      />
-      <path
-        fill="url(#supabase-b)"
-        fillOpacity=".2"
-        d="M63.7076 110.284c-2.8595 3.601-8.6574 1.628-8.7263-2.97l-1.0075-67.2513h45.2197c8.1905 0 12.7585 9.4601 7.6655 15.8747L63.7076 110.284Z"
-      />
-      <path
-        fill="#3ECF8E"
-        d="M45.317 2.071c2.8595-3.6014 8.6575-1.628 8.7264 2.97l.4415 67.2512H9.8311c-8.1907 0-12.7588-9.4601-7.6656-15.8747L45.317 2.071Z"
-      />
-      <defs>
-        <linearGradient
-          id="supabase-a"
-          x1="53.9738"
-          x2="94.1635"
-          y1="54.974"
-          y2="71.8295"
-          gradientUnits="userSpaceOnUse"
-        >
-          <stop offset="0" stopColor="#249361" />
-          <stop offset="1" stopColor="#3ECF8E" />
-        </linearGradient>
-        <linearGradient
-          id="supabase-b"
-          x1="36.1558"
-          x2="54.4844"
-          y1="30.578"
-          y2="65.0806"
-          gradientUnits="userSpaceOnUse"
-        >
-          <stop offset="0" />
-          <stop offset="1" stopOpacity="0" />
-        </linearGradient>
-      </defs>
     </svg>
   );
 }

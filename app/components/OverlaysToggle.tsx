@@ -35,7 +35,7 @@ export function OverlaysToggle({ season }: OverlaysToggleProps): JSX.Element {
     <fieldset disabled={navigationState !== "idle"}>
       <ul className="flex flex-col space-y-2 px-4 pt-4 md:flex-row md:space-x-2 md:space-y-0 md:px-0 md:pt-0">
         {overlays.map((overlay, index) => {
-          const checked = season.overlaysToDisplay.includes(overlay);
+          const checked = season.score.overlaysToDisplay.includes(overlay);
 
           return (
             <li

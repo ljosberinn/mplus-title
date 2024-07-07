@@ -37,3 +37,10 @@ enum Regions {
   TW
   US
 }
+
+model DungeonHistory {
+  id        Int    @id @default(autoincrement())
+  timestamp Int
+  slug      String
+  keyLevel  Int
+}
