@@ -18,7 +18,7 @@ const noDataResponse: Record<string, string> = {
   de: `Affixe noch nicht bekannt. Probier's später wieder.`,
 };
 
-const regionisRegion = (region: string): region is Regions => region in Regions;
+const regionIsRegion = (region: string): region is Regions => region in Regions;
 
 export const loader = async ({
   params,
@@ -26,7 +26,7 @@ export const loader = async ({
 }: LoaderArgs): Promise<Response> => {
   const { region } = params;
 
-  if (!region || !regionisRegion(region)) {
+  if (!region || !regionIsRegion(region)) {
     return new Response(undefined, {
       status: 400,
       statusText: "Region missing.",
