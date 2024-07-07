@@ -146,10 +146,15 @@ export async function loadRecordsForSeason(
             ? dungeonSlugMetaMap[dataset.slug]
             : null;
 
+        const name = (dungeonMetaInformation?.name ?? dataset.slug).replace(
+          "The ",
+          "",
+        );
+
         acc[dataset.slug] = {
           type: "line",
           data: [],
-          name: dungeonMetaInformation?.name ?? dataset.slug,
+          name,
           // @ts-expect-error doesn't matter
           iconUrl: dungeonMetaInformation
             ? `https://wow.zamimg.com/images/wow/icons/medium/${dungeonMetaInformation.icon}.jpg`

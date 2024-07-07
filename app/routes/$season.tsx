@@ -235,14 +235,14 @@ function DungeonRecords({ season }: DungeonRecordsProps): JSX.Element | null {
       symbolRadius: 0,
       itemMarginTop: 1,
       itemMarginBottom: 1,
-      align: "right",
-      verticalAlign: "middle",
-      layout: "vertical",
       useHTML: true,
+      itemStyle: {
+        minWidth: "75px",
+      },
       labelFormatter() {
         return `
 				<span style="color: #fff; display:flex; place-items: center; gap: 5px;">
-					${"userOptions" in this && "iconUrl" in this.userOptions && typeof this.userOptions.iconUrl === "string" ? `<img src="${this.userOptions.iconUrl}" width="32" height="32" loading="lazy" />` : ""}
+					${"userOptions" in this && "iconUrl" in this.userOptions && typeof this.userOptions.iconUrl === "string" ? `<img src="${this.userOptions.iconUrl}" width="24" height="24" loading="lazy" />` : ""}
 					${this.name}
 				</span>
 			`;
@@ -267,10 +267,7 @@ function DungeonRecords({ season }: DungeonRecordsProps): JSX.Element | null {
       aria-labelledby="title-dungeon-records"
       id="dungeon-records"
     >
-      <h1
-        id="title-dungeon-records"
-        className="text-center text-lg font-bold"
-      >
+      <h1 id="title-dungeon-records" className="text-center text-lg font-bold">
         Dungeon Records
       </h1>
       <div className="rounded-lg bg-gray-700 p-4">
