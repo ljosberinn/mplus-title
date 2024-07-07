@@ -640,22 +640,14 @@ type LocaleTimeProps = {
 };
 
 function LocaleTime({ date }: LocaleTimeProps) {
-  const [render, setRender] = useState(false);
-
-  useEffect(() => {
-    setRender(true);
-  }, []);
-
-  if (!render) {
-    return null;
-  }
-
   return (
-    <time className="text-xs" dateTime={date.toISOString()}>
-      {date.toLocaleString(undefined, {
-        month: "numeric",
-        day: "numeric",
-      })}
-    </time>
+    <ClientOnly fallback={null}>
+      {() => <time className="text-xs" dateTime={date.toISOString()}>
+        {date.toLocaleString(undefined, {
+          month: "numeric",
+          day: "numeric",
+        })}
+      </time>}
+    </ClientOnly>
   );
 }
