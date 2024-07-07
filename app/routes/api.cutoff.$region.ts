@@ -1,10 +1,10 @@
 import { Regions } from "@prisma/client";
-import { type LoaderArgs } from "@remix-run/node";
+import { type LoaderFunctionArgs } from "@remix-run/node";
 
-import { getEnhancedSeason } from "~/models/season.server";
-import { findSeasonByTimestamp } from "~/seasons";
+import { getEnhancedSeason } from "../models/season.server";
+import { findSeasonByTimestamp } from "../seasons";
 
-const regionisRegion = (region: string): region is Regions => region in Regions;
+const regionIsRegion = (region: string): region is Regions => region in Regions;
 
 const CURRENT_PH = "%current%";
 const NEXT_PH = "%next%";
@@ -32,10 +32,10 @@ const estimationLabels: Record<
 export const loader = async ({
   params,
   request,
-}: LoaderArgs): Promise<Response> => {
-  const { region } = params;
+}: LoaderFunctionArgs): Promise<Response> => {
+  const region = params.region ? params.region.toUpperCase() : null
 
-  if (!region || !regionisRegion(region)) {
+  if (!region || !regionIsRegion(region)) {
     return new Response(undefined, {
       status: 400,
       statusText: "Region missing.",

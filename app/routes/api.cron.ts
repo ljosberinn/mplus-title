@@ -5,9 +5,9 @@ import { type ActionFunction, type LoaderFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { load } from "cheerio";
 
-import { env } from "~/env/server";
-import { prisma } from "~/prisma.server";
-import { type Season, seasons } from "~/seasons";
+import { env } from "../env/server";
+import { prisma } from "../prisma.server";
+import { type Season, seasons } from "../seasons";
 
 const rioBaseUrl = "https://raider.io";
 
@@ -18,12 +18,10 @@ if (!String.prototype.replaceAll) {
     if (
       Object.prototype.toString.call(str).toLowerCase() === "[object regexp]"
     ) {
-      // @ts-expect-error required polyfill
       return this.replace(str, newStr);
     }
 
     // If a string
-    // @ts-expect-error required polyfill
     return this.replaceAll(new RegExp(str, "gu"), newStr);
   };
 }

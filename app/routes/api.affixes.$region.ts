@@ -1,9 +1,9 @@
 import { Regions } from "@prisma/client";
-import { type LoaderArgs } from "@remix-run/node";
+import { type LoaderFunctionArgs } from "@remix-run/node";
 
-import { getAffixName } from "~/affixes";
-import { getEnhancedSeason } from "~/models/season.server";
-import { findSeasonByTimestamp } from "~/seasons";
+import { getAffixName } from "../affixes";
+import { getEnhancedSeason } from "../models/season.server";
+import { findSeasonByTimestamp } from "../seasons";
 
 const CURRENT_WEEK_PH = "%current_week%";
 const NEXT_WEEK_PH = "%next_week%";
@@ -23,8 +23,8 @@ const regionIsRegion = (region: string): region is Regions => region in Regions;
 export const loader = async ({
   params,
   request,
-}: LoaderArgs): Promise<Response> => {
-  const { region } = params;
+}: LoaderFunctionArgs): Promise<Response> => {
+  const region = params.region ? params.region.toUpperCase() : null
 
   if (!region || !regionIsRegion(region)) {
     return new Response(undefined, {

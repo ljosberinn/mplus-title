@@ -1,19 +1,19 @@
-import { type LoaderArgs, type TypedResponse } from "@remix-run/node";
+import { type LoaderFunctionArgs, type TypedResponse } from "@remix-run/node";
 import { json } from "@remix-run/node";
 
-import { env } from "~/env/server";
+import { env } from "../env/server";
 import {
   determineOverlaysToDisplayFromSearchParams,
   determineRegionsToDisplayFromSearchParams,
-} from "~/load.server";
-import { getEnhancedSeason } from "~/models/season.server";
-import { type EnhancedSeason } from "~/seasons";
-import { findSeasonByName } from "~/seasons";
+} from "../load.server";
+import { getEnhancedSeason } from "../models/season.server";
+import { type EnhancedSeason } from "../seasons";
+import { findSeasonByName } from "../seasons";
 
 export const loader = async ({
   params,
   request,
-}: LoaderArgs): Promise<TypedResponse<EnhancedSeason>> => {
+}: LoaderFunctionArgs): Promise<TypedResponse<EnhancedSeason>> => {
   if (!env.FEATURE_FLAG_API_ENABLED) {
     throw new Response(undefined, {
       status: 501,
