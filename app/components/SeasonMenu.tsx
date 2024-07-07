@@ -45,17 +45,17 @@ export function SeasonMenu(): JSX.Element {
   );
 
   return (
-    <ClientOnly fallback={null}>
-      {() => (<MenuButton
-        label={
-          selectedSeason ? (
-            <SeasonNavItemBody season={selectedSeason} />
-          ) : (
-            <>Seasons</>
-          )
-        }
-      >
-        {seasons
+    <MenuButton
+      label={
+        selectedSeason ? (
+          <SeasonNavItemBody season={selectedSeason} />
+        ) : (
+          <>Seasons</>
+        )
+      }
+    >
+      <ClientOnly fallback={null}>
+        {() => seasons
           .reduce<{ label: string; seasons: Season[] }[]>((acc, season) => {
             const lastSection = acc[acc.length - 1];
             const [prefix] = season.slug.split("-");
@@ -120,8 +120,8 @@ export function SeasonMenu(): JSX.Element {
               </Section>
             );
           })}
-      </MenuButton>)}
-    </ClientOnly>
+      </ClientOnly>
+    </MenuButton>
   );
 }
 
