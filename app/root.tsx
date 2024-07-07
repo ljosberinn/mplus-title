@@ -1,12 +1,6 @@
 import { type LinksFunction, type MetaFunction } from "@remix-run/node";
-import {
-  Links,
-  LiveReload,
-  Meta,
-  Outlet,
-  Scripts,
-  ScrollRestoration,
-} from "@remix-run/react";
+import { Links, LiveReload, Meta, Outlet, Scripts, ScrollRestoration, useRouteError } from "@remix-run/react";
+import { captureRemixErrorBoundaryError } from "@sentry/remix";
 
 import stylesheet from "~/tailwind.css";
 
@@ -80,7 +74,13 @@ export function meta(): ReturnType<MetaFunction> {
     { name: "msapplication-TileColor", content: "#da532c" },
     { name: "theme-color", content: "#ffffff" },
   ];
-};
+}
+
+export function ErrorBoundary() {
+  const error = useRouteError();
+  captureRemixErrorBoundaryError(error);
+  return <div>Something went wrong</div>;
+}
 
 export default function App(): JSX.Element {
   return (
