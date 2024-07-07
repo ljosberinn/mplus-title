@@ -5,7 +5,8 @@ import { type ActionFunction, type LoaderFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { load } from "cheerio";
 
-import { env } from "../env/server";
+import { protectCronRoute } from "~/load.server";
+
 import { prisma } from "../prisma.server";
 import { type Season, seasons } from "../seasons";
 
@@ -34,23 +35,10 @@ export const action: ActionFunction = async ({ request }) => {
   }
 
   try {
-    if (env.NODE_ENV === "production") {
-      const body = await request.text();
-      const payload = JSON.parse(body);
+    const failed = await protectCronRoute(request);
 
-      const secret = env.SECRET;
-
-      if (!secret) {
-        return json({ error: "secret missing" }, 500);
-      }
-
-      const maybeSecret = payload.secret;
-
-      if (!maybeSecret || secret !== maybeSecret) {
-        return json({ error: "secret missing" }, 204);
-      }
-    } else {
-      console.info("Skipping verification of secret.");
+    if (failed) {
+      return json(failed.payload, failed.status);
     }
 
     const latestPerRegion = await prisma.crossFactionHistory.findMany({

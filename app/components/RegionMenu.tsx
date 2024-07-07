@@ -35,8 +35,8 @@ export function RegionToggle({ season }: RegionToggleProps): JSX.Element {
     <fieldset disabled={navigationState !== "idle"}>
       <ul className="flex flex-col space-y-2 px-4 pt-4 md:flex-row md:space-x-2 md:space-y-0 md:px-0 md:pt-0">
         {orderedRegionsBySize.map((region, index) => {
-          const checked = season.regionsToDisplay.includes(region);
-          const disabled = season.regionsToDisplay.length === 1 && checked;
+          const checked = season.score.regionsToDisplay.includes(region);
+          const disabled = season.score.regionsToDisplay.length === 1 && checked;
 
           return (
             <li

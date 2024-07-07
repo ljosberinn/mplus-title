@@ -1,17 +1,21 @@
 import { type Regions } from "@prisma/client";
-import { json, type LoaderFunctionArgs, type TypedResponse } from "@remix-run/node";
+import {
+  json,
+  type LoaderFunctionArgs,
+  type TypedResponse,
+} from "@remix-run/node";
 import { useLoaderData, useNavigation } from "@remix-run/react";
 import { type HeadersFunction, redirect } from "@remix-run/server-runtime";
 import clsx from "clsx";
 import { type Options, type PointLabelObject } from "highcharts";
-import { type HighchartsReactRefObject } from 'highcharts-react-official'
+import { type HighchartsReactRefObject } from "highcharts-react-official";
 import { Fragment, lazy, Suspense, useEffect, useRef, useState } from "react";
-import { ClientOnly } from 'remix-utils/client-only';
+import { ClientOnly } from "remix-utils/client-only";
 
 import { getAffixIconUrl, getAffixName } from "../affixes";
 import { Footer } from "../components/Footer";
 import { Header } from "../components/Header";
-import { Highcharts, HighchartsReact } from '../components/Highcharts.client'
+import { Highcharts, HighchartsReact } from "../components/Highcharts.client";
 import { time, type Timings } from "../load.server";
 import {
   determineOverlaysToDisplayFromCookies,
@@ -124,15 +128,15 @@ export const loader = async ({
   const cookieRegions = searchParamRegions
     ? null
     : await time(() => determineRegionsToDisplayFromCookies(request), {
-      type: "determineRegionsToDisplayFromCookies",
-      timings,
-    });
+        type: "determineRegionsToDisplayFromCookies",
+        timings,
+      });
   const cookieOverlays = searchParamOverlays
     ? null
     : await time(() => determineOverlaysToDisplayFromCookies(request), {
-      type: "determineOverlaysToDisplayFromCookies",
-      timings,
-    });
+        type: "determineOverlaysToDisplayFromCookies",
+        timings,
+      });
 
   if (cookieRegions || cookieOverlays) {
     const params = new URLSearchParams();
@@ -173,13 +177,13 @@ type ZoomExtremes = null | { min: number; max: number };
 export default function Season(): JSX.Element | null {
   const season = useLoaderData() as EnhancedSeason;
   const prevSeason = useRef(season.slug);
-  const prevExtrapolation = useRef(season.extrapolation);
+  const prevExtrapolation = useRef(season.score.extrapolation);
   const [extremes, setExtremes] = useState<ZoomExtremes>(null);
 
   useEffect(() => {
     if (
       prevSeason.current === season.slug &&
-      prevExtrapolation.current === season.extrapolation
+      prevExtrapolation.current === season.score.extrapolation
     ) {
       return;
     }
@@ -191,7 +195,8 @@ export default function Season(): JSX.Element | null {
     <>
       <Header season={season} />
       <main className="container mt-4 flex max-w-screen-2xl flex-1 flex-col space-y-4 px-4 md:mx-auto 2xl:px-0">
-        {season.regionsToDisplay.map((region) => {
+        <DungeonRecords season={season} />
+        {season.score.regionsToDisplay.map((region) => {
           return (
             <Fragment key={region}>
               <Region
@@ -209,8 +214,83 @@ export default function Season(): JSX.Element | null {
   );
 }
 
+type DungeonRecordsProps = {
+  season: EnhancedSeason;
+};
+
+function DungeonRecords({ season }: DungeonRecordsProps): JSX.Element | null {
+  if (season.records.length === 0) {
+    return null;
+  }
+
+  const options: Options = {
+    ...season.score.chartBlueprint,
+    time: {
+      timezoneOffset: new Date().getTimezoneOffset(),
+    },
+    series: season.records,
+    legend: {
+      symbolHeight: 0,
+      symbolWidth: 0,
+      symbolRadius: 0,
+      itemMarginTop: 1,
+      itemMarginBottom: 1,
+      align: "right",
+      verticalAlign: "middle",
+      layout: "vertical",
+      useHTML: true,
+      labelFormatter() {
+        return `
+				<span style="color: #fff; display:flex; place-items: center; gap: 5px;">
+					${"userOptions" in this && "iconUrl" in this.userOptions && typeof this.userOptions.iconUrl === "string" ? `<img src="${this.userOptions.iconUrl}" width="32" height="32" loading="lazy" />` : ""}
+					${this.name}
+				</span>
+			`;
+      },
+    },
+    yAxis: {
+      ...season.score.chartBlueprint.yAxis,
+      title: {
+        ...(Array.isArray(season.score.chartBlueprint.yAxis)
+          ? null
+          : season.score.chartBlueprint.yAxis?.title),
+        text: "Key Level",
+      },
+    },
+  };
+
+  return (
+    <section
+      className={clsx(
+        "max-w-screen-2xl rounded-md bg-gray-700 transition-all duration-500 ease-linear motion-reduce:transition-none",
+      )}
+      aria-labelledby="title-dungeon-records"
+      id="dungeon-records"
+    >
+      <h1
+        id="title-dungeon-records"
+        className="text-center text-lg font-bold"
+      >
+        Dungeon Records
+      </h1>
+      <div className="rounded-lg bg-gray-700 p-4">
+        <div className="h-[39vh] lg:h-[30vh]">
+          <ClientOnly fallback={null}>
+            {() => (
+              <HighchartsReact highcharts={Highcharts} options={options} />
+            )}
+          </ClientOnly>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function findIndexOfCurrentWeek(season: EnhancedSeason, region: Regions) {
-  if (!season.startDates[region] || season.dataByRegion[region].length === 0) {
+  if (
+    !season.startDates[region] ||
+    season.score.dataByRegion[region].length === 0
+  ) {
     return null;
   }
 
@@ -222,7 +302,9 @@ function findIndexOfCurrentWeek(season: EnhancedSeason, region: Regions) {
   }
 
   const latestDataset =
-    season.dataByRegion[region][season.dataByRegion[region].length - 1];
+    season.score.dataByRegion[region][
+      season.score.dataByRegion[region].length - 1
+    ];
 
   const result = Math.floor(
     (latestDataset.ts - startDate) / 1000 / 60 / 60 / 24 / 7,
@@ -237,7 +319,7 @@ function findIndexOfCurrentWeek(season: EnhancedSeason, region: Regions) {
   }
 
   return result;
-};
+}
 
 type CardProps = {
   season: EnhancedSeason;
@@ -253,7 +335,7 @@ const TempBanner = lazy(() => import("../components/TempBanner.client"));
 function Region({ season, region, extremes, onZoom }: CardProps): JSX.Element {
   const ref = useRef<HighchartsReactRefObject | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const [isClient, setIsClient] = useState(false)
+  const [isClient, setIsClient] = useState(false);
 
   const confirmedCutoffUrl = season.confirmedCutoffs[region].source;
   const navigation = useNavigation();
@@ -269,7 +351,7 @@ function Region({ season, region, extremes, onZoom }: CardProps): JSX.Element {
       return;
     }
 
-    const zoom = season.initialZoom[region];
+    const zoom = season.score.initialZoom[region];
 
     if (containerRef.current) {
       containerRef.current.className = "";
@@ -288,15 +370,15 @@ function Region({ season, region, extremes, onZoom }: CardProps): JSX.Element {
 
     ref.current.chart.xAxis[0].setExtremes(start, end);
     ref.current.chart.showResetZoom();
-  }, [region, season.initialZoom, extremes, isClient]);
+  }, [region, season.score.initialZoom, extremes, isClient]);
 
   useEffect(() => {
-    setIsClient(true)
-  }, [])
+    setIsClient(true);
+  }, []);
 
   const now = Date.now();
 
-  if (season.dataByRegion[region].length === 0) {
+  if (season.score.dataByRegion[region].length === 0) {
     const startDate = season.startDates[region];
     const seasonHasNotStartedForRegion = !startDate || startDate > now;
     const hoursUntilSeasonStart =
@@ -339,7 +421,7 @@ function Region({ season, region, extremes, onZoom }: CardProps): JSX.Element {
   }
 
   const options: Options = {
-    ...season.chartBlueprint,
+    ...season.score.chartBlueprint,
     time: {
       timezoneOffset: new Date().getTimezoneOffset(),
     },
@@ -350,7 +432,7 @@ function Region({ season, region, extremes, onZoom }: CardProps): JSX.Element {
         numberFormatParts.find((i) => i.type === "decimal")?.value ?? ".",
     },
     xAxis: {
-      ...season.chartBlueprint.xAxis,
+      ...season.score.chartBlueprint.xAxis,
       events: {
         afterSetExtremes(event) {
           if (event.trigger !== "zoom") {
@@ -363,14 +445,14 @@ function Region({ season, region, extremes, onZoom }: CardProps): JSX.Element {
           });
         },
       },
-      plotBands: season.xAxisPlotBands[region],
-      plotLines: season.xAxisPlotLines[region],
+      plotBands: season.score.xAxisPlotBands[region],
+      plotLines: season.score.xAxisPlotLines[region],
     },
     yAxis: {
-      ...season.chartBlueprint.yAxis,
-      plotLines: season.yAxisPlotLines[region],
+      ...season.score.chartBlueprint.yAxis,
+      plotLines: season.score.yAxisPlotLines[region],
     },
-    series: season.series[region].map((series) => ({
+    series: season.score.series[region].map((series) => ({
       ...series,
       dataLabels: {
         formatter,
@@ -383,8 +465,8 @@ function Region({ season, region, extremes, onZoom }: CardProps): JSX.Element {
   const seasonEndForRegion = season.endDates[region];
   const timePassedSinceSeasonStart = seasonStartForRegion
     ? (seasonEndForRegion && seasonEndForRegion < now
-      ? seasonEndForRegion
-      : now) - seasonStartForRegion
+        ? seasonEndForRegion
+        : now) - seasonStartForRegion
     : 0;
   const weeksPassedSinceSeasonStart =
     timePassedSinceSeasonStart / 1000 / 60 / 60 / 24 / 7;
@@ -455,7 +537,7 @@ function Region({ season, region, extremes, onZoom }: CardProps): JSX.Element {
               season.affixes.length -
               Math.ceil(
                 ((weeksPassedSinceSeasonStart / season.affixes.length) * 10) %
-                season.affixes.length,
+                  season.affixes.length,
               );
             let offset = season.affixes.length - index - rollover;
 
@@ -477,22 +559,22 @@ function Region({ season, region, extremes, onZoom }: CardProps): JSX.Element {
             startTimeOfWeek =
               seasonStartForRegion +
               (index + cycles * season.affixes.length) *
-              7 *
-              24 *
-              60 *
-              60 *
-              1000;
+                7 *
+                24 *
+                60 *
+                60 *
+                1000;
 
             // move date of past week to the future indicating when it comes around next
             if (!isCurrentWeek && startTimeOfWeek <= now) {
               startTimeOfWeek =
                 seasonStartForRegion +
                 (index + (cycles + 1) * season.affixes.length) *
-                7 *
-                24 *
-                60 *
-                60 *
-                1000;
+                  7 *
+                  24 *
+                  60 *
+                  60 *
+                  1000;
             }
 
             endTimeOfWeek = startTimeOfWeek + 7 * 24 * 60 * 60 * 1000;
@@ -539,11 +621,13 @@ function Region({ season, region, extremes, onZoom }: CardProps): JSX.Element {
                 <span className="hidden items-center space-x-1 md:flex lg:space-x-2">
                   {affixSetId && season.wcl ? (
                     <a
-                      href={`https://www.warcraftlogs.com/zone/rankings/${season.wcl.zoneId
-                        }#affixes=${affixSetId}&leaderboards=1${season.wcl.partition
+                      href={`https://www.warcraftlogs.com/zone/rankings/${
+                        season.wcl.zoneId
+                      }#affixes=${affixSetId}&leaderboards=1${
+                        season.wcl.partition
                           ? `&partition=${season.wcl.partition}`
                           : ""
-                        }`}
+                      }`}
                       rel="noopener noreferrer"
                       target="_blank"
                       className="italic text-blue-400 underline"
@@ -603,7 +687,11 @@ function Region({ season, region, extremes, onZoom }: CardProps): JSX.Element {
       <div className="h-[39vh] lg:h-[30vh]" ref={containerRef}>
         <ClientOnly fallback={null}>
           {() => (
-            <HighchartsReact highcharts={Highcharts} options={options} ref={ref} />
+            <HighchartsReact
+              highcharts={Highcharts}
+              options={options}
+              ref={ref}
+            />
           )}
         </ClientOnly>
       </div>
@@ -657,7 +745,8 @@ function LocaleTime({ date }: LocaleTimeProps) {
             month: "numeric",
             day: "numeric",
           })}
-        </time>)}
+        </time>
+      )}
     </ClientOnly>
   );
 }

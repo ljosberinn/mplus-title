@@ -15,6 +15,11 @@ type CutoffSource = { score: number; source: string | null };
 
 const UNKNOWN_SEASON_START_OR_ENDING = null;
 
+export type Dungeon = {
+  name: string;
+  slug: string;
+};
+
 export type Season = {
   name: string;
   slug: string;
@@ -35,29 +40,38 @@ export type Season = {
   seasonIcon: string;
   dungeonHotfixes: Record<string, Record<Regions, number>>;
   patches: Record<string, Record<Regions, number>>;
-  dungeons: number;
+  dungeons: number | Dungeon[];
   startingPeriod: number | null;
 };
 
+export type DungeonRecord = {
+  slug: string;
+  timestamp: number;
+  keyLevel: number;
+};
+
 export type EnhancedSeason = Season & {
-  dataByRegion: Record<Regions, Dataset[]>;
-  extrapolation: Record<
-    Regions,
-    | null
-    | [number, number][]
-    | {
-        from: Omit<Dataset, "rank">;
-        to: Omit<Dataset, "rank">;
-      }
-  >;
-  initialZoom: Record<Regions, null | [number, number]>;
-  xAxisPlotLines: Record<Regions, XAxisPlotLinesOptions[]>;
-  xAxisPlotBands: Record<Regions, XAxisPlotBandsOptions[]>;
-  yAxisPlotLines: Record<Regions, YAxisPlotLinesOptions[]>;
-  regionsToDisplay: Regions[];
-  overlaysToDisplay: Overlay[];
-  series: Record<Regions, SeriesLineOptions[]>;
-  chartBlueprint: Options;
+  score: {
+    dataByRegion: Record<Regions, Dataset[]>;
+    extrapolation: Record<
+      Regions,
+      | null
+      | [number, number][]
+      | {
+          from: Omit<Dataset, "rank">;
+          to: Omit<Dataset, "rank">;
+        }
+    >;
+    initialZoom: Record<Regions, null | [number, number]>;
+    xAxisPlotLines: Record<Regions, XAxisPlotLinesOptions[]>;
+    xAxisPlotBands: Record<Regions, XAxisPlotBandsOptions[]>;
+    yAxisPlotLines: Record<Regions, YAxisPlotLinesOptions[]>;
+    regionsToDisplay: Regions[];
+    overlaysToDisplay: Overlay[];
+    series: Record<Regions, SeriesLineOptions[]>;
+    chartBlueprint: Options;
+  };
+  records: SeriesLineOptions[];
 };
 
 export type Dataset = {
@@ -123,7 +137,40 @@ export const seasons: Season[] = [
       TW: { score: 0, source: null },
     },
     dungeonHotfixes: {},
-    dungeons: 8,
+    dungeons: [
+      {
+        name: "Ara-Kara, City of Echoes",
+        slug: "arakara-city-of-echoes",
+      },
+      {
+        name: "City of Threads",
+        slug: "city-of-threads",
+      },
+      {
+        name: "Grim Batol",
+        slug: "grim-batol",
+      },
+      {
+        name: "Mists of Tirna Scithe",
+        slug: "mists-of-tirna-scithe",
+      },
+      {
+        name: "Siege of Boralus",
+        slug: "siege-of-boralus",
+      },
+      {
+        name: "The Dawnbreaker",
+        slug: "the-dawnbreaker",
+      },
+      {
+        name: "The Necrotic Wake",
+        slug: "the-necrotic-wake",
+      },
+      {
+        name: "The Stonevault",
+        slug: "the-stonevault",
+      },
+    ],
     patches: {},
     seasonIcon:
       "https://assets.rpglogs.com/img/warcraft/abilities/inv_misc_questionmark.jpg",
@@ -145,10 +192,10 @@ export const seasons: Season[] = [
       TW: offsetStartDateForRegion(1_713_884_400_000, "TW"),
     },
     endDates: {
-      US: UNKNOWN_SEASON_START_OR_ENDING,
-      EU: UNKNOWN_SEASON_START_OR_ENDING,
-      KR: UNKNOWN_SEASON_START_OR_ENDING,
-      TW: UNKNOWN_SEASON_START_OR_ENDING,
+      US: offsetStartDateForRegion(1_721_746_800_000, "US"),
+      EU: offsetStartDateForRegion(1_721_746_800_000, "EU"),
+      KR: offsetStartDateForRegion(1_721_746_800_000, "KR"),
+      TW: offsetStartDateForRegion(1_721_746_800_000, "TW"),
     },
     affixes: [
       [Affix.Tyrannical, Affix.Storming, Affix.Raging],
@@ -169,7 +216,32 @@ export const seasons: Season[] = [
       TW: { score: 0, source: null },
     },
     dungeonHotfixes: {},
-    dungeons: 8,
+    dungeons: [
+      { name: "The Azure Vault", slug: "the-azure-vault" },
+      { name: "Algeth'ar Academy", slug: "algethar-academy" },
+      {
+        name: "The Nokhud Offensive",
+
+        slug: "the-nokhud-offensive",
+      },
+      {
+        name: "Halls of Infusion",
+
+        slug: "halls-of-infusion",
+      },
+      { name: "Ruby Life Pools", slug: "ruby-life-pools" },
+      {
+        name: "Brackenhide Hollow",
+
+        slug: "brackenhide-hollow",
+      },
+      { name: "Neltharus", slug: "neltharus" },
+      {
+        name: "Uldaman: Legacy of Tyr",
+
+        slug: "uldaman-legacy-of-tyr",
+      },
+    ],
     patches: {},
     seasonIcon: "https://assets.rpglogs.com/img/warcraft/zones/zone-37.png",
     startingPeriod: 956,
