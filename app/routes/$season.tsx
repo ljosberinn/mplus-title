@@ -174,6 +174,10 @@ export const loader = async ({
 
 type ZoomExtremes = null | { min: number; max: number };
 
+const DungeonRecords = lazy(
+  () => import("../components/DungeonRecords.client"),
+);
+
 export default function Season(): JSX.Element | null {
   const season = useLoaderData() as EnhancedSeason;
   const prevSeason = useRef(season.slug);
@@ -195,7 +199,11 @@ export default function Season(): JSX.Element | null {
     <>
       <Header season={season} />
       <main className="container mt-4 flex max-w-screen-2xl flex-1 flex-col space-y-4 px-4 md:mx-auto 2xl:px-0">
-        <DungeonRecords season={season} />
+        {season.records.length > 0 ? (
+          <Suspense fallback={null}>
+            <DungeonRecords season={season} />
+          </Suspense>
+        ) : null}
         {season.score.regionsToDisplay.map((region) => {
           return (
             <Fragment key={region}>
@@ -211,75 +219,6 @@ export default function Season(): JSX.Element | null {
       </main>
       <Footer />
     </>
-  );
-}
-
-type DungeonRecordsProps = {
-  season: EnhancedSeason;
-};
-
-function DungeonRecords({ season }: DungeonRecordsProps): JSX.Element | null {
-  if (season.records.length === 0) {
-    return null;
-  }
-
-  const options: Options = {
-    ...season.score.chartBlueprint,
-    time: {
-      timezoneOffset: new Date().getTimezoneOffset(),
-    },
-    series: season.records,
-    legend: {
-      symbolHeight: 0,
-      symbolWidth: 0,
-      symbolRadius: 0,
-      itemMarginTop: 1,
-      itemMarginBottom: 1,
-      useHTML: true,
-      itemStyle: {
-        minWidth: "75px",
-      },
-      labelFormatter() {
-        return `
-				<span style="color: #fff; display:flex; place-items: center; gap: 5px;">
-					${"userOptions" in this && "iconUrl" in this.userOptions && typeof this.userOptions.iconUrl === "string" ? `<img src="${this.userOptions.iconUrl}" width="24" height="24" loading="lazy" />` : ""}
-					${this.name}
-				</span>
-			`;
-      },
-    },
-    yAxis: {
-      ...season.score.chartBlueprint.yAxis,
-      title: {
-        ...(Array.isArray(season.score.chartBlueprint.yAxis)
-          ? null
-          : season.score.chartBlueprint.yAxis?.title),
-        text: "Key Level",
-      },
-    },
-  };
-
-  return (
-    <section
-      className={clsx(
-        "max-w-screen-2xl rounded-md bg-gray-700 transition-all duration-500 ease-linear motion-reduce:transition-none",
-      )}
-      aria-labelledby="title-dungeon-records"
-      id="dungeon-records"
-    >
-      <h1 id="title-dungeon-records" className="text-center text-lg font-bold">
-        Dungeon Records
-      </h1>
-      <div className="rounded-lg bg-gray-700 p-4">
-        <div className="h-[39vh] lg:h-[30vh]">
-          <ClientOnly fallback={null}>
-            {() => (
-              <HighchartsReact highcharts={Highcharts} options={options} />
-            )}
-          </ClientOnly>
-        </div>
-      </div>
-    </section>
   );
 }
 
