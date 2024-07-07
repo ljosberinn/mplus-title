@@ -44,18 +44,24 @@ export function SeasonMenu(): JSX.Element {
     (season) => season.slug === selectedSeasonSlug,
   );
 
+  const fallback = <Button buttonRef={{ current: null }}>{
+    selectedSeason ? (
+      <SeasonNavItemBody season={selectedSeason} />
+    ) : (<>Seasons</>)}
+  </Button>
+
   return (
-    <MenuButton
-      label={
-        selectedSeason ? (
-          <SeasonNavItemBody season={selectedSeason} />
-        ) : (
-          <>Seasons</>
-        )
-      }
-    >
-      <ClientOnly fallback={null}>
-        {() => seasons
+    <ClientOnly fallback={fallback}>
+      {() => <MenuButton
+        label={
+          selectedSeason ? (
+            <SeasonNavItemBody season={selectedSeason} />
+          ) : (
+            <>Seasons</>
+          )
+        }
+      >
+        {seasons
           .reduce<{ label: string; seasons: Season[] }[]>((acc, season) => {
             const lastSection = acc[acc.length - 1];
             const [prefix] = season.slug.split("-");
@@ -120,8 +126,8 @@ export function SeasonMenu(): JSX.Element {
               </Section>
             );
           })}
-      </ClientOnly>
-    </MenuButton>
+      </MenuButton>}
+    </ClientOnly>
   );
 }
 
