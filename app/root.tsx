@@ -47,39 +47,39 @@ export const links: LinksFunction = () => {
 
 const title = "Title Cutoff History & Estimation";
 
-export const meta: MetaFunction = () => {
+export function meta(): ReturnType<MetaFunction> {
   const url = "https://mplus-title.vercel.app/";
   const description =
     "Seasonal Mythic+ Title Score History & Estimation, updated hourly.";
 
-  return {
-    charset: "utf-8",
-    title,
-    viewport: "width=device-width,initial-scale=1",
-    "og:url": url,
-    "twitter:url": url,
-    "image:alt": title,
-    "og:type": "website",
-    "og:title": title,
-    "og:image": `${url}logo.webp`,
-    "og:image:alt": title,
-    "og:description": description,
-    "twitter:description": description,
-    "twitter:creator": "@gerrit_alex",
-    "twitter:title": title,
-    "twitter:image": `${url}logo.webp`,
-    "og:site_name": title,
-    "og:locale": "en_US",
-    "twitter:image:alt": title,
-    "twitter:card": "summary",
-    description,
-    name: title,
-    author: "Gerrit Alex",
-    "revisit-after": "7days",
-    distribution: "global",
-    "msapplication-TileColor": "#da532c",
-    "theme-color": "#ffffff",
-  };
+  return [
+    { name: "title", content: title },
+    { name: "charset", content: "utf-8" },
+    { name: "viewport", content: "width=device-width,initial-scale=1" },
+    { name: "og:url", content: url },
+    { name: "twitter:url", content: url },
+    { name: "image:alt", content: title },
+    { name: "og:type", content: "website" },
+    { name: "og:title", content: title },
+    { name: "og:image", content: `${url}logo.webp` },
+    { name: "og:image:alt", content: title },
+    { name: "og:description", content: description },
+    { name: "twitter:description", content: description },
+    { name: "twitter:creator", content: "@gerrit_alex" },
+    { name: "twitter:title", content: title },
+    { name: "twitter:image", content: `${url}logo.webp` },
+    { name: "og:site_name", content: title },
+    { name: "og:locale", content: "en_US" },
+    { name: "twitter:image:alt", content: title },
+    { name: "twitter:card", content: "summary" },
+    { name: "description", content: description },
+    { name: "name", content: title },
+    { name: "author", content: "Gerrit Alex" },
+    { name: "revisit-after", content: "7days" },
+    { name: "distribution", content: "global" },
+    { name: "msapplication-TileColor", content: "#da532c" },
+    { name: "theme-color", content: "#ffffff" },
+  ];
 };
 
 export default function App(): JSX.Element {

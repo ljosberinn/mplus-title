@@ -1,26 +1,28 @@
 import { type Regions } from "@prisma/client";
-import { json, type LoaderArgs, type TypedResponse } from "@remix-run/node";
+import { json, type LoaderFunctionArgs, type TypedResponse } from "@remix-run/node";
 import { useLoaderData, useNavigation } from "@remix-run/react";
 import { type HeadersFunction, redirect } from "@remix-run/server-runtime";
 import clsx from "clsx";
-import Highcharts, { type Options, type PointLabelObject } from "highcharts";
-import HighchartsReact from "highcharts-react-official";
-import { Fragment, lazy, Suspense, useEffect, useRef, useState } from "react";
+import { type Options, type PointLabelObject } from "highcharts";
+import { type HighchartsReactRefObject } from 'highcharts-react-official'
+import React, { Fragment, lazy, Suspense, useEffect, useRef, useState } from "react";
+import { ClientOnly } from 'remix-utils/client-only';
 
-import { getAffixIconUrl, getAffixName } from "~/affixes";
-import { Footer } from "~/components/Footer";
-import { Header } from "~/components/Header";
-import { time, type Timings } from "~/load.server";
+import { getAffixIconUrl, getAffixName } from "../affixes";
+import { Footer } from "../components/Footer";
+import { Header } from "../components/Header";
+import { Highcharts, HighchartsReact } from '../components/Highcharts.client'
+import { time, type Timings } from "../load.server";
 import {
   determineOverlaysToDisplayFromCookies,
   determineOverlaysToDisplayFromSearchParams,
   determineRegionsToDisplayFromCookies,
   determineRegionsToDisplayFromSearchParams,
   getServerTimeHeader,
-} from "~/load.server";
-import { getEnhancedSeason } from "~/models/season.server";
-import { type EnhancedSeason, findSeasonByName } from "~/seasons";
-import { searchParamSeparator } from "~/utils";
+} from "../load.server";
+import { getEnhancedSeason } from "../models/season.server";
+import { type EnhancedSeason, findSeasonByName } from "../seasons";
+import { searchParamSeparator } from "../utils";
 
 const lastModified = "Last-Modified";
 const cacheControl = "Cache-Control";
@@ -91,7 +93,7 @@ export const headers: HeadersFunction = ({ loaderHeaders }) => {
 export const loader = async ({
   params,
   request,
-}: LoaderArgs): Promise<TypedResponse<EnhancedSeason>> => {
+}: LoaderFunctionArgs): Promise<TypedResponse<EnhancedSeason>> => {
   if (!("season" in params) || !params.season) {
     throw new Response(undefined, {
       status: 400,
@@ -246,10 +248,10 @@ type CardProps = {
 
 const numberFormatParts = new Intl.NumberFormat().formatToParts(1234.5);
 
-const TempBanner = lazy(() => import("../../components/TempBanner"));
+const TempBanner = lazy(() => import("../components/TempBanner.client"));
 
 function Region({ season, region, extremes, onZoom }: CardProps): JSX.Element {
-  const ref = useRef<HighchartsReact.RefObject | null>(null);
+  const ref = useRef<HighchartsReactRefObject | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
 
   const confirmedCutoffUrl = season.confirmedCutoffs[region].source;
@@ -434,8 +436,8 @@ function Region({ season, region, extremes, onZoom }: CardProps): JSX.Element {
 
           let startTimeOfWeek = 0;
           let endTimeOfWeek = 0;
-          let startTime = null;
-          let endTime = null;
+          let startTime: Date | null = null;
+          let endTime: Date | null = null;
           let weekOffset = 0;
 
           // to properly adjust weeks in past seasons
@@ -588,8 +590,13 @@ function Region({ season, region, extremes, onZoom }: CardProps): JSX.Element {
           );
         })}
       </div>
+
       <div className="h-[39vh] lg:h-[30vh]" ref={containerRef}>
-        <HighchartsReact highcharts={Highcharts} options={options} ref={ref} />
+        <ClientOnly fallback={null}>
+          {() => (
+            <HighchartsReact highcharts={Highcharts} options={options} ref={ref} />
+          )}
+        </ClientOnly>
       </div>
     </section>
   );

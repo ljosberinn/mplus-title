@@ -12,7 +12,7 @@ type HeaderProps = {
   season: EnhancedSeason;
 };
 
-const CustomExtrapolationForm = lazy(() => import("./CustomExtrapolationForm"));
+const CustomExtrapolationForm = lazy(() => import("./CustomExtrapolationForm.client"));
 
 export function Header({ season }: HeaderProps): JSX.Element {
   const seasonHasStarted = Object.values(season.startDates).some(
