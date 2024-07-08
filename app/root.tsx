@@ -1,5 +1,12 @@
 import { type LinksFunction, type MetaFunction } from "@remix-run/node";
-import { Links, LiveReload, Meta, Outlet, Scripts, ScrollRestoration, useRouteError } from "@remix-run/react";
+import {
+  Links,
+  LiveReload,
+  Meta,
+  Outlet,
+  Scripts,
+  ScrollRestoration,
+} from "@remix-run/react";
 
 import stylesheet from "~/tailwind.css";
 
@@ -46,7 +53,7 @@ export function meta(): ReturnType<MetaFunction> {
     "Seasonal Mythic+ Title Score History & Estimation, updated hourly.";
 
   return [
-    { name: "title", content: title },
+    { title },
     { name: "charset", content: "utf-8" },
     { name: "viewport", content: "width=device-width,initial-scale=1" },
     { name: "og:url", content: url },
