@@ -38,8 +38,8 @@ export const action: ActionFunction = async ({ request }) => {
     throw new TypeError("Season has no dungeon information");
   }
 
-  const data = await Promise.all(
-    season.dungeons.map<Promise<Record>>(async (dungeon) => {
+  const newDatasets = await Promise.all(
+    season.dungeons.map<Promise<Record | null>>(async (dungeon) => {
       const url = createEndpointUrl(season.rioKey, dungeon.slug);
 
       try {
@@ -47,50 +47,43 @@ export const action: ActionFunction = async ({ request }) => {
         const json = await response.json();
 
         if (json.rankings.length === 0) {
-          return { slug: dungeon.slug, keyLevel: 0, timestamp: 0 };
+          return null;
         }
 
-        return {
-          slug: dungeon.slug,
-          keyLevel: json.rankings[0].run.mythic_level,
-          timestamp: Math.round(
-            new Date(json.rankings[0].run.completed_at).getTime() / 1000,
-          ),
-        };
-      } catch {
-        return { slug: dungeon.slug, keyLevel: 0, timestamp: 0 };
-      }
-    }),
-  );
+        const [{ mythic_level: keyLevel, completed_at }] = json.rankings;
 
-  const filtered = data.filter((dataset) => dataset.keyLevel > 0);
+        const timestamp = Math.round(new Date(completed_at).getTime() / 1000);
 
-  if (filtered.length === 0) {
-    return json([], 204);
-  }
-
-  const inserted = await Promise.all(
-    filtered.map(async (dataset) => {
-      const latest = await prisma.dungeonHistory.findFirst({
-        where: { slug: dataset.slug },
-        orderBy: { timestamp: "desc" },
-      });
-
-      if (!latest || dataset.keyLevel > latest.keyLevel) {
-        await prisma.dungeonHistory.create({
-          data: {
-            slug: dataset.slug,
-            keyLevel: dataset.keyLevel,
-            timestamp: dataset.timestamp,
-          },
+        const latest = await prisma.dungeonHistory.findFirst({
+          where: { slug: dungeon.slug },
+          orderBy: { timestamp: "desc" },
         });
 
-        return dataset;
-      }
+        if (!latest || keyLevel > latest.keyLevel) {
+          const data = {
+            slug: dungeon.slug,
+            keyLevel,
+            timestamp,
+          };
 
-      return null;
+          await prisma.dungeonHistory.create({
+            data,
+          });
+
+          return data;
+        }
+
+        return null;
+      } catch (error) {
+        console.error(
+          dungeon.slug,
+          url,
+          error instanceof Error ? error.message : error,
+        );
+        return null;
+      }
     }),
   );
 
-  return json({ added: inserted.filter(Boolean) });
+  return json({ added: newDatasets.filter(Boolean) });
 };
