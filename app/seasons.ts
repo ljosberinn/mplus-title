@@ -271,7 +271,7 @@ export const seasons: Season[] = [
       EU: {
         score: 3719,
         source:
-          "https://EU:.forums.blizzard.com/en/wow/t/m-dreaming-hero-title-updated-16-april/507523",
+          "https://eu.forums.blizzard.com/en/wow/t/m-dreaming-hero-title-updated-16-april/507523",
       },
       US: {
         score: 3684,
@@ -416,7 +416,7 @@ export const seasons: Season[] = [
       EU: {
         score: 0,
         source:
-          "https://EU:.forums.blizzard.com/en/wow/t/m-smoldering-hero-title-updated-november-2/474193",
+          "https://eu.forums.blizzard.com/en/wow/t/m-smoldering-hero-title-updated-november-2/474193",
       },
       US: {
         score: 0,
@@ -507,7 +507,7 @@ export const seasons: Season[] = [
       EU: {
         score: 0,
         source:
-          "https://EU:.forums.blizzard.com/en/wow/t/m-thundering-hero-title-updated-27-april/444828",
+          "https://eu.forums.blizzard.com/en/wow/t/m-thundering-hero-title-updated-27-april/444828",
       },
       US: {
         score: 0,
@@ -580,7 +580,7 @@ export const seasons: Season[] = [
       EU: {
         score: 3120,
         source:
-          "https://EU:.forums.blizzard.com/en/wow/t/m-shrouded-hero-title-november-16-update/395176/19",
+          "https://eu.forums.blizzard.com/en/wow/t/m-shrouded-hero-title-november-16-update/395176/19",
       },
       US: {
         score: 3087,
@@ -637,7 +637,7 @@ export const seasons: Season[] = [
       EU: {
         score: 3725,
         source:
-          "https://EU:.forums.blizzard.com/en/wow/t/m-cryptic-hero-title-score-updated-daily/371434",
+          "https://eu.forums.blizzard.com/en/wow/t/m-cryptic-hero-title-score-updated-daily/371434",
       },
       US: { score: 0, source: null },
       KR: { score: 0, source: null },
@@ -690,7 +690,7 @@ export const seasons: Season[] = [
     confirmedCutoffs: {
       EU: {
         source:
-          "https://EU:.forums.blizzard.com/en/wow/t/m-tormented-hero-title-score-updated-daily/341108",
+          "https://eu.forums.blizzard.com/en/wow/t/m-tormented-hero-title-score-updated-daily/341108",
         alliance: 2788,
         horde: 2875,
       },
