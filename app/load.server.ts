@@ -699,7 +699,7 @@ export function calculateSeries(
 
 function createWeekDiffString(value: number, color: string): string {
   const prefix = value > 0 ? "+" : value === 0 ? "±" : "";
-  return `<span style="font-size: 10px; color: ${color}">${prefix}${value.toFixed(1)}</span>`;
+  return `<span style='font-size: 10px; color: ${color}'>${prefix}${value.toFixed(1)}</span>`;
 }
 
 export function calculateXAxisPlotBands(
