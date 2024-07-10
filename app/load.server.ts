@@ -697,6 +697,11 @@ export function calculateSeries(
   return options;
 }
 
+function createWeekDiffString(value: number, color: string): string {
+  const prefix = value > 0 ? "+" : value === 0 ? "±" : "";
+  return `<span style="font-size: 10px; color: ${color}">${prefix}${value.toFixed(1)}</span>`;
+}
+
 export function calculateXAxisPlotBands(
   season: Season,
   region: Regions,
@@ -772,25 +777,23 @@ export function calculateXAxisPlotBands(
         to,
       );
 
-    const text = [
-      crossFactionSupport === "complete"
-        ? null
-        : `<span style="font-size: 10px; color: ${factionColors.horde}">${
-            hordeDiff > 0 ? "+" : hordeDiff === 0 ? "±" : ""
-          }${hordeDiff.toFixed(1)}</span>`,
-      crossFactionSupport === "complete"
-        ? null
-        : `<span style="font-size: 10px; color: ${factionColors.alliance}">${
-            allianceDiff > 0 ? "+" : allianceDiff === 0 ? "±" : ""
-          }${allianceDiff.toFixed(1)}</span>`,
+    const text: string[] = [];
+
+    if (crossFactionSupport !== "complete") {
+      text.push(
+        createWeekDiffString(hordeDiff, factionColors.horde),
+        createWeekDiffString(allianceDiff, factionColors.alliance),
+      );
+    }
+
+    if (
       from > now ||
       crossFactionSupport === "none" ||
       (crossFactionSupport === "partial" && xFactionDiff === 0)
-        ? null
-        : `<span style="font-size: 10px; color: ${factionColors.xFaction}">${
-            xFactionDiff > 0 ? "+" : xFactionDiff === 0 ? "±" : ""
-          }${xFactionDiff.toFixed(1)}</span>`,
-    ].filter(Boolean);
+    ) {
+    } else {
+      text.push(createWeekDiffString(xFactionDiff, factionColors.xFaction));
+    }
 
     options.push({
       from,
@@ -798,7 +801,7 @@ export function calculateXAxisPlotBands(
       color: "transparent",
       label: {
         verticalAlign: "bottom",
-        text: text.join("<br />"),
+        text: text.join("<br>"),
         useHTML: true,
         y: text.length * -15,
       },
