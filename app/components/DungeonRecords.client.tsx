@@ -1,10 +1,10 @@
 import clsx from "clsx";
 import { type Options } from "highcharts";
-import Highcharts from "highcharts";
-import HighchartsReact from "highcharts-react-official";
 import { ClientOnly } from "remix-utils/client-only";
 
 import { type EnhancedSeason } from "~/seasons";
+
+import { Highcharts, HighchartsReact } from "./Highcharts.client";
 
 type DungeonRecordsProps = {
   season: EnhancedSeason;
