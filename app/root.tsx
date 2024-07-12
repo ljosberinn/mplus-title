@@ -99,6 +99,17 @@ export default function App(): JSX.Element {
         </div>
         <ScrollRestoration />
         <Scripts />
+
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function () {
+        window.counterscale = {
+            q: [["set", "siteId", "mplus-title"], ["trackPageview"]],
+        };
+    })();`,
+          }}
+        />
+        <script id="counterscale-script" defer src="https://counterscale.gerritalex.workers.dev/tracker.js" />
         <LiveReload />
       </body>
     </html>
