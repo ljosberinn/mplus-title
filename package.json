@@ -9,7 +9,7 @@
     "build": "prisma generate && remix build --sourcemap",
     "dev": "remix dev",
     "postinstall": "sort-package-json",
-    "install:clean": "rm -rf node_modules && rm yarn.lock && yarn",
+    "install:clean": "rm -rf node_modules && rm package-lock.json && npm i",
     "lint": "eslint app --fix && prettier --config prettier.config.js --write . --cache",
     "prisma:generate": "prisma generate",
     "prisma:push": "prisma db push",
