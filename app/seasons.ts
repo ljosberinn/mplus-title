@@ -129,7 +129,7 @@ export const seasons: Season[] = [
       KR: UNKNOWN_SEASON_START_OR_ENDING,
       TW: UNKNOWN_SEASON_START_OR_ENDING,
     },
-    affixes: [[Affix.BargainAscendant], [Affix.BargainFrenzied]],
+    affixes: [],
     confirmedCutoffs: {
       EU: { score: 0, source: null },
       US: { score: 0, source: null },
@@ -172,8 +172,7 @@ export const seasons: Season[] = [
       },
     ],
     patches: {},
-    seasonIcon:
-      "https://assets.rpglogs.com/img/warcraft/abilities/inv_misc_questionmark.jpg",
+    seasonIcon: "https://assets.rpglogs.com/img/warcraft/zones/zone-39.png",
     startingPeriod: 0,
     wcl: {
       zoneId: 39,
