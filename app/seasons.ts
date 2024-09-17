@@ -118,10 +118,10 @@ export const seasons: Season[] = [
     rioKey: "season-tww-1",
     crossFactionSupport: "complete",
     startDates: {
-      US: offsetEndDateForRegion(1726585200000, "US"),
-      EU: offsetEndDateForRegion(1726585200000, "EU"),
-      KR: offsetEndDateForRegion(1726585200000, "KR"),
-      TW: offsetEndDateForRegion(1726585200000, "TW"),
+      US: offsetEndDateForRegion(1_726_585_200_000, "US"),
+      EU: offsetEndDateForRegion(1_726_585_200_000, "EU"),
+      KR: offsetEndDateForRegion(1_726_585_200_000, "KR"),
+      TW: offsetEndDateForRegion(1_726_585_200_000, "TW"),
     },
     endDates: {
       US: UNKNOWN_SEASON_START_OR_ENDING,
@@ -129,7 +129,7 @@ export const seasons: Season[] = [
       KR: UNKNOWN_SEASON_START_OR_ENDING,
       TW: UNKNOWN_SEASON_START_OR_ENDING,
     },
-    affixes: [],
+    affixes: [[Affix.BargainAscendant]],
     confirmedCutoffs: {
       EU: { score: 0, source: null },
       US: { score: 0, source: null },
