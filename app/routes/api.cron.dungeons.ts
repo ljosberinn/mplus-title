@@ -50,8 +50,7 @@ export const action: ActionFunction = async ({ request }) => {
           return null;
         }
 
-        const [{ mythic_level: keyLevel, completed_at }] = json.rankings;
-
+        const { mythic_level: keyLevel, completed_at } = json.rankings[0].run;
         const timestamp = Math.round(new Date(completed_at).getTime() / 1000);
 
         const latest = await prisma.dungeonHistory.findFirst({
