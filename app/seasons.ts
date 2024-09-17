@@ -764,7 +764,7 @@ export function findSeasonByTimestamp(
 ): Season | null {
   const season = seasons.find((season) => {
     if (regions) {
-      return regions.every((region) => {
+      return regions.some((region) => {
         const startDate = season.startDates[region];
 
         return startDate && startDate < timestamp;
