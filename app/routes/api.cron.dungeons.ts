@@ -34,6 +34,12 @@ export const action: ActionFunction = async ({ request }) => {
     throw new Error("Could not determine latest season.");
   }
 
+  const americanStartDate = season.startDates.US;
+
+  if (!americanStartDate) {
+    throw new Error("Could not determine season start date.");
+  }
+
   if (typeof season.dungeons === "number" || season.dungeons.length === 0) {
     throw new TypeError("Season has no dungeon information");
   }
@@ -51,14 +57,21 @@ export const action: ActionFunction = async ({ request }) => {
         }
 
         const { mythic_level: keyLevel, completed_at } = json.rankings[0].run;
-        const timestamp = Math.round(new Date(completed_at).getTime() / 1000);
 
         const latest = await prisma.dungeonHistory.findFirst({
-          where: { slug: dungeon.slug },
-          orderBy: { timestamp: "desc" },
+          where: {
+            slug: dungeon.slug,
+            timestamp: { gt: Math.floor(americanStartDate / 1000) },
+          },
+          orderBy: { keyLevel: "desc" },
+          select: {
+            keyLevel: true,
+          },
         });
 
         if (!latest || keyLevel > latest.keyLevel) {
+          const timestamp = Math.round(new Date(completed_at).getTime() / 1000);
+
           const data = {
             slug: dungeon.slug,
             keyLevel,
