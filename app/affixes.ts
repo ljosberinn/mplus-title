@@ -32,6 +32,7 @@ export enum Affix {
   BargainFrenzied = 153,
   BargainAscendant = 148,
   BargainVoidbound = 158,
+  BargainOblivion = 159,
   BargainDevour = 160,
 }
 
@@ -39,6 +40,12 @@ export const affixes: Record<
   Affix,
   { icon: string; locales: Record<string, string> }
 > = {
+  [Affix.BargainOblivion]: {
+    locales: {
+      en: "Xal'atath's Bargain: Oblivion",
+    },
+    icon: "spell_priest_void-blast",
+  },
   [Affix.BargainVoidbound]: {
     locales: {
       en: "Xal'atath's Bargain: Voidbound",
