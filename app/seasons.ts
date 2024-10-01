@@ -129,7 +129,12 @@ export const seasons: Season[] = [
       KR: UNKNOWN_SEASON_START_OR_ENDING,
       TW: UNKNOWN_SEASON_START_OR_ENDING,
     },
-    affixes: [[Affix.BargainAscendant], [Affix.BargainOblivion]],
+    affixes: [
+      [Affix.BargainAscendant],
+      [Affix.BargainOblivion],
+      [Affix.BargainVoidbound],
+      [Affix.BargainDevour],
+    ],
     confirmedCutoffs: {
       EU: { score: 0, source: null },
       US: { score: 0, source: null },
