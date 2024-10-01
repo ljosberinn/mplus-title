@@ -136,7 +136,14 @@ export const seasons: Season[] = [
       KR: { score: 0, source: null },
       TW: { score: 0, source: null },
     },
-    dungeonHotfixes: {},
+    dungeonHotfixes: {
+      "Dungeon Tuning Oct 1": {
+        US: offsetStartDateForRegion(1727794800000, "US"),
+        EU: offsetStartDateForRegion(1727794800000, "EU"),
+        KR: offsetStartDateForRegion(1727794800000, "KR"),
+        TW: offsetStartDateForRegion(1727794800000, "TW"),
+      },
+    },
     dungeons: [
       {
         name: "Ara-Kara, City of Echoes",
