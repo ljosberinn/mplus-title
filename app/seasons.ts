@@ -149,10 +149,10 @@ export const seasons: Season[] = [
         TW: offsetStartDateForRegion(1727794800000, "TW"),
       },
       "Xal'atath's Guile Nerf": {
-        US: offsetStartDateForRegion(1728594316832, "US"),
-        EU: offsetStartDateForRegion(1728594316832, "EU"),
-        KR: offsetStartDateForRegion(1728594316832, "KR"),
-        TW: offsetStartDateForRegion(1728594316832, "TW"),
+        US: 1728594316832,
+        EU: 1728594316832,
+        KR: 1728594316832,
+        TW: 1728594316832,
       },
       "NW/SV Nerf": {
         US: offsetStartDateForRegion(1729004400000, "US"),
