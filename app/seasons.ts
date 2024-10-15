@@ -134,6 +134,7 @@ export const seasons: Season[] = [
       [Affix.BargainOblivion],
       [Affix.BargainVoidbound],
       [Affix.BargainDevour],
+      [Affix.BargainOblivion],
     ],
     confirmedCutoffs: {
       EU: { score: 0, source: null },
