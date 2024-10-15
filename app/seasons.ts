@@ -195,7 +195,14 @@ export const seasons: Season[] = [
         slug: "the-stonevault",
       },
     ],
-    patches: {},
+    patches: {
+      "11.0.5": {
+        US: offsetStartDateForRegion(1729602000000, "US"),
+        EU: offsetStartDateForRegion(1729602000000, "EU"),
+        KR: offsetStartDateForRegion(1729602000000, "KR"),
+        TW: offsetStartDateForRegion(1729602000000, "TW"),
+      },
+    },
     seasonIcon: "https://assets.rpglogs.com/img/warcraft/zones/zone-39.png",
     startingPeriod: 0,
     wcl: {
