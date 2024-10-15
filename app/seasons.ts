@@ -29,7 +29,10 @@ export type Season = {
     Regions,
     CutoffSource | ({ source: string | null } & Record<Factions, number>)
   >;
-  affixes: [Affix, Affix, Affix, Affix][] | [Affix, Affix, Affix][] | [Affix][];
+  affixes:
+    | [Affix, Affix, Affix, Affix][]
+    | [Affix, Affix, Affix][]
+    | [Affix, Affix][];
   rioKey: string;
   crossFactionSupport: "complete" | "none" | "partial";
   wcl?: {
@@ -130,11 +133,11 @@ export const seasons: Season[] = [
       TW: UNKNOWN_SEASON_START_OR_ENDING,
     },
     affixes: [
-      [Affix.BargainAscendant],
-      [Affix.BargainOblivion],
-      [Affix.BargainVoidbound],
-      [Affix.BargainDevour],
-      [Affix.BargainOblivion],
+      [Affix.BargainAscendant, Affix.Fortified],
+      [Affix.BargainOblivion, Affix.Fortified],
+      [Affix.BargainVoidbound, Affix.Fortified],
+      [Affix.BargainDevour, Affix.Fortified],
+      [Affix.BargainOblivion, Affix.Tyrannical],
     ],
     confirmedCutoffs: {
       EU: { score: 0, source: null },
@@ -143,7 +146,7 @@ export const seasons: Season[] = [
       TW: { score: 0, source: null },
     },
     dungeonHotfixes: {
-      "Dungeon Tuning Oct 1": {
+      "Dungeon Tuning": {
         US: offsetStartDateForRegion(1727794800000, "US"),
         EU: offsetStartDateForRegion(1727794800000, "EU"),
         KR: offsetStartDateForRegion(1727794800000, "KR"),
@@ -205,7 +208,7 @@ export const seasons: Season[] = [
       },
     },
     seasonIcon: "https://assets.rpglogs.com/img/warcraft/zones/zone-39.png",
-    startingPeriod: 0,
+    startingPeriod: 977,
     wcl: {
       zoneId: 39,
       weekIndexToAffixSetId: [],

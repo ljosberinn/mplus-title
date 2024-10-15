@@ -594,31 +594,33 @@ function Region({ season, region, extremes, onZoom }: CardProps): JSX.Element {
                   <LocaleTime date={endTime} />
                 </span>
               ) : null}
-              <div>
-                {setSlice.map((affix) => {
-                  const affixName = getAffixName(affix);
+              {(season.wcl?.zoneId ?? 0) < 39 ? (
+                <div>
+                  {setSlice.map((affix) => {
+                    const affixName = getAffixName(affix);
 
-                  return (
-                    <div
-                      key={affix}
-                      className="flex w-full justify-center space-x-2"
-                      title={affixName}
-                    >
-                      <img
-                        src={getAffixIconUrl(affix)}
-                        width={18}
-                        height={18}
-                        loading="lazy"
-                        className="h-4 w-4"
-                        alt={affixName.slice(0, 3)}
-                      />
-                      <span className="hidden text-sm md:inline">
-                        {affixName.slice(0, 3)}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
+                    return (
+                      <div
+                        key={affix}
+                        className="flex w-full justify-center space-x-2"
+                        title={affixName}
+                      >
+                        <img
+                          src={getAffixIconUrl(affix)}
+                          width={18}
+                          height={18}
+                          loading="lazy"
+                          className="h-4 w-4"
+                          alt={affixName.slice(0, 3)}
+                        />
+                        <span className="hidden text-sm md:inline">
+                          {affixName.slice(0, 3)}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : null}
             </div>
           );
         })}
