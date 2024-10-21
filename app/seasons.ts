@@ -201,10 +201,10 @@ export const seasons: Season[] = [
     ],
     patches: {
       "11.0.5": {
-        US: offsetStartDateForRegion(1729602000000, "US"),
-        EU: offsetStartDateForRegion(1729602000000, "EU"),
-        KR: offsetStartDateForRegion(1729602000000, "KR"),
-        TW: offsetStartDateForRegion(1729602000000, "TW"),
+        US: offsetStartDateForRegion(1729605600000, "US"),
+        EU: offsetStartDateForRegion(1729605600000, "EU"),
+        KR: offsetStartDateForRegion(1729605600000, "KR"),
+        TW: offsetStartDateForRegion(1729605600000, "TW"),
       },
     },
     seasonIcon: "https://assets.rpglogs.com/img/warcraft/zones/zone-39.png",
