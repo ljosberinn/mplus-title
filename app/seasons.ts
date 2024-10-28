@@ -164,6 +164,12 @@ export const seasons: Season[] = [
         KR: offsetStartDateForRegion(1729004400000, "KR"),
         TW: offsetStartDateForRegion(1729004400000, "TW"),
       },
+      Tuning: {
+        US: offsetStartDateForRegion(1730210400000, "US"),
+        EU: offsetStartDateForRegion(1730210400000, "EU"),
+        KR: offsetStartDateForRegion(1730210400000, "KR"),
+        TW: offsetStartDateForRegion(1730210400000, "TW"),
+      },
     },
     dungeons: [
       {
