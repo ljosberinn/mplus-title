@@ -122,6 +122,9 @@ export async function loadRecordsForSeason(
       timestamp: {
         gte: Math.round(season.startDates.US / 1000),
       },
+      keyLevel: {
+        gte: 10,
+      },
     },
     select: {
       slug: true,
