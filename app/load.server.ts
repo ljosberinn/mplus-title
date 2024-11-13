@@ -123,7 +123,7 @@ export async function loadRecordsForSeason(
         gte: Math.round(season.startDates.US / 1000),
       },
       keyLevel: {
-        gte: 10,
+        gte: 12,
       },
     },
     select: {
