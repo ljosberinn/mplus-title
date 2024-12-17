@@ -215,6 +215,12 @@ export const seasons: Season[] = [
         KR: offsetStartDateForRegion(1729605600000, "KR"),
         TW: offsetStartDateForRegion(1729605600000, "TW"),
       },
+      "11.0.7": {
+        US: offsetStartDateForRegion(1734447600000, "US"),
+        EU: offsetStartDateForRegion(1734447600000, "EU"),
+        KR: offsetStartDateForRegion(1734444000000 + 60 * 60 * 1000, "KR"),
+        TW: offsetStartDateForRegion(1734444000000 + 60 * 60 * 1000, "TW"),
+      },
     },
     seasonIcon: "https://assets.rpglogs.com/img/warcraft/zones/zone-39.png",
     startingPeriod: 977,
