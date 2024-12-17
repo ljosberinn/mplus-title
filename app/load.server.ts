@@ -718,7 +718,7 @@ export function calculateXAxisPlotBands(
   }
 
   const seasonEnd = season.endDates[region];
-  const { affixes, crossFactionSupport } = season;
+  const { affixes, crossFactionSupport, wcl } = season;
 
   const weeks = seasonEnd
     ? (seasonEnd - seasonStart) / oneWeekInMs + 1
@@ -755,15 +755,16 @@ export function calculateXAxisPlotBands(
         style: {
           display: "flex",
         },
-        text: overlays.includes("affixes")
-          ? relevantRotationSlice
-              .map((affix) => {
-                return `<img width="18" height="18" style="transform: rotate(-90deg); opacity: 0.75;" src="${getAffixIconUrl(
-                  affix,
-                )}"/>`;
-              })
-              .join("")
-          : undefined,
+        text:
+          (wcl?.zoneId ?? 0) < 39 && overlays.includes("affixes")
+            ? relevantRotationSlice
+                .map((affix) => {
+                  return `<img width="18" height="18" style="transform: rotate(-90deg); opacity: 0.75;" src="${getAffixIconUrl(
+                    affix,
+                  )}"/>`;
+                })
+                .join("")
+            : undefined,
         rotation: 90,
         align: "left",
         x: 5,
