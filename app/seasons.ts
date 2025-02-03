@@ -116,6 +116,73 @@ function offsetEndDateForRegion(timestamp: number, region: Regions): number {
 
 export const seasons: Season[] = [
   {
+    name: "TWW S2",
+    slug: "tww-season-2",
+    rioKey: "season-tww-2",
+    crossFactionSupport: "complete",
+    startDates: {
+      US: 1741100400000,
+      EU: 1741147200000,
+      KR: 1741215600000,
+      TW: 1741215600000,
+    },
+    endDates: {
+      US: null,
+      EU: null,
+      KR: null,
+      TW: null,
+    },
+    affixes: [],
+    confirmedCutoffs: {
+      EU: { score: 0, source: null },
+      US: { score: 0, source: null },
+      KR: { score: 0, source: null },
+      TW: { score: 0, source: null },
+    },
+    dungeonHotfixes: {},
+    dungeons: [
+      {
+        name: "Cinderbrew Meadery",
+        slug: "cinderbrew-meadery",
+      },
+      {
+        name: "Darkflame Cleft",
+        slug: "darkflame-cleft",
+      },
+      {
+        name: "Operation: Floodgate",
+        slug: "operation-floodgate",
+      },
+      {
+        name: "Operation: Mechagon - Workshop",
+        slug: "operation-mechagon-workshop",
+      },
+      {
+        name: "Priory of the Sacred Flame",
+        slug: "priory-of-the-sacred-flame",
+      },
+      {
+        name: "The MOTHERLODE!!",
+        slug: "the-motherlode",
+      },
+      {
+        name: "The Rookery",
+        slug: "the-rookery",
+      },
+      {
+        name: "Theater of Pain",
+        slug: "theater-of-pain",
+      },
+    ],
+    patches: {},
+    seasonIcon: "",
+    startingPeriod: 0,
+    wcl: {
+      weekIndexToAffixSetId: [],
+      zoneId: 43,
+    },
+  },
+  {
     name: "TWW S1",
     slug: "tww-season-1",
     rioKey: "season-tww-1",
