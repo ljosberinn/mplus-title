@@ -114,6 +114,8 @@ function offsetEndDateForRegion(timestamp: number, region: Regions): number {
   }
 }
 
+const oneWeekInMilliseconds = 7 * 24 * 60 * 60 * 1000;
+
 export const seasons: Season[] = [
   {
     name: "TWW S2",
@@ -121,10 +123,10 @@ export const seasons: Season[] = [
     rioKey: "season-tww-2",
     crossFactionSupport: "complete",
     startDates: {
-      US: 1741100400000,
-      EU: 1741147200000,
-      KR: 1741215600000,
-      TW: 1741215600000,
+      US: new Date("2025-03-04T15:00:00Z").getTime(),
+      EU: new Date("2025-03-05T04:00:00Z").getTime(),
+      TW: new Date("2025-03-05T23:00:00Z").getTime(),
+      KR: new Date("2025-03-05T23:00:00Z").getTime(),
     },
     endDates: {
       US: null,
@@ -175,7 +177,7 @@ export const seasons: Season[] = [
       },
     ],
     patches: {},
-    seasonIcon: "",
+    seasonIcon: "https://assets.rpglogs.com/img/warcraft/zones/zone-43.png",
     startingPeriod: 0,
     wcl: {
       weekIndexToAffixSetId: [],
@@ -194,10 +196,10 @@ export const seasons: Season[] = [
       TW: 1_726_700_400_000,
     },
     endDates: {
-      US: UNKNOWN_SEASON_START_OR_ENDING,
-      EU: UNKNOWN_SEASON_START_OR_ENDING,
-      KR: UNKNOWN_SEASON_START_OR_ENDING,
-      TW: UNKNOWN_SEASON_START_OR_ENDING,
+      US: new Date("2025-03-04T15:00:00Z").getTime() - oneWeekInMilliseconds,
+      EU: new Date("2025-03-05T04:00:00Z").getTime() - oneWeekInMilliseconds,
+      TW: new Date("2025-03-05T23:00:00Z").getTime() - oneWeekInMilliseconds,
+      KR: new Date("2025-03-05T23:00:00Z").getTime() - oneWeekInMilliseconds,
     },
     affixes: [
       [Affix.BargainAscendant, Affix.Fortified],
