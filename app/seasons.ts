@@ -219,12 +219,12 @@ export const seasons: Season[] = [
     ],
     confirmedCutoffs: {
       EU: {
-        score: 0,
+        score: 3483,
         source:
           "https://eu.forums.blizzard.com/en/wow/t/m-thundering-hero-title-updated-19-february/562387",
       },
       US: {
-        score: 0,
+        score: 3458,
         source:
           "https://us.forums.blizzard.com/en/wow/t/m-thundering-hero-title-updated-february-19/2062504/1",
       },
