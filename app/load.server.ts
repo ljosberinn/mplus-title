@@ -949,9 +949,23 @@ export function calculateXAxisPlotLines(
       lines.push(
         ...calcOldLevelCompletionLines(season, data, startDate, extrapolation),
       );
-    } else {
+    } else if ((season.wcl?.zoneId ?? 0) === 39) {
       lines.push(
-        ...calcNewLevelCompletionLines(season, data, startDate, extrapolation),
+        ...calcTwwS1LevelCompletionLines(
+          season,
+          data,
+          startDate,
+          extrapolation,
+        ),
+      );
+    } else if ((season.wcl?.zoneId ?? 0) === 43) {
+      lines.push(
+        ...calcTwwS2LevelCompletionLines(
+          season,
+          data,
+          startDate,
+          extrapolation,
+        ),
       );
     }
   }
@@ -1121,8 +1135,101 @@ function calculateFactionDiffForWeek(
   };
 }
 
+function calcTwwS2LevelCompletionLines(
+  season: Season,
+  data: Dataset[],
+  startDate: number,
+  extrapolation: ReturnType<typeof calculateExtrapolation>,
+): XAxisPlotLinesOptions[] {
+  const lines: XAxisPlotLinesOptions[] = [];
+  const base = 125;
+  const perLevelPoints = 15;
+
+  const numberOfDungeons =
+    typeof season.dungeons === "number"
+      ? season.dungeons
+      : season.dungeons.length;
+
+  for (let level = 5; level <= 25; level++) {
+    let affixPoints = 0;
+
+    if (level >= 7) {
+      affixPoints += 15;
+    }
+
+    if (level >= 10) {
+      affixPoints += 15;
+    }
+
+    if (level >= 4 && level <= 11) {
+      affixPoints += 15;
+    }
+
+    if (level >= 12) {
+      affixPoints += 25;
+    }
+
+    const total =
+      (base + perLevelPoints * level + affixPoints) * numberOfDungeons;
+
+    let match: Omit<Dataset, "rank"> | undefined = data.find((dataset) => {
+      if (dataset.ts - startDate < oneWeekInMs) {
+        return dataset.score >= total;
+      }
+
+      return false;
+    });
+
+    if (!match && Array.isArray(extrapolation)) {
+      const extrapolationMatchIndex = extrapolation.findIndex(
+        ([, score]) => score >= total,
+      );
+
+      if (extrapolationMatchIndex > -1) {
+        const last = data[data.length - 1];
+        const extrapolationMatch = extrapolation[extrapolationMatchIndex];
+
+        const timeDiff = extrapolationMatch[0] - last.ts;
+        const scoreDiff = extrapolationMatch[1] - last.score;
+
+        const step = scoreDiff / timeDiff;
+
+        // expensive, but a lot more precise than just picking next match
+        for (let i = 0; i < timeDiff; i += 60_000) {
+          if (last.score + step * i > total) {
+            match = {
+              ts: last.ts + i,
+              score: total,
+            };
+            break;
+          }
+        }
+      }
+    }
+
+    if (match) {
+      lines.push({
+        zIndex: 100,
+        label: {
+          text: `All ${level}`,
+          rotation: 0,
+          y: 200,
+          style: {
+            color: "white",
+          },
+        },
+        value: match.ts,
+        dashStyle: "Dash",
+        color: "white",
+      });
+    }
+  }
+
+  return lines;
+}
+
 // TODO: merge these eventually
-function calcNewLevelCompletionLines(
+function calcTwwS1LevelCompletionLines(
   season: Season,
   data: Dataset[],
   startDate: number,

@@ -147,7 +147,14 @@ export const seasons: Season[] = [
       KR: { score: 0, source: null },
       TW: { score: 0, source: null },
     },
-    dungeonHotfixes: {},
+    dungeonHotfixes: {
+      "Dungeon Tuning": {
+        US: 1741377600000,
+        EU: 1741377600000,
+        KR: 1741377600000,
+        TW: 1741377600000,
+      },
+    },
     dungeons: [
       {
         name: "Cinderbrew Meadery",
