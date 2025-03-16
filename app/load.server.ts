@@ -1172,13 +1172,9 @@ function calcTwwS2LevelCompletionLines(
     const total =
       (base + perLevelPoints * level + affixPoints) * numberOfDungeons;
 
-    let match: Omit<Dataset, "rank"> | undefined = data.find((dataset) => {
-      if (dataset.ts - startDate < oneWeekInMs) {
-        return dataset.score >= total;
-      }
-
-      return false;
-    });
+    let match: Omit<Dataset, "rank"> | undefined = data.find(
+      (dataset) => dataset.score >= total,
+    );
 
     if (!match && Array.isArray(extrapolation)) {
       const extrapolationMatchIndex = extrapolation.findIndex(
