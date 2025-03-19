@@ -154,6 +154,12 @@ export const seasons: Season[] = [
         KR: 1741377600000,
         TW: 1741377600000,
       },
+      "More Dungeon Tuning": {
+        US: 1742360400000,
+        EU: 1742360400000,
+        KR: 1742360400000,
+        TW: 1742360400000,
+      },
     },
     dungeons: [
       {
