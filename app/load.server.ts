@@ -121,6 +121,9 @@ export async function loadRecordsForSeason(
     where: {
       timestamp: {
         gte: Math.round(season.startDates.US / 1000),
+        lte: season.endDates.US
+          ? Math.round(season.endDates.US / 1000)
+          : undefined,
       },
       keyLevel: {
         gte: 12,
