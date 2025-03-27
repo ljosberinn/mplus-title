@@ -720,9 +720,13 @@ export function calculateXAxisPlotBands(
   const seasonEnd = season.endDates[region];
   const { affixes, crossFactionSupport, wcl } = season;
 
-  const weeks = seasonEnd
-    ? (seasonEnd - seasonStart) / oneWeekInMs + 1
-    : affixes.length * 3;
+  let weeks = affixes.length * 3;
+
+  if (seasonEnd) {
+    weeks = (seasonEnd - seasonStart) / oneWeekInMs + 1;
+  } else {
+    weeks = (Date.now() - seasonStart) / oneWeekInMs + 1;
+  }
 
   const now = Date.now();
 
@@ -1166,7 +1170,7 @@ function calcTwwS2LevelCompletionLines(
     }
 
     if (level >= 12) {
-      affixPoints += 25;
+      affixPoints += 30;
     }
 
     const total =
