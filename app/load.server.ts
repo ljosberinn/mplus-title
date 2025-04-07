@@ -384,10 +384,10 @@ export function calculateExtrapolation(
     .slice(4)
     .slice(-season.affixes.length);
 
-  const daysUntilSeasonEndingOrFourWeeks = daysUntilSeasonEnding ?? 21;
+  const daysUntilSeasonEndingOrThreeWeeks = daysUntilSeasonEnding ?? 21;
   const to =
     seasonEnding ??
-    lastDataset.ts + (daysUntilSeasonEndingOrFourWeeks / 7) * oneWeekInMs;
+    lastDataset.ts + (daysUntilSeasonEndingOrThreeWeeks / 7) * oneWeekInMs;
   const timeUntilExtrapolationEnd = to - lastDataset.ts;
 
   // given a couple weeks past the first four, apply weighting on older weeks
@@ -396,7 +396,7 @@ export function calculateExtrapolation(
     timeUntilExtrapolationEnd > oneWeekInMs / 7
   ) {
     const interval =
-      timeUntilExtrapolationEnd / daysUntilSeasonEndingOrFourWeeks;
+      timeUntilExtrapolationEnd / daysUntilSeasonEndingOrThreeWeeks;
     const scoreIncreaseSteps =
       [...passedWeeksDiff].reverse().reduce((acc, diff, index, arr) => {
         // applies a <1 factor on the total increase a week saw based on how far
@@ -425,7 +425,7 @@ export function calculateExtrapolation(
     return [
       [lastDataset.ts, lastDataset.score],
       ...Array.from<number, [number, number]>(
-        { length: daysUntilSeasonEndingOrFourWeeks - 1 },
+        { length: daysUntilSeasonEndingOrThreeWeeks - 1 },
         (_, i) => {
           return [
             lastDataset.ts + interval * (i + 1),
@@ -437,7 +437,7 @@ export function calculateExtrapolation(
         to,
         toOneDigit(
           lastDataset.score +
-            scoreIncreaseSteps * daysUntilSeasonEndingOrFourWeeks,
+            scoreIncreaseSteps * daysUntilSeasonEndingOrThreeWeeks,
         ),
       ],
     ];
@@ -445,7 +445,7 @@ export function calculateExtrapolation(
 
   const timePassed = lastDataset.ts - firstRelevantDataset.ts;
   const daysPassed = timePassed / 1000 / 60 / 60 / 24;
-  const factor = daysUntilSeasonEndingOrFourWeeks / daysPassed;
+  const factor = daysUntilSeasonEndingOrThreeWeeks / daysPassed;
 
   const score = toOneDigit(
     lastDataset.score +
@@ -454,14 +454,14 @@ export function calculateExtrapolation(
 
   if (timeUntilExtrapolationEnd > oneWeekInMs / 7) {
     const interval =
-      timeUntilExtrapolationEnd / daysUntilSeasonEndingOrFourWeeks;
+      timeUntilExtrapolationEnd / daysUntilSeasonEndingOrThreeWeeks;
     const scoreIncreaseSteps =
-      (score - lastDataset.score) / daysUntilSeasonEndingOrFourWeeks;
+      (score - lastDataset.score) / daysUntilSeasonEndingOrThreeWeeks;
 
     return [
       [lastDataset.ts, lastDataset.score],
       ...Array.from<number, [number, number]>(
-        { length: daysUntilSeasonEndingOrFourWeeks - 1 },
+        { length: daysUntilSeasonEndingOrThreeWeeks - 1 },
         (_, i) => {
           return [
             lastDataset.ts + interval * (i + 1),
@@ -728,7 +728,11 @@ export function calculateXAxisPlotBands(
   if (seasonEnd) {
     weeks = (seasonEnd - seasonStart) / oneWeekInMs + 1;
   } else {
-    weeks = (Date.now() - seasonStart) / oneWeekInMs + 1;
+    const hasExtrapolation = true;
+    weeks =
+      (Date.now() + (hasExtrapolation ? oneWeekInMs * 3 : 0) - seasonStart) /
+        oneWeekInMs +
+      1;
   }
 
   const now = Date.now();
