@@ -116,7 +116,7 @@ export async function loadRecordsForSeason(
 
   const data = await prisma.dungeonHistory.findMany({
     orderBy: {
-      timestamp: "desc",
+      timestamp: "asc",
     },
     where: {
       timestamp: {

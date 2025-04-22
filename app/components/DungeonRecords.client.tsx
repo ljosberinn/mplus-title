@@ -32,7 +32,7 @@ export default function DungeonRecords({
       labelFormatter() {
         return `
                   <span style="color: #fff; display:flex; place-items: center; gap: 5px;">
-                      ${"userOptions" in this && "iconUrl" in this.userOptions && typeof this.userOptions.iconUrl === "string" ? `<img src="${this.userOptions.iconUrl}" width="24" height="24" loading="lazy" />` : ""}
+                      ${"userOptions" in this && "iconUrl" in this.userOptions && typeof this.userOptions.iconUrl === "string" ? `<img src="${this.userOptions.iconUrl}" width="24" height="24" />` : ""}
                       ${this.name}
                   </span>
               `;
