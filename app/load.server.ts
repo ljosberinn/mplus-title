@@ -1193,22 +1193,29 @@ function calcTwwS2LevelCompletionLines(
       );
 
       if (extrapolationMatchIndex > -1) {
-        const last = data[data.length - 1];
         const extrapolationMatch = extrapolation[extrapolationMatchIndex];
 
-        const timeDiff = extrapolationMatch[0] - last.ts;
-        const scoreDiff = extrapolationMatch[1] - last.score;
+        if (extrapolationMatch[1] === total) {
+          match = {
+            ts: extrapolationMatch[0],
+            score: total,
+          };
+        } else {
+          const last = data[data.length - 1];
+          const timeDiff = extrapolationMatch[0] - last.ts;
+          const scoreDiff = extrapolationMatch[1] - last.score;
 
-        const step = scoreDiff / timeDiff;
+          const step = scoreDiff / timeDiff;
 
-        // expensive, but a lot more precise than just picking next match
-        for (let i = 0; i < timeDiff; i += 60_000) {
-          if (last.score + step * i > total) {
-            match = {
-              ts: last.ts + i,
-              score: total,
-            };
-            break;
+          // expensive, but a lot more precise than just picking next match
+          for (let i = 0; i <= timeDiff; i += 60_000) {
+            if (last.score + step * i >= total) {
+              match = {
+                ts: last.ts + i,
+                score: total,
+              };
+              break;
+            }
           }
         }
       }
