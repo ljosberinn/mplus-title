@@ -33,7 +33,7 @@ export const loader = async ({
   params,
   request,
 }: LoaderFunctionArgs): Promise<Response> => {
-  const region = params.region ? params.region.toUpperCase() : null
+  const region = params.region ? params.region.toUpperCase() : null;
 
   if (!region || !regionIsRegion(region)) {
     return new Response(undefined, {
@@ -68,11 +68,11 @@ export const loader = async ({
   // ongoing season
   if (!endDate || endDate > Date.now()) {
     const lastDataset =
-      enhancedSeason.dataByRegion[region][
-        enhancedSeason.dataByRegion[region].length - 1
+      enhancedSeason.score.dataByRegion[region][
+        enhancedSeason.score.dataByRegion[region].length - 1
       ];
 
-    const estimation = enhancedSeason.extrapolation[region];
+    const estimation = enhancedSeason.score.extrapolation[region];
 
     let responseText = rawResponseText.replace(
       CURRENT_PH,
@@ -109,7 +109,7 @@ export const loader = async ({
     });
   }
 
-  const lastDataset = [...enhancedSeason.dataByRegion[region]]
+  const lastDataset = [...enhancedSeason.score.dataByRegion[region]]
     .reverse()
     .find((dataset) => dataset.ts < endDate);
 
