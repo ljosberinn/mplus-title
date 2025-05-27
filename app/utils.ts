@@ -5,6 +5,7 @@ export const searchParamSeparator = "~";
 export const orderedRegionsBySize = [
   Regions.EU,
   Regions.US,
+  Regions.CN,
   Regions.TW,
   Regions.KR,
 ];

@@ -93,7 +93,8 @@ function offsetStartDateForRegion(timestamp: number, region: Regions): number {
       return timestamp + 46_800_000;
     }
     case "KR":
-    case "TW": {
+    case "TW":
+    case "CN": {
       return timestamp + 111_600_000;
     }
   }
@@ -108,7 +109,8 @@ function offsetEndDateForRegion(timestamp: number, region: Regions): number {
       return timestamp + 61_200_000;
     }
     case "KR":
-    case "TW": {
+    case "TW":
+    case "CN": {
       return timestamp + 129_600_000;
     }
   }
@@ -125,6 +127,7 @@ export const seasons: Season[] = [
     startDates: {
       US: new Date("2025-03-04T15:00:00Z").getTime(),
       EU: new Date("2025-03-05T04:00:00Z").getTime(),
+      CN: new Date("2025-03-05T23:00:00Z").getTime(),
       TW: new Date("2025-03-05T23:00:00Z").getTime(),
       KR: new Date("2025-03-05T23:00:00Z").getTime(),
     },
@@ -133,6 +136,7 @@ export const seasons: Season[] = [
       EU: null,
       KR: null,
       TW: null,
+      CN: null,
     },
     affixes: [],
     confirmedCutoffs: {
@@ -146,6 +150,7 @@ export const seasons: Season[] = [
       },
       KR: { score: 0, source: null },
       TW: { score: 0, source: null },
+      CN: { score: 0, source: null },
     },
     dungeonHotfixes: {
       "Dungeon Tuning": {
@@ -153,12 +158,14 @@ export const seasons: Season[] = [
         EU: 1741377600000,
         KR: 1741377600000,
         TW: 1741377600000,
+        CN: 1741377600000,
       },
       "More Dungeon Tuning": {
         US: 1742360400000,
         EU: 1742360400000,
         KR: 1742360400000,
         TW: 1742360400000,
+        CN: 1742360400000,
       },
     },
     dungeons: [
@@ -213,12 +220,14 @@ export const seasons: Season[] = [
       EU: 1_726_632_000_000,
       KR: 1_726_700_400_000,
       TW: 1_726_700_400_000,
+      CN: 1_726_700_400_000,
     },
     endDates: {
       US: new Date("2025-03-04T15:00:00Z").getTime() - oneWeekInMilliseconds,
       EU: new Date("2025-03-05T04:00:00Z").getTime() - oneWeekInMilliseconds,
       TW: new Date("2025-03-05T23:00:00Z").getTime() - oneWeekInMilliseconds,
       KR: new Date("2025-03-05T23:00:00Z").getTime() - oneWeekInMilliseconds,
+      CN: new Date("2025-03-05T23:00:00Z").getTime() - oneWeekInMilliseconds,
     },
     affixes: [
       [Affix.BargainAscendant, Affix.Fortified],
@@ -243,6 +252,7 @@ export const seasons: Season[] = [
       },
       KR: { score: 0, source: null },
       TW: { score: 0, source: null },
+      CN: { score: 0, source: null },
     },
     dungeonHotfixes: {
       "Dungeon Tuning": {
@@ -250,11 +260,13 @@ export const seasons: Season[] = [
         EU: offsetStartDateForRegion(1727794800000, "EU"),
         KR: offsetStartDateForRegion(1727794800000, "KR"),
         TW: offsetStartDateForRegion(1727794800000, "TW"),
+        CN: offsetStartDateForRegion(1727794800000, "CN"),
       },
       "Xal'atath's Guile Nerf": {
         US: 1728594316832,
         EU: 1728594316832,
         KR: 1728594316832,
+        CN: 1728594316832,
         TW: 1728594316832,
       },
       "NW/SV Nerf": {
@@ -262,18 +274,21 @@ export const seasons: Season[] = [
         EU: offsetStartDateForRegion(1729004400000, "EU"),
         KR: offsetStartDateForRegion(1729004400000, "KR"),
         TW: offsetStartDateForRegion(1729004400000, "TW"),
+        CN: offsetStartDateForRegion(1729004400000, "CN"),
       },
       Tuning: {
         US: offsetStartDateForRegion(1730210400000, "US"),
         EU: offsetStartDateForRegion(1730210400000, "EU"),
         KR: offsetStartDateForRegion(1730210400000, "KR"),
         TW: offsetStartDateForRegion(1730210400000, "TW"),
+        CN: offsetStartDateForRegion(1730210400000, "CN"),
       },
       "More Tuning": {
         US: offsetStartDateForRegion(1734447600000, "US"),
         EU: offsetStartDateForRegion(1734447600000, "EU"),
         KR: offsetStartDateForRegion(1734444000000 + 60 * 60 * 1000, "KR"),
         TW: offsetStartDateForRegion(1734444000000 + 60 * 60 * 1000, "TW"),
+        CN: offsetStartDateForRegion(1734444000000 + 60 * 60 * 1000, "CN"),
       },
     },
     dungeons: [
@@ -316,12 +331,14 @@ export const seasons: Season[] = [
         EU: offsetStartDateForRegion(1729605600000, "EU"),
         KR: offsetStartDateForRegion(1729605600000, "KR"),
         TW: offsetStartDateForRegion(1729605600000, "TW"),
+        CN: offsetStartDateForRegion(1729605600000, "CN"),
       },
       "11.0.7": {
         US: offsetStartDateForRegion(1734447600000, "US"),
         EU: offsetStartDateForRegion(1734447600000, "EU"),
         KR: offsetStartDateForRegion(1734444000000 + 60 * 60 * 1000, "KR"),
         TW: offsetStartDateForRegion(1734444000000 + 60 * 60 * 1000, "TW"),
+        CN: offsetStartDateForRegion(1734444000000 + 60 * 60 * 1000, "CN"),
       },
     },
     seasonIcon: "https://assets.rpglogs.com/img/warcraft/zones/zone-39.png",
@@ -341,12 +358,14 @@ export const seasons: Season[] = [
       EU: offsetStartDateForRegion(1_713_884_400_000, "EU"),
       KR: offsetStartDateForRegion(1_713_884_400_000, "KR"),
       TW: offsetStartDateForRegion(1_713_884_400_000, "TW"),
+      CN: offsetStartDateForRegion(1_713_884_400_000, "CN"),
     },
     endDates: {
       US: offsetStartDateForRegion(1_721_746_800_000, "US"),
       EU: offsetStartDateForRegion(1_721_746_800_000, "EU"),
       KR: offsetStartDateForRegion(1_721_746_800_000, "KR"),
       TW: offsetStartDateForRegion(1_721_746_800_000, "TW"),
+      CN: offsetStartDateForRegion(1_721_746_800_000, "CN"),
     },
     affixes: [
       [Affix.Tyrannical, Affix.Storming, Affix.Raging],
@@ -365,6 +384,7 @@ export const seasons: Season[] = [
       US: { score: 0, source: null },
       KR: { score: 0, source: null },
       TW: { score: 0, source: null },
+      CN: { score: 0, source: null },
     },
     dungeonHotfixes: {},
     dungeons: [
@@ -411,12 +431,14 @@ export const seasons: Season[] = [
       EU: offsetStartDateForRegion(1_699_974_000_000, "EU"),
       KR: offsetStartDateForRegion(1_699_974_000_000, "KR"),
       TW: offsetStartDateForRegion(1_699_974_000_000, "TW"),
+      CN: offsetStartDateForRegion(1_699_974_000_000, "CN"),
     },
     endDates: {
       US: offsetEndDateForRegion(1_713_848_400_000, "US"),
       EU: offsetEndDateForRegion(1_713_848_400_000, "EU"),
       KR: offsetEndDateForRegion(1_713_848_400_000, "KR"),
       TW: offsetEndDateForRegion(1_713_848_400_000, "TW"),
+      CN: offsetEndDateForRegion(1_713_848_400_000, "CN"),
     },
     confirmedCutoffs: {
       EU: {
@@ -431,6 +453,7 @@ export const seasons: Season[] = [
       },
       KR: { score: 0, source: null },
       TW: { score: 0, source: null },
+      CN: { score: 0, source: null },
     },
     affixes: [
       [Affix.Fortified, Affix.Incorporeal, Affix.Sanguine],
@@ -467,6 +490,10 @@ export const seasons: Season[] = [
           1_699_974_000_000 + 2 * 7 * 24 * 60 * 60 * 1000,
           "TW",
         ),
+        CN: offsetStartDateForRegion(
+          1_699_974_000_000 + 2 * 7 * 24 * 60 * 60 * 1000,
+          "CN",
+        ),
       },
       "WCM Thorns -35% hp": {
         US: offsetStartDateForRegion(
@@ -485,6 +512,10 @@ export const seasons: Season[] = [
           1_699_974_000_000 + 7 * 7 * 24 * 60 * 60 * 1000,
           "TW",
         ),
+        CN: offsetStartDateForRegion(
+          1_699_974_000_000 + 7 * 7 * 24 * 60 * 60 * 1000,
+          "CN",
+        ),
       },
       "Spec Tuning & Rise nerfs": {
         US: offsetStartDateForRegion(
@@ -502,6 +533,10 @@ export const seasons: Season[] = [
         TW: offsetStartDateForRegion(
           1_699_974_000_000 + 10 * 7 * 24 * 60 * 60 * 1000,
           "TW",
+        ),
+        CN: offsetStartDateForRegion(
+          1_699_974_000_000 + 10 * 7 * 24 * 60 * 60 * 1000,
+          "CN",
         ),
       },
     },
@@ -524,6 +559,10 @@ export const seasons: Season[] = [
           1_699_974_000_000 + 9 * 7 * 24 * 60 * 60 * 1000,
           "TW",
         ),
+        CN: offsetStartDateForRegion(
+          1_699_974_000_000 + 9 * 7 * 24 * 60 * 60 * 1000,
+          "CN",
+        ),
       },
       "10.2.6": {
         US: offsetStartDateForRegion(
@@ -542,6 +581,10 @@ export const seasons: Season[] = [
           1_699_974_000_000 + 18 * 7 * 24 * 60 * 60 * 1000,
           "TW",
         ),
+        CN: offsetStartDateForRegion(
+          1_699_974_000_000 + 18 * 7 * 24 * 60 * 60 * 1000,
+          "CN",
+        ),
       },
     },
     startingPeriod: 933,
@@ -556,12 +599,14 @@ export const seasons: Season[] = [
       EU: offsetStartDateForRegion(1_683_644_400_000, "EU"),
       KR: offsetStartDateForRegion(1_683_644_400_000, "KR"),
       TW: offsetStartDateForRegion(1_683_644_400_000, "TW"),
+      CN: offsetStartDateForRegion(1_683_644_400_000, "CN"),
     },
     endDates: {
       US: offsetStartDateForRegion(1_699_336_800_000, "US"),
       EU: offsetStartDateForRegion(1_699_336_800_000, "EU"),
       KR: offsetStartDateForRegion(1_699_336_800_000, "KR"),
       TW: offsetStartDateForRegion(1_699_336_800_000, "TW"),
+      CN: offsetStartDateForRegion(1_699_336_800_000, "CN"),
     },
     confirmedCutoffs: {
       EU: {
@@ -576,6 +621,7 @@ export const seasons: Season[] = [
       },
       KR: { score: 0, source: null },
       TW: { score: 0, source: null },
+      CN: { score: 0, source: null },
     },
     affixes: [
       [Affix.Tyrannical, Affix.Storming, Affix.Raging],
@@ -600,24 +646,28 @@ export const seasons: Season[] = [
         EU: offsetStartDateForRegion(1_692_716_400_000, "EU"),
         KR: offsetStartDateForRegion(1_692_716_400_000, "KR"),
         TW: offsetStartDateForRegion(1_692_716_400_000, "TW"),
+        CN: offsetStartDateForRegion(1_692_716_400_000, "CN"),
       },
       "Larger Class Tuning": {
         US: offsetStartDateForRegion(1_691_506_800_000, "US"),
         EU: offsetStartDateForRegion(1_691_506_800_000, "EU"),
         KR: offsetStartDateForRegion(1_691_506_800_000, "KR"),
         TW: offsetStartDateForRegion(1_691_506_800_000, "TW"),
+        CN: offsetStartDateForRegion(1_691_506_800_000, "CN"),
       },
       "Small Class Tuning": {
         US: offsetStartDateForRegion(1_690_297_200_000, "US"),
         EU: offsetStartDateForRegion(1_690_297_200_000, "EU"),
         KR: offsetStartDateForRegion(1_690_297_200_000, "KR"),
         TW: offsetStartDateForRegion(1_690_297_200_000, "TW"),
+        CN: offsetStartDateForRegion(1_690_297_200_000, "CN"),
       },
       "Various Nerfs": {
         US: offsetStartDateForRegion(1_688_130_000_000, "US"),
         EU: offsetStartDateForRegion(1_688_130_000_000, "EU"),
         KR: offsetStartDateForRegion(1_688_130_000_000, "KR"),
         TW: offsetStartDateForRegion(1_688_130_000_000, "TW"),
+        CN: offsetStartDateForRegion(1_688_130_000_000, "CN"),
       },
     },
     patches: {
@@ -626,12 +676,14 @@ export const seasons: Season[] = [
         EU: offsetStartDateForRegion(1_689_087_600_000, "EU"),
         KR: offsetStartDateForRegion(1_689_087_600_000, "KR"),
         TW: offsetStartDateForRegion(1_689_087_600_000, "TW"),
+        CN: offsetStartDateForRegion(1_689_087_600_000, "CN"),
       },
       "10.1.7": {
         US: offsetStartDateForRegion(1_693_926_000_000, "US"),
         EU: offsetStartDateForRegion(1_693_926_000_000, "EU"),
         KR: offsetStartDateForRegion(1_693_926_000_000, "KR"),
         TW: offsetStartDateForRegion(1_693_926_000_000, "TW"),
+        CN: offsetStartDateForRegion(1_693_926_000_000, "CN"),
       },
     },
     dungeons: 8,
@@ -647,12 +699,14 @@ export const seasons: Season[] = [
       EU: offsetStartDateForRegion(1_670_943_600_000, "EU"),
       KR: offsetStartDateForRegion(1_670_943_600_000, "KR"),
       TW: offsetStartDateForRegion(1_670_943_600_000, "TW"),
+      CN: offsetStartDateForRegion(1_670_943_600_000, "CN"),
     },
     endDates: {
       US: offsetStartDateForRegion(1_683_007_200_000, "US"),
       EU: offsetStartDateForRegion(1_683_007_200_000, "EU"),
       KR: offsetStartDateForRegion(1_683_007_200_000, "KR"),
       TW: offsetStartDateForRegion(1_683_007_200_000, "TW"),
+      CN: offsetStartDateForRegion(1_683_007_200_000, "CN"),
     },
     confirmedCutoffs: {
       EU: {
@@ -667,6 +721,7 @@ export const seasons: Season[] = [
       },
       KR: { score: 0, source: null },
       TW: { score: 0, source: null },
+      CN: { score: 0, source: null },
     },
     affixes: [
       [Affix.Fortified, Affix.Raging, Affix.Quaking, Affix.Thundering],
@@ -691,6 +746,7 @@ export const seasons: Season[] = [
         EU: offsetStartDateForRegion(1_678_798_800_000, "EU"),
         KR: offsetStartDateForRegion(1_678_798_800_000, "KR"),
         TW: offsetStartDateForRegion(1_678_798_800_000, "TW"),
+        CN: offsetStartDateForRegion(1_678_798_800_000, "CN"),
       },
     },
     patches: {
@@ -699,12 +755,14 @@ export const seasons: Season[] = [
         EU: offsetStartDateForRegion(1_679_410_800_000, "EU"),
         KR: offsetStartDateForRegion(1_679_410_800_000, "KR"),
         TW: offsetStartDateForRegion(1_679_410_800_000, "TW"),
+        CN: offsetStartDateForRegion(1_679_410_800_000, "CN"),
       },
       "10.0.5": {
         US: offsetStartDateForRegion(1_675_177_200_000, "US"),
         EU: offsetStartDateForRegion(1_675_177_200_000, "EU"),
         KR: offsetStartDateForRegion(1_675_177_200_000, "KR"),
         TW: offsetStartDateForRegion(1_675_177_200_000, "TW"),
+        CN: offsetStartDateForRegion(1_675_177_200_000, "CN"),
       },
     },
     dungeons: 8,
@@ -720,12 +778,14 @@ export const seasons: Season[] = [
       EU: offsetStartDateForRegion(1_659_452_400_000, "EU"),
       KR: offsetStartDateForRegion(1_659_452_400_000, "KR"),
       TW: offsetStartDateForRegion(1_659_452_400_000, "TW"),
+      CN: offsetStartDateForRegion(1_659_452_400_000, "CN"),
     },
     endDates: {
       US: offsetStartDateForRegion(1_666_710_000_000, "US"),
       EU: offsetStartDateForRegion(1_666_710_000_000, "EU"),
       KR: offsetStartDateForRegion(1_666_710_000_000, "KR"),
       TW: offsetStartDateForRegion(1_666_710_000_000, "TW"),
+      CN: offsetStartDateForRegion(1_666_710_000_000, "CN"),
     },
     confirmedCutoffs: {
       EU: {
@@ -740,6 +800,7 @@ export const seasons: Season[] = [
       },
       KR: { score: 0, source: null },
       TW: { score: 0, source: null },
+      CN: { score: 0, source: null },
     },
     affixes: [
       [Affix.Tyrannical, Affix.Inspiring, Affix.Quaking, Affix.Shrouded],
@@ -776,13 +837,15 @@ export const seasons: Season[] = [
       US: offsetStartDateForRegion(1_646_146_800_000, "US"),
       EU: offsetStartDateForRegion(1_646_146_800_000, "EU"),
       KR: offsetStartDateForRegion(1_646_146_800_000, "KR"),
-      TW: offsetStartDateForRegion(1_646_146_800_000, "TW"),
+      TW: offsetStartDateForRegion(1_659_452_400_000, "TW"),
+      CN: offsetStartDateForRegion(1_646_146_800_000, "CN"),
     },
     endDates: {
       US: offsetStartDateForRegion(1_659_452_400_000, "US"),
       EU: offsetStartDateForRegion(1_659_452_400_000, "EU"),
       KR: offsetStartDateForRegion(1_659_452_400_000, "KR"),
       TW: offsetStartDateForRegion(1_659_452_400_000, "TW"),
+      CN: offsetStartDateForRegion(1_659_452_400_000, "CN"),
     },
     confirmedCutoffs: {
       EU: {
@@ -793,6 +856,7 @@ export const seasons: Season[] = [
       US: { score: 0, source: null },
       KR: { score: 0, source: null },
       TW: { score: 0, source: null },
+      CN: { score: 0, source: null },
     },
     affixes: [
       [Affix.Tyrannical, Affix.Bolstering, Affix.Explosive, Affix.Encrypted],
@@ -831,12 +895,14 @@ export const seasons: Season[] = [
       EU: offsetStartDateForRegion(1_625_583_600_000, "EU"),
       KR: offsetStartDateForRegion(1_625_583_600_000, "KR"),
       TW: offsetStartDateForRegion(1_625_583_600_000, "TW"),
+      CN: offsetStartDateForRegion(1_625_583_600_000, "CN"),
     },
     endDates: {
       US: offsetStartDateForRegion(1_645_542_000_000, "US"),
       EU: offsetStartDateForRegion(1_645_542_000_000, "EU"),
       KR: offsetStartDateForRegion(1_645_542_000_000, "KR"),
       TW: offsetStartDateForRegion(1_645_542_000_000, "TW"),
+      CN: offsetStartDateForRegion(1_645_542_000_000, "CN"),
     },
     confirmedCutoffs: {
       EU: {
@@ -857,6 +923,11 @@ export const seasons: Season[] = [
         horde: 0,
       },
       TW: {
+        source: null,
+        alliance: 0,
+        horde: 0,
+      },
+      CN: {
         source: null,
         alliance: 0,
         horde: 0,

@@ -36,6 +36,7 @@ enum Regions {
   KR
   TW
   US
+  CN
 }
 
 model DungeonHistory {
