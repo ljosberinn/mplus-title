@@ -27,7 +27,7 @@ if (!String.prototype.replaceAll) {
   };
 }
 
-const regions = [Regions.US, Regions.EU, Regions.KR, Regions.TW];
+const regions = [Regions.US, Regions.EU, Regions.KR, Regions.TW, Regions.CN];
 
 export const action: ActionFunction = async ({ request }) => {
   if (request.method !== "POST") {
