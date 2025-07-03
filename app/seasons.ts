@@ -202,7 +202,22 @@ export const seasons: Season[] = [
         slug: "theater-of-pain",
       },
     ],
-    patches: {},
+    patches: {
+      "11.1.5": {
+        US: new Date("2025-04-22T15:00:00Z").getTime(),
+        EU: new Date("2025-04-23T04:00:00Z").getTime(),
+        TW: new Date("2025-04-23T23:00:00Z").getTime(),
+        KR: new Date("2025-04-23T23:00:00Z").getTime(),
+        CN: new Date("2025-04-23T23:00:00Z").getTime(),
+      },
+      "11.1.7": {
+        US: new Date("2025-06-17T15:00:00Z").getTime(),
+        EU: new Date("2025-06-18T04:00:00Z").getTime(),
+        TW: new Date("2025-06-18T23:00:00Z").getTime(),
+        KR: new Date("2025-06-18T23:00:00Z").getTime(),
+        CN: new Date("2025-06-18T23:00:00Z").getTime(),
+      },
+    },
     seasonIcon: "https://assets.rpglogs.com/img/warcraft/zones/zone-43.png",
     startingPeriod: 0,
     wcl: {
