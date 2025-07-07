@@ -199,15 +199,6 @@ export default function Season(): JSX.Element | null {
     <>
       <Header season={season} />
       <main className="container mt-4 flex max-w-screen-2xl flex-1 flex-col space-y-4 px-4 md:mx-auto 2xl:px-0">
-        {season.records.length > 0 ? (
-          <ClientOnly fallback={null}>
-            {() => (
-              <Suspense fallback={null}>
-                <DungeonRecords season={season} />
-              </Suspense>
-            )}
-          </ClientOnly>
-        ) : null}
         {season.score.regionsToDisplay.map((region) => {
           return (
             <Fragment key={region}>
@@ -220,6 +211,16 @@ export default function Season(): JSX.Element | null {
             </Fragment>
           );
         })}
+
+        {season.records.length > 0 ? (
+          <ClientOnly fallback={null}>
+            {() => (
+              <Suspense fallback={null}>
+                <DungeonRecords season={season} />
+              </Suspense>
+            )}
+          </ClientOnly>
+        ) : null}
       </main>
       <Footer />
     </>

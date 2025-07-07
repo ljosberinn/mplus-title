@@ -969,7 +969,7 @@ export function calculateXAxisPlotLines(
           extrapolation,
         ),
       );
-    } else if ((season.wcl?.zoneId ?? 0) === 43) {
+    } else if ((season.wcl?.zoneId ?? 0) >= 43) {
       lines.push(
         ...calcTwwS2LevelCompletionLines(
           season,
@@ -983,17 +983,26 @@ export function calculateXAxisPlotLines(
 
   if (startDate) {
     const end = endDate ?? Date.now();
+
     for (let i = startDate; i <= end; i += oneWeekInMs) {
+      const weeksSinceStart = Math.round((i - startDate) / oneWeekInMs) + 1;
+
+      if (weeksSinceStart === 1) {
+        continue;
+      }
+
       const match = data.find((dataset) => dataset.ts >= i);
 
       if (match) {
         lines.push({
           zIndex: 100,
           label: {
-            text: `${match.score}`,
+            text: [`Week ${weeksSinceStart}`, `Start @ ${match.score}`].join(
+              "<br>",
+            ),
             align: "center",
             rotation: 0,
-            y: 265,
+            y: 255,
             style: {
               color: "lightgreen",
             },

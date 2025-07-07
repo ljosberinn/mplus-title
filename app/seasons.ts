@@ -120,6 +120,82 @@ const oneWeekInMilliseconds = 7 * 24 * 60 * 60 * 1000;
 
 export const seasons: Season[] = [
   {
+    name: "TWW S3",
+    slug: "tww-season-3",
+    rioKey: "season-tww-3",
+    crossFactionSupport: "complete",
+    startDates: {
+      US: new Date("2025-08-12T15:00:00Z").getTime(),
+      EU: new Date("2025-08-13T04:00:00Z").getTime(),
+      CN: new Date("2025-08-13T23:00:00Z").getTime(),
+      TW: new Date("2025-08-13T23:00:00Z").getTime(),
+      KR: new Date("2025-08-13T23:00:00Z").getTime(),
+    },
+    endDates: {
+      US: null,
+      EU: null,
+      CN: null,
+      TW: null,
+      KR: null,
+    },
+    affixes: [],
+    confirmedCutoffs: {
+      EU: {
+        score: 0,
+        source: null,
+      },
+      US: {
+        score: 0,
+        source: null,
+      },
+      KR: { score: 0, source: null },
+      TW: { score: 0, source: null },
+      CN: { score: 0, source: null },
+    },
+    dungeonHotfixes: {},
+    dungeons: [
+      {
+        name: "Operation: Floodgate",
+        slug: "operation-floodgate",
+      },
+      {
+        name: "Ara-Kara, City of Echoes",
+        slug: "arakara-city-of-echoes",
+      },
+      {
+        name: "The Dawnbreaker",
+        slug: "the-dawnbreaker",
+      },
+      {
+        name: "Priory of the Sacred Flame",
+        slug: "priory-of-the-sacred-flame",
+      },
+      {
+        name: "Tazavesh: Streets of Wonder",
+        slug: "tazavesh-streets-of-wonder",
+      },
+      {
+        name: "Tazavesh: So'leah's Gambit",
+        slug: "tazavesh-soleahs-gambit",
+      },
+      {
+        name: "Eco-Dome Al'dani",
+        slug: "ecodome-aldani",
+      },
+      {
+        name: "Halls of Atonement",
+        slug: "halls-of-atonement",
+      },
+    ],
+    patches: {},
+    seasonIcon: "https://assets.rpglogs.com/img/warcraft/zones/zone-45.png",
+    startingPeriod: 0,
+    wcl: {
+      weekIndexToAffixSetId: [],
+      zoneId: 45,
+    },
+  },
+  {
     name: "TWW S2",
     slug: "tww-season-2",
     rioKey: "season-tww-2",
@@ -132,11 +208,11 @@ export const seasons: Season[] = [
       KR: new Date("2025-03-05T23:00:00Z").getTime(),
     },
     endDates: {
-      US: null,
-      EU: null,
-      KR: null,
-      TW: null,
-      CN: null,
+      US: new Date("2025-08-05T15:00:00Z").getTime(),
+      EU: new Date("2025-08-06T04:00:00Z").getTime(),
+      CN: new Date("2025-08-06T23:00:00Z").getTime(),
+      TW: new Date("2025-08-06T23:00:00Z").getTime(),
+      KR: new Date("2025-08-06T23:00:00Z").getTime(),
     },
     affixes: [],
     confirmedCutoffs: {
