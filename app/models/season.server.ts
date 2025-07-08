@@ -228,8 +228,6 @@ export const getEnhancedSeason = async ({
         { type: `calculateExtrapolation-${region}`, timings },
       );
 
-      console.log({ extrapolation });
-
       enhancedSeason.score.xAxisPlotLines[region] = await time(
         () =>
           calculateXAxisPlotLines(
