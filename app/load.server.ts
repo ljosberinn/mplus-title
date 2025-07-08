@@ -397,7 +397,7 @@ export function calculateExtrapolation(
   ) {
     const interval =
       timeUntilExtrapolationEnd / daysUntilSeasonEndingOrThreeWeeks;
-    const scoreIncreaseSteps =
+    let scoreIncreaseSteps =
       [...passedWeeksDiff].reverse().reduce((acc, diff, index, arr) => {
         // applies a <1 factor on the total increase a week saw based on how far
         // it was in the past. e.g. the current week should never be penalized
@@ -421,6 +421,11 @@ export function calculateExtrapolation(
       }, 0) /
       passedWeeksDiff.length /
       7;
+
+    // hacky shit to deal with turbo boost breaking the algo
+    if (season.slug === "tww-season-2") {
+      scoreIncreaseSteps = 1.2;
+    }
 
     return [
       [lastDataset.ts, lastDataset.score],

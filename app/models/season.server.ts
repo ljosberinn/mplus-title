@@ -75,42 +75,49 @@ export const getEnhancedSeason = async ({
         US: [],
         KR: [],
         TW: [],
+        CN: [],
       },
       extrapolation: {
         EU: null,
         KR: null,
         TW: null,
         US: null,
+        CN: null,
       },
       initialZoom: {
         EU: null,
         KR: null,
         TW: null,
         US: null,
+        CN: null,
       },
       xAxisPlotLines: {
         EU: [],
         US: [],
         KR: [],
         TW: [],
+        CN: [],
       },
       yAxisPlotLines: {
         EU: [],
         US: [],
         KR: [],
         TW: [],
+        CN: [],
       },
       xAxisPlotBands: {
         EU: [],
         US: [],
         KR: [],
         TW: [],
+        CN: [],
       },
       series: {
         EU: [],
         US: [],
         KR: [],
         TW: [],
+        CN: [],
       },
       chartBlueprint: {
         accessibility: {
@@ -220,6 +227,8 @@ export const getEnhancedSeason = async ({
         () => calculateExtrapolation(season, region, data, extrapolationEnd),
         { type: `calculateExtrapolation-${region}`, timings },
       );
+
+      console.log({ extrapolation });
 
       enhancedSeason.score.xAxisPlotLines[region] = await time(
         () =>
