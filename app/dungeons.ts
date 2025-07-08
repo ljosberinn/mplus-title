@@ -92,4 +92,20 @@ export const dungeonSlugMetaMap: Record<
     name: "Operation: Floodgate",
     icon: "inv_achievement_dungeon_waterworks",
   },
+  "ecodome-aldani": {
+    name: "Eco-Dome Al'dani",
+    icon: "inv_112_achievement_dungeon_ecodome",
+  },
+  "halls-of-atonement": {
+    name: "Halls of Atonement",
+    icon: "achievement_dungeon_hallsofattonement",
+  },
+  "tazavesh-streets-of-wonder": {
+    name: "Tazavesh: Streets of Wonder",
+    icon: "achievement_dungeon_brokerdungeon",
+  },
+  "tazavesh-soleahs-gambit": {
+    name: "Tazavesh: So'leah's Gambit",
+    icon: "achievement_dungeon_brokerdungeon",
+  },
 };
