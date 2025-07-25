@@ -368,7 +368,7 @@ export function calculateExtrapolation(
 
   const weeks = seasonEnding ? (seasonEnding - seasonStart) / oneWeekInMs : 36;
 
-  const passedWeeksDiff = Array.from({ length: weeks }, (_, index) => {
+  let passedWeeksDiff = Array.from({ length: weeks }, (_, index) => {
     const from = seasonStart + index * oneWeekInMs;
     const to = from + oneWeekInMs;
 
@@ -381,8 +381,15 @@ export function calculateExtrapolation(
     ).xFactionDiff;
   })
     .filter(Boolean)
-    .slice(4)
-    .slice(-season.affixes.length);
+    .slice(4);
+
+  // for seasons with affixes, only take the last full rotation of affixes
+  if (season.affixes.length > 0) {
+    passedWeeksDiff = passedWeeksDiff.slice(-season.affixes.length);
+  } else {
+    // otherwise, take the last 6 weeks
+    passedWeeksDiff = passedWeeksDiff.slice(-6);
+  }
 
   const daysUntilSeasonEndingOrThreeWeeks = daysUntilSeasonEnding ?? 21;
   const to =
@@ -397,7 +404,7 @@ export function calculateExtrapolation(
   ) {
     const interval =
       timeUntilExtrapolationEnd / daysUntilSeasonEndingOrThreeWeeks;
-    let scoreIncreaseSteps =
+    const scoreIncreaseSteps =
       [...passedWeeksDiff].reverse().reduce((acc, diff, index, arr) => {
         // applies a <1 factor on the total increase a week saw based on how far
         // it was in the past. e.g. the current week should never be penalized
@@ -421,11 +428,6 @@ export function calculateExtrapolation(
       }, 0) /
       passedWeeksDiff.length /
       7;
-
-    // hacky shit to deal with turbo boost breaking the algo
-    if (season.slug === "tww-season-2") {
-      scoreIncreaseSteps = 1.2;
-    }
 
     return [
       [lastDataset.ts, lastDataset.score],
