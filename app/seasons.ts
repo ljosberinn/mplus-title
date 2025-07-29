@@ -218,11 +218,13 @@ export const seasons: Season[] = [
     confirmedCutoffs: {
       EU: {
         score: 0,
-        source: null,
+        source:
+          "https://eu.forums.blizzard.com/en/wow/t/m-enterprising-hero-title-updated-29-july/582042",
       },
       US: {
         score: 0,
-        source: null,
+        source:
+          "https://us.forums.blizzard.com/en/wow/t/m-enterprising-hero-title-updated-july-29/2139296/1",
       },
       KR: { score: 0, source: null },
       TW: { score: 0, source: null },
