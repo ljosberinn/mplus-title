@@ -225,10 +225,18 @@ export async function loadDataForRegion(
 
           return next;
         })
-        .filter((dataset) => {
-          return dataset.score > 0;
-        })
-        .sort((a, b) => a.ts - b.ts),
+        .filter((dataset) => dataset.score > 0)
+        .sort((a, b) => a.ts - b.ts)
+        .reduce<Dataset[]>((acc, dataset, index, arr) => {
+          const next = arr[index + 1];
+          const last = acc[acc.length - 1];
+
+          if (acc.length === 0 || !next || last.score !== dataset.score) {
+            acc.push(dataset);
+          }
+
+          return acc;
+        }, []),
     { type: `normalizeDatasets-${region}`, timings },
   );
 
