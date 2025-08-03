@@ -539,7 +539,7 @@ export function calculateZoom(
 
   if (daysUntilSeasonEnding) {
     const offset =
-      daysUntilSeasonEnding < 1
+      daysUntilSeasonEnding < 3
         ? 1.5
         : daysUntilSeasonEnding < 7
           ? 2.5
