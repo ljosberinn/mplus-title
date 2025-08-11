@@ -189,7 +189,7 @@ export const seasons: Season[] = [
     ],
     patches: {},
     seasonIcon: "https://assets.rpglogs.com/img/warcraft/zones/zone-45.png",
-    startingPeriod: 0,
+    startingPeriod: 1024,
     wcl: {
       weekIndexToAffixSetId: [],
       zoneId: 45,
@@ -217,12 +217,12 @@ export const seasons: Season[] = [
     affixes: [],
     confirmedCutoffs: {
       EU: {
-        score: 0,
+        score: 3821,
         source:
           "https://eu.forums.blizzard.com/en/wow/t/m-enterprising-hero-title-updated-29-july/582042",
       },
       US: {
-        score: 0,
+        score: 3805,
         source:
           "https://us.forums.blizzard.com/en/wow/t/m-enterprising-hero-title-updated-july-29/2139296/1",
       },
