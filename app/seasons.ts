@@ -152,7 +152,15 @@ export const seasons: Season[] = [
       TW: { score: 0, source: null },
       CN: { score: 0, source: null },
     },
-    dungeonHotfixes: {},
+    dungeonHotfixes: {
+      "Ara-Kara / Halls Nerfs": {
+        US: new Date("2025-09-09T15:00:00Z").getTime(),
+        EU: new Date("2025-09-10T04:00:00Z").getTime(),
+        CN: new Date("2025-09-09T23:00:00Z").getTime(),
+        TW: new Date("2025-09-09T23:00:00Z").getTime(),
+        KR: new Date("2025-09-09T23:00:00Z").getTime(),
+      },
+    },
     dungeons: [
       {
         name: "Operation: Floodgate",
