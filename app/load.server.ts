@@ -391,6 +391,10 @@ export function calculateExtrapolation(
     .filter(Boolean)
     .slice(4);
 
+  if (passedWeeksDiff.length === 0) {
+    return null;
+  }
+
   // for seasons with affixes, only take the last full rotation of affixes
   if (season.affixes.length > 0) {
     passedWeeksDiff = passedWeeksDiff.slice(-season.affixes.length);
