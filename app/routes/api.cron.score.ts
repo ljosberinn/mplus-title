@@ -3,7 +3,6 @@ import { type Prisma } from "@prisma/client";
 import { Regions } from "@prisma/client";
 import { type ActionFunction, type LoaderFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { load } from "cheerio";
 
 import { protectCronRoute } from "~/load.server";
 
@@ -82,7 +81,9 @@ export const action: ActionFunction = async ({ request }) => {
     );
     console.timeEnd("parseRegionData");
 
-    await prisma.crossFactionHistory.create({ data: regionData });
+    if (regionData.score > 0) {
+      await prisma.crossFactionHistory.create({ data: regionData });
+    }
 
     return json({ region: mostOutdatedRegion.region, regionData });
   } catch (error) {
@@ -108,99 +109,65 @@ function findSeasonForRegion(region: Regions): Season | null {
 }
 
 function createPageUrl(rioSeasonName: string, region: Regions, page = 0) {
-  return `${rioBaseUrl}/mythic-plus-character-rankings/${rioSeasonName}/${region}/all/all/${page}`;
+  // return `${rioBaseUrl}/mythic-plus-character-rankings/${rioSeasonName}/${region}/all/all/${page}`;
+  return `${rioBaseUrl}/api/mythic-plus/rankings/characters?region=${region}&season=${rioSeasonName}&class=all&role=all&page=${page}`;
 }
 
-type LastPageUrlParams = {
-  url: string;
-  page: number;
-  initialPage: number;
-};
-
-async function retrieveLastPageUrl(
+async function retrieveLastPage(
   rioSeasonName: string,
   region: Regions,
-): Promise<LastPageUrlParams> {
-  const firstPageUrl = createPageUrl(rioSeasonName, region);
-  const firstPageResponse = await fetch(firstPageUrl);
-  const firstPageText = await firstPageResponse.text();
+): Promise<number> {
+  const firstPageApiUrl = createPageUrl(rioSeasonName, region);
+  const firstPageResponse = await fetch(firstPageApiUrl);
+  const firstPageJson = await firstPageResponse.json();
 
-  const $firstPage = load(firstPageText);
-
-  const url = $firstPage(".rio-pagination--button").last().attr("href");
-
-  if (!url) {
-    return {
-      url: "",
-      initialPage: 0,
-      page: 0,
-    };
-  }
-
-  const withoutHash = url.includes("#content")
-    ? url.replace("#content", "")
-    : url;
-
-  const { page, url: urlWithoutPage } = parsePage(withoutHash);
-
-  return {
-    url: urlWithoutPage,
-    page,
-    initialPage: page,
-  };
+  return firstPageJson.rankings.ui.lastPage;
 }
 
-function parsePage(str: string) {
-  const parts = str.split("/");
-
-  return {
-    page: Number.parseInt(parts[parts.length - 1]),
-    url: parts.slice(0, -1).join("/"),
-  };
-}
+let retries = 0;
 
 async function determineLastEligibleRank(
-  lastPageParams: LastPageUrlParams,
+  rioSeasonName: string,
+  region: Regions,
+  lastPage: number,
 ): Promise<number> {
-  const retryDiff = lastPageParams.initialPage - lastPageParams.page;
-
-  if (retryDiff === 3) {
+  if (retries === 3) {
     console.debug("too many retries to determine last eligible rank, bailing");
     return 0;
   }
 
-  const url = `${rioBaseUrl}${lastPageParams.url}/${lastPageParams.page}`;
-  const lastPageResponse = await fetch(url);
-  const lastPageText = await lastPageResponse.text();
-  const $lastPage = load(lastPageText);
+  retries++;
 
-  const cellSelector =
-    ".mythic-plus-rankings--row:last-of-type .rank-text-normal";
+  const url = createPageUrl(rioSeasonName, region, lastPage);
 
-  const textContent = $lastPage(cellSelector).text();
+  try {
+    const lastPageResponse = await fetch(url);
+    const lastPageJson = await lastPageResponse.json();
 
-  const totalRankedCharacters = Number.parseInt(
-    textContent.replaceAll(",", ""),
-  );
+    const lastEntry =
+      lastPageJson.rankings.rankedCharacters[
+        lastPageJson.rankings.rankedCharacters.length - 1
+      ];
 
-  if (Number.isNaN(totalRankedCharacters)) {
-    const prevPage = lastPageParams.page - 1;
+    retries = 0;
+
+    return Math.floor(lastEntry.rank * 0.001);
+  } catch {
+    const prevPage = lastPage - 1;
 
     if (prevPage === 0) {
       console.debug("probably no entries yet, bailing");
       return 0;
     }
 
-    return determineLastEligibleRank({
-      ...lastPageParams,
-      page: prevPage,
-    });
+    return determineLastEligibleRank(rioSeasonName, region, prevPage);
   }
-
-  console.debug({ totalRankedCharacters });
-
-  return Math.floor(totalRankedCharacters * 0.001);
 }
+
+type RioLeaderboardApiDataset = {
+  score: number;
+  rank: number;
+};
 
 async function retrieveScore(
   rioSeasonName: string,
@@ -220,24 +187,17 @@ async function retrieveScore(
   );
 
   const scorePageResponse = await fetch(scorePageUrl);
-  const scorePageText = await scorePageResponse.text();
+  const scorePageJson = await scorePageResponse.json();
 
-  const $scorePage = load(scorePageText);
+  const match = (
+    scorePageJson.rankings.rankedCharacters as RioLeaderboardApiDataset[]
+  ).find((character) => character.rank === lastEligibleRank);
 
-  const maybeScore = Number.parseFloat(
-    $scorePage(".mythic-plus-rankings--row .rank-text-normal")
-      .filter((_, element) => {
-        return (
-          $scorePage(element).text().replaceAll(",", "") ===
-          `${lastEligibleRank}`
-        );
-      })
-      .parents(".mythic-plus-rankings--row")
-      .find("b")
-      .text(),
-  );
+  if (match) {
+    return match.score;
+  }
 
-  return Number.isNaN(maybeScore) ? 0 : maybeScore;
+  return 0;
 }
 
 async function parseRegionData(
@@ -246,12 +206,12 @@ async function parseRegionData(
 ): Promise<Prisma.CrossFactionHistoryCreateInput> {
   const now = Math.round(Date.now() / 1000);
 
-  console.time("retrieveLastPageUrl");
-  const lastPageUrlParams = await retrieveLastPageUrl(rioSeasonName, region);
-  console.timeEnd("retrieveLastPageUrl");
+  console.time("retrieveLastPage");
+  const lastPage = await retrieveLastPage(rioSeasonName, region);
+  console.timeEnd("retrieveLastPage");
 
-  if (!lastPageUrlParams.url) {
-    console.warn("Could not parse last page button, bailing without data.");
+  if (!lastPage) {
+    console.warn("Could not parse last page, bailing without data.", lastPage);
     return {
       score: 0,
       rank: 0,
@@ -261,11 +221,18 @@ async function parseRegionData(
   }
 
   console.time("determineLastEligibleRank");
-  const lastEligibleRank = await determineLastEligibleRank(lastPageUrlParams);
+  const lastEligibleRank = await determineLastEligibleRank(
+    rioSeasonName,
+    region,
+    lastPage,
+  );
   console.timeEnd("determineLastEligibleRank");
 
   if (lastEligibleRank === 0) {
-    console.warn("Could not parse last eligible rank, bailing without data.");
+    console.warn(
+      "Could not parse last eligible rank, bailing without data.",
+      lastEligibleRank,
+    );
     return {
       score: 0,
       rank: 0,
@@ -277,6 +244,10 @@ async function parseRegionData(
   console.time("retrieveScore");
   const score = await retrieveScore(rioSeasonName, region, lastEligibleRank);
   console.timeEnd("retrieveScore");
+
+  console.info(
+    `Established score for ${region} at ${lastEligibleRank} of ${rioSeasonName} as ${score}`,
+  );
 
   return {
     score,
