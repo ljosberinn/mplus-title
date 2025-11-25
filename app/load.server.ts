@@ -374,7 +374,7 @@ export function calculateExtrapolation(
     return null;
   }
 
-  const weeks = seasonEnding ? (seasonEnding - seasonStart) / oneWeekInMs : 36;
+  const weeks = seasonEnding ? (seasonEnding - seasonStart) / oneWeekInMs : 24;
 
   let passedWeeksDiff = Array.from({ length: weeks }, (_, index) => {
     const from = seasonStart + index * oneWeekInMs;
@@ -434,7 +434,7 @@ export function calculateExtrapolation(
         // there's good weeks coming up.
 
         const factor =
-          index === 0 ? 1 : 1 - (1 - 0.5) * (index / (arr.length - 1)) ** 1.5;
+          index === 0 ? 1 : 1 - (1 - 0.1) * (index / (arr.length - 1)) ** 1.5;
 
         return acc + diff * factor;
       }, 0) /
