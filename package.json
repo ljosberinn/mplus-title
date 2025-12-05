@@ -6,7 +6,7 @@
   "sideEffects": false,
   "type": "module",
   "scripts": {
-    "build": "prisma generate && remix build --sourcemap",
+    "build": "prisma generate && remix build",
     "dev": "remix dev",
     "postinstall": "sort-package-json",
     "install:clean": "rm -rf node_modules && rm package-lock.json && npm i",
