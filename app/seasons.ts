@@ -125,11 +125,11 @@ export const seasons: Season[] = [
     rioKey: "season-mn-1",
     crossFactionSupport: "complete",
     startDates: {
-      US: new Date("2026-03-16T15:00:00Z").getTime(),
-      EU: new Date("2026-03-17T04:00:00Z").getTime(),
-      CN: new Date("2026-03-17T23:00:00Z").getTime(),
-      TW: new Date("2026-03-17T23:00:00Z").getTime(),
-      KR: new Date("2026-03-17T23:00:00Z").getTime(),
+      US: new Date("2026-03-23T15:00:00Z").getTime(),
+      EU: new Date("2026-03-24T04:00:00Z").getTime(),
+      CN: new Date("2026-03-24T23:00:00Z").getTime(),
+      TW: new Date("2026-03-24T23:00:00Z").getTime(),
+      KR: new Date("2026-03-24T23:00:00Z").getTime(),
     },
     endDates: {
       US: null,
