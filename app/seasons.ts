@@ -120,6 +120,82 @@ const oneWeekInMilliseconds = 7 * 24 * 60 * 60 * 1000;
 
 export const seasons: Season[] = [
   {
+    name: "MN S1",
+    slug: "mn-season-1",
+    rioKey: "season-mn-1",
+    crossFactionSupport: "complete",
+    startDates: {
+      US: new Date("2026-03-16T15:00:00Z").getTime(),
+      EU: new Date("2026-03-17T04:00:00Z").getTime(),
+      CN: new Date("2026-03-17T23:00:00Z").getTime(),
+      TW: new Date("2026-03-17T23:00:00Z").getTime(),
+      KR: new Date("2026-03-17T23:00:00Z").getTime(),
+    },
+    endDates: {
+      US: null,
+      EU: null,
+      CN: null,
+      TW: null,
+      KR: null,
+    },
+    affixes: [],
+    confirmedCutoffs: {
+      EU: {
+        score: 0,
+        source: null,
+      },
+      US: {
+        score: 0,
+        source: null,
+      },
+      KR: { score: 0, source: null },
+      TW: { score: 0, source: null },
+      CN: { score: 0, source: null },
+    },
+    dungeonHotfixes: {},
+    dungeons: [
+      {
+        slug: "algethar-academy",
+        name: "Algeth'ar Academy",
+      },
+      {
+        slug: "magisters-terrace",
+        name: "Magisters' Terrace",
+      },
+      {
+        slug: "maisara-caverns",
+        name: "Maisara Caverns",
+      },
+      {
+        slug: "nexuspoint-xenas",
+        name: "Nexus-Point Xenas",
+      },
+      {
+        slug: "pit-of-saron",
+        name: "Pit of Saron",
+      },
+      {
+        slug: "seat-of-the-triumvirate",
+        name: "Seat of the Triumvirate",
+      },
+      {
+        slug: "skyreach",
+        name: "Skyreach",
+      },
+      {
+        slug: "windrunner-spire",
+        name: "Windrunner Spire",
+      },
+    ],
+    patches: {},
+    seasonIcon: "https://assets.rpglogs.com/img/warcraft/zones/zone-47.png",
+    startingPeriod: 1024,
+    wcl: {
+      weekIndexToAffixSetId: [],
+      zoneId: 47,
+    },
+  },
+  {
     name: "TWW S3",
     slug: "tww-season-3",
     rioKey: "season-tww-3",
@@ -132,11 +208,11 @@ export const seasons: Season[] = [
       KR: new Date("2025-08-13T23:00:00Z").getTime(),
     },
     endDates: {
-      US: null,
-      EU: null,
-      CN: null,
-      TW: null,
-      KR: null,
+      US: new Date("2026-01-20T15:00:00Z").getTime(),
+      EU: new Date("2026-01-21T04:00:00Z").getTime(),
+      CN: new Date("2026-01-21T23:00:00Z").getTime(),
+      TW: new Date("2026-01-21T23:00:00Z").getTime(),
+      KR: new Date("2026-01-21T23:00:00Z").getTime(),
     },
     affixes: [],
     confirmedCutoffs: {
