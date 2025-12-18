@@ -108,4 +108,32 @@ export const dungeonSlugMetaMap: Record<
     name: "Tazavesh: So'leah's Gambit",
     icon: "achievement_dungeon_brokerdungeon",
   },
+  "magisters-terrace": {
+    icon: "inv_achievement_dungeon_magistersterrace",
+    name: "Magisters' Terrace",
+  },
+  "maisara-caverns": {
+    icon: "inv_achievement_dungeon_maisarahills",
+    name: "Maisara Caverns",
+  },
+  "nexuspoint-xenas": {
+    icon: "inv_achievement_dungeon_nexuspointxenas",
+    name: "Nexus-Point Xenas",
+  },
+  "pit-of-saron": {
+    icon: "achievement_dungeon_icecrown_pitofsaron",
+    name: "Pit of Saron",
+  },
+  "seat-of-the-triumvirate": {
+    icon: "achievement_boss_triumvirate_darknaaru",
+    name: "Seat of the Triumvirate",
+  },
+  skyreach: {
+    icon: "achievement_dungeon_arakkoaspires",
+    name: "Skyreach",
+  },
+  "windrunner-spire": {
+    icon: "inv_achievement_dungeon_windrunnerspire",
+    name: "Windrunner Spire",
+  },
 };
