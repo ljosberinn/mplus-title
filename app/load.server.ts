@@ -100,6 +100,47 @@ function setupRedisProviders() {
   };
 }
 
+export async function loadExtrapolationHistoryForSeason(
+  season: Season,
+  region: Regions,
+  overlays: readonly Overlay[],
+): Promise<[number, number][]> {
+  if (!season.supportsExtrapolationHistory) {
+    return [];
+  }
+
+  if (!overlays.includes("extrapolation")) {
+    return [];
+  }
+
+  if (season.startDates.US === null) {
+    return [];
+  }
+
+  const data = await prisma.extrapolation.findMany({
+    orderBy: {
+      timestamp: "asc",
+    },
+    where: {
+      timestamp: {
+        gte: Math.round(season.startDates.US / 1000),
+        lte: season.endDates.US
+          ? Math.round(season.endDates.US / 1000)
+          : undefined,
+      },
+      region: {
+        equals: region,
+      },
+    },
+    select: {
+      score: true,
+      timestamp: true,
+    },
+  });
+
+  return data.map((dataset) => [dataset.timestamp * 1000, dataset.score]);
+}
+
 export async function loadRecordsForSeason(
   season: Season,
   overlays: readonly Overlay[],
@@ -638,17 +679,21 @@ export function determineRegionsToDisplayFromCookies(
   }
 }
 
-const factionColors = {
+const colors = {
   alliance: "#60a5fa",
   horde: "#f87171",
   xFaction: "#EEE7D8",
-  extrapolation: "#C8BEAE50",
+  extrapolation: "#ccaa8aff",
+  extrapolationHistory: "gray",
 } as const;
 
 export function calculateSeries(
   season: Season,
   data: Dataset[],
   extrapolation: ReturnType<typeof calculateExtrapolation>,
+  extrapolationHistory: Awaited<
+    ReturnType<typeof loadExtrapolationHistoryForSeason>
+  >,
 ): SeriesLineOptions[] {
   const options: SeriesLineOptions[] = [];
 
@@ -657,7 +702,7 @@ export function calculateSeries(
       {
         type: "line",
         name: "Score Horde",
-        color: factionColors.horde,
+        color: colors.horde,
         data: data
           .filter((dataset) => dataset.faction === "horde")
           .map((dataset) => {
@@ -667,7 +712,7 @@ export function calculateSeries(
       {
         type: "line",
         name: "Score Alliance",
-        color: factionColors.alliance,
+        color: colors.alliance,
         data: data
           .filter((dataset) => dataset.faction === "alliance")
           .map((dataset) => {
@@ -680,8 +725,8 @@ export function calculateSeries(
   if (season.crossFactionSupport !== "none") {
     options.push({
       type: "line",
-      name: "Score X-Faction",
-      color: factionColors.xFaction,
+      name: "Score",
+      color: colors.xFaction,
       data: data
         .filter((dataset) => !("faction" in dataset))
         .map((dataset) => {
@@ -694,7 +739,9 @@ export function calculateSeries(
     options.push({
       type: "line",
       name: "Score Extrapolated",
-      color: factionColors.extrapolation,
+      description:
+        "A projection of how the cutoff will evolve over time based on various parameters.",
+      color: colors.extrapolation,
       data: Array.isArray(extrapolation)
         ? extrapolation
         : [
@@ -704,14 +751,34 @@ export function calculateSeries(
       dashStyle: "ShortDash",
       marker: {
         enabled: true,
+        radius: 5,
+        symbol: "triangle",
       },
       visible: true,
     });
   }
 
+  if (extrapolationHistory.length > 0) {
+    options.push({
+      type: "line",
+      name: "Extrapolation History",
+      color: colors.extrapolationHistory,
+      description:
+        "Series of data the score was expected to be at for a given point in time. Useful to compare how accurate prediction was.",
+      dashStyle: "Dot",
+      marker: {
+        enabled: true,
+        radius: 4,
+        symbol: "triangle-down",
+      },
+      visible: false,
+      data: extrapolationHistory,
+    });
+  }
+
   options.push({
     type: "line",
-    name: "Characters above Cutoff (default hidden)",
+    name: "# Characters Above Cutoff (click to toggle)",
     data: data
       .filter((dataset) => dataset.rank !== null)
       .map((dataset) => [dataset.ts, dataset.rank]),
@@ -815,8 +882,8 @@ export function calculateXAxisPlotBands(
 
     if (crossFactionSupport !== "complete") {
       text.push(
-        createWeekDiffString(hordeDiff, factionColors.horde),
-        createWeekDiffString(allianceDiff, factionColors.alliance),
+        createWeekDiffString(hordeDiff, colors.horde),
+        createWeekDiffString(allianceDiff, colors.alliance),
       );
     }
 
@@ -826,7 +893,7 @@ export function calculateXAxisPlotBands(
       (crossFactionSupport === "partial" && xFactionDiff === 0)
     ) {
     } else {
-      text.push(createWeekDiffString(xFactionDiff, factionColors.xFaction));
+      text.push(createWeekDiffString(xFactionDiff, colors.xFaction));
     }
 
     options.push({
@@ -859,7 +926,7 @@ export function calculateYAxisPlotLines(
         label: {
           text: `Confirmed cutoff for Alliance at ${cutoffs.alliance}`,
           rotation: 0,
-          style: { color: factionColors.alliance },
+          style: { color: colors.alliance },
         },
         value: cutoffs.alliance,
         dashStyle: "Dash",
@@ -868,7 +935,7 @@ export function calculateYAxisPlotLines(
         label: {
           text: `Confirmed cutoff for Horde at ${cutoffs.horde}`,
           rotation: 0,
-          style: { color: factionColors.horde },
+          style: { color: colors.horde },
         },
         value: cutoffs.horde,
         dashStyle: "Dash",
@@ -885,7 +952,7 @@ export function calculateYAxisPlotLines(
       label: {
         text: `Confirmed cutoff at ${cutoffs.score}`,
         rotation: 0,
-        style: { color: factionColors.xFaction },
+        style: { color: colors.xFaction },
       },
       value: cutoffs.score,
       dashStyle: "Dash",

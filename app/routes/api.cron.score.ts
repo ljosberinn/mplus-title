@@ -106,6 +106,7 @@ export const action: ActionFunction = async ({ request }) => {
             data: {
               timestamp: Math.round(timestamp / 1000),
               region: mostOutdatedRegion.region,
+              estimatedAt: Math.round(regionData.timestamp),
               score,
             },
           }),
