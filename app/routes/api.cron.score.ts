@@ -1,8 +1,8 @@
 /* eslint-disable no-console */
-import { type Prisma } from "@prisma/client";
-import { Regions } from "@prisma/client";
 import { type ActionFunction, type LoaderFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
+import { Regions } from "prisma/generated/prisma/enums";
+import { type CrossFactionHistoryCreateInput } from "prisma/generated/prisma/models";
 
 import {
   calculateExtrapolation,
@@ -235,7 +235,7 @@ async function retrieveScore(
 async function parseRegionData(
   region: Regions,
   rioSeasonName: string,
-): Promise<Prisma.CrossFactionHistoryCreateInput> {
+): Promise<CrossFactionHistoryCreateInput> {
   const now = Math.round(Date.now() / 1000);
 
   console.time("retrieveLastPage");

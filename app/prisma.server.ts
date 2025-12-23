@@ -1,21 +1,15 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaMariaDb } from "@prisma/adapter-mariadb";
+import { env } from "prisma/config";
+import { PrismaClient } from "prisma/generated/prisma/client";
 
-import { env } from "~/env/server";
+const adapter = new PrismaMariaDb(env("DATABASE_URL"));
 
-// add prisma to the NodeJS global type
-type CustomNodeJsGlobal = {
-  prisma: PrismaClient;
-} & typeof globalThis;
+const prisma = new PrismaClient({ adapter });
 
-declare const global: CustomNodeJsGlobal;
+const globalForPrisma = global as unknown as { prisma: typeof prisma };
 
-if (typeof window !== "undefined") {
-  throw new TypeError("import error - do not bundle prisma to the client");
+if (process.env.NODE_ENV !== "production") {
+  globalForPrisma.prisma = prisma;
 }
 
-// Prevent multiple instances of Prisma Client in development
-export const prisma = global.prisma || new PrismaClient();
-
-if (env.NODE_ENV !== "production") {
-  global.prisma = prisma;
-}
+export { prisma };

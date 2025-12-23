@@ -1,5 +1,5 @@
-import { Regions } from "@prisma/client";
 import { type LoaderFunctionArgs } from "@remix-run/node";
+import { Regions } from "prisma/generated/prisma/enums";
 
 import { getAffixName } from "../affixes";
 import { getEnhancedSeason } from "../models/season.server";
@@ -24,7 +24,7 @@ export const loader = async ({
   params,
   request,
 }: LoaderFunctionArgs): Promise<Response> => {
-  const region = params.region ? params.region.toUpperCase() : null
+  const region = params.region ? params.region.toUpperCase() : null;
 
   if (!region || !regionIsRegion(region)) {
     return new Response(undefined, {

@@ -1,4 +1,3 @@
-import { type Factions, type Regions } from "@prisma/client";
 import {
   type Options,
   type SeriesLineOptions,
@@ -6,6 +5,7 @@ import {
   type XAxisPlotLinesOptions,
   type YAxisPlotLinesOptions,
 } from "highcharts";
+import { type Factions, type Regions } from "prisma/generated/prisma/enums";
 
 import { type Overlay } from "~/utils";
 

@@ -1,4 +1,4 @@
-import { type Regions } from "@prisma/client";
+import { type Regions } from "prisma/generated/prisma/enums";
 
 import {
   calculateSeries,

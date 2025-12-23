@@ -1,6 +1,6 @@
-import { Regions } from "@prisma/client";
 import { json } from "@remix-run/node";
 import { type ActionFunction } from "@remix-run/server-runtime";
+import { Regions } from "prisma/generated/prisma/enums";
 
 import { protectCronRoute } from "~/load.server";
 import { prisma } from "~/prisma.server";

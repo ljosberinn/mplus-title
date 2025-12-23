@@ -1,4 +1,3 @@
-import { type Regions } from "@prisma/client";
 import {
   json,
   type LoaderFunctionArgs,
@@ -9,6 +8,7 @@ import { type HeadersFunction, redirect } from "@remix-run/server-runtime";
 import clsx from "clsx";
 import { type Options, type PointLabelObject } from "highcharts";
 import { type HighchartsReactRefObject } from "highcharts-react-official";
+import { type Regions } from "prisma/generated/prisma/enums";
 import { Fragment, lazy, Suspense, useEffect, useRef, useState } from "react";
 import { ClientOnly } from "remix-utils/client-only";
 

@@ -1,4 +1,4 @@
-import { Regions } from "@prisma/client";
+import { Regions } from "prisma/generated/prisma/enums";
 
 export const searchParamSeparator = "~";
 

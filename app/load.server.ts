@@ -1,4 +1,3 @@
-import { Regions } from "@prisma/client";
 import { Redis } from "@upstash/redis";
 import {
   type SeriesLineOptions,
@@ -6,6 +5,7 @@ import {
   type XAxisPlotLinesOptions,
   type YAxisPlotLinesOptions,
 } from "highcharts";
+import { Regions } from "prisma/generated/prisma/enums";
 
 import { env } from "~/env/server";
 

@@ -1,5 +1,5 @@
-import { Regions } from "@prisma/client";
 import { type LoaderFunctionArgs } from "@remix-run/node";
+import { Regions } from "prisma/generated/prisma/enums";
 
 import { getEnhancedSeason } from "../models/season.server";
 import { findSeasonByTimestamp } from "../seasons";

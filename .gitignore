@@ -13,3 +13,4 @@ node_modules
 
 .idea
 
+prisma/generated/*
