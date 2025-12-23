@@ -39,6 +39,13 @@ export function OverlaysToggle({ season }: OverlaysToggleProps): JSX.Element {
             return null;
           }
 
+          if (
+            overlay === "extrapolation" &&
+            !season.supportsExtrapolationHistory
+          ) {
+            return null;
+          }
+
           const checked = season.score.overlaysToDisplay.includes(overlay);
 
           return (

@@ -16,6 +16,7 @@ export const overlays = [
   "levelCompletion",
   "affixes",
   "records",
+  "extrapolation",
 ] as const;
 
 export type Overlay = (typeof overlays)[number];
@@ -26,6 +27,7 @@ export const extraOverlayNames: Record<Overlay, string> = {
   patches: "Patches",
   affixes: "Affixes",
   records: "Records",
+  extrapolation: "Extrapolation",
 };
 
 export const isNotNull = <T>(something: T | null): something is T =>
