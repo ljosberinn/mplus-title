@@ -62,7 +62,13 @@ export const getEnhancedSeason = async ({
   );
 
   const regions = pRegions ?? orderedRegionsBySize;
-  const overlays = pOverlays ?? defaultOverlays;
+  const overlays = (pOverlays ?? defaultOverlays).filter((overlay) => {
+    if ((season.wcl?.zoneId ?? 0) > 39) {
+      return overlay !== "affixes";
+    }
+
+    return true;
+  });
 
   const enhancedSeason: EnhancedSeason = {
     ...season,
