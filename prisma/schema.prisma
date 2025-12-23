@@ -19,11 +19,18 @@ model History {
 }
 
 model CrossFactionHistory {
-  id        Int     @id @default(autoincrement())
+  id            Int     @id @default(autoincrement())
+  timestamp     Int
+  region        Regions
+  score         Float
+  rank          Int
+}
+
+model Extrapolation {
+  id        Int    @id @default(autoincrement())
   timestamp Int
   region    Regions
   score     Float
-  rank      Int
 }
 
 enum Factions {

@@ -4,7 +4,11 @@ import { Regions } from "@prisma/client";
 import { type ActionFunction, type LoaderFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
 
-import { protectCronRoute } from "~/load.server";
+import {
+  calculateExtrapolation,
+  loadDataForRegion,
+  protectCronRoute,
+} from "~/load.server";
 
 import { prisma } from "../prisma.server";
 import { type Season, seasons } from "../seasons";
@@ -82,7 +86,34 @@ export const action: ActionFunction = async ({ request }) => {
     console.timeEnd("parseRegionData");
 
     if (regionData.score > 0) {
-      await prisma.crossFactionHistory.create({ data: regionData });
+      const data = await loadDataForRegion(
+        mostOutdatedRegion.region,
+        season,
+        {},
+      );
+      const extrapolation = calculateExtrapolation(
+        season,
+        mostOutdatedRegion.region,
+        data,
+        null,
+      );
+
+      if (Array.isArray(extrapolation) && extrapolation.length > 0) {
+        const [timestamp, score] = extrapolation[extrapolation.length - 1];
+
+        await Promise.all([
+          prisma.extrapolation.create({
+            data: {
+              timestamp: Math.round(timestamp / 1000),
+              region: mostOutdatedRegion.region,
+              score,
+            },
+          }),
+          prisma.crossFactionHistory.create({ data: regionData }),
+        ]);
+      } else {
+        await prisma.crossFactionHistory.create({ data: regionData });
+      }
     }
 
     return json({ region: mostOutdatedRegion.region, regionData });
