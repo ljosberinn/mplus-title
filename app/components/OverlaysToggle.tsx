@@ -1,6 +1,6 @@
-import { useNavigation, useSubmit } from "@remix-run/react";
-import { type FormEventHandler } from "react";
+import { type ReactNode, type FormEventHandler } from "react";
 import { useRef } from "react";
+import { useNavigation, useSubmit } from "react-router";
 
 import { type EnhancedSeason } from "~/seasons";
 import { extraOverlayNames, isNotNull, overlays } from "~/utils";
@@ -11,7 +11,7 @@ type OverlaysToggleProps = {
   season: EnhancedSeason;
 };
 
-export function OverlaysToggle({ season }: OverlaysToggleProps): JSX.Element {
+export function OverlaysToggle({ season }: OverlaysToggleProps): ReactNode {
   const submit = useSubmit();
   const { state: navigationState } = useNavigation();
 
@@ -28,7 +28,11 @@ export function OverlaysToggle({ season }: OverlaysToggleProps): JSX.Element {
         return acc;
       }, new FormData());
 
-    submit(formData, { action: "/overlays", method: "post", replace: true });
+    void submit(formData, {
+      action: "/overlays",
+      method: "post",
+      replace: true,
+    });
   };
 
   return (

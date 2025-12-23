@@ -1,5 +1,4 @@
-import { type LoaderFunctionArgs, type TypedResponse } from "@remix-run/node";
-import { json } from "@remix-run/node";
+import { type LoaderFunctionArgs } from "react-router";
 
 import { env } from "../env/server";
 import {
@@ -7,13 +6,12 @@ import {
   determineRegionsToDisplayFromSearchParams,
 } from "../load.server";
 import { getEnhancedSeason } from "../models/season.server";
-import { type EnhancedSeason } from "../seasons";
 import { findSeasonByName } from "../seasons";
 
 export const loader = async ({
   params,
   request,
-}: LoaderFunctionArgs): Promise<TypedResponse<EnhancedSeason>> => {
+}: LoaderFunctionArgs): Promise<Response> => {
   if (!env.FEATURE_FLAG_API_ENABLED) {
     throw new Response(undefined, {
       status: 501,
@@ -48,5 +46,5 @@ export const loader = async ({
     timings: {},
   });
 
-  return json(enhancedSeason, { headers });
+  return new Response(JSON.stringify(enhancedSeason), { headers });
 };

@@ -1,8 +1,7 @@
 /* eslint-disable no-console */
-import { type ActionFunction, type LoaderFunction } from "@remix-run/node";
-import { json } from "@remix-run/node";
 import { Regions } from "prisma/generated/prisma/enums";
 import { type CrossFactionHistoryCreateInput } from "prisma/generated/prisma/models";
+import { type ActionFunction, type LoaderFunction } from "react-router";
 
 import {
   calculateExtrapolation,
@@ -34,14 +33,18 @@ const regions = [Regions.US, Regions.EU, Regions.KR, Regions.TW, Regions.CN];
 
 export const action: ActionFunction = async ({ request }) => {
   if (request.method !== "POST") {
-    return json([], 404);
+    return new Response(JSON.stringify([]), {
+      status: 404,
+    });
   }
 
   try {
     const failed = await protectCronRoute(request);
 
     if (failed) {
-      return json(failed.payload, failed.status);
+      return new Response(JSON.stringify(failed.payload), {
+        status: failed.status,
+      });
     }
 
     const latestPerRegion = await prisma.crossFactionHistory.findMany({
@@ -73,7 +76,7 @@ export const action: ActionFunction = async ({ request }) => {
     const season = findSeasonForRegion(mostOutdatedRegion.region);
 
     if (!season) {
-      return json([]);
+      return new Response(JSON.stringify([]));
     }
 
     console.info("using season:", season.name);
@@ -117,15 +120,21 @@ export const action: ActionFunction = async ({ request }) => {
       }
     }
 
-    return json({ region: mostOutdatedRegion.region, regionData });
+    return new Response(
+      JSON.stringify({ region: mostOutdatedRegion.region, regionData }),
+    );
   } catch (error) {
     console.error("yikes", error);
-    return json([], 500);
+    return new Response(JSON.stringify([]), {
+      status: 500,
+    });
   }
 };
 
 export const loader: LoaderFunction = () => {
-  return json([], 405);
+  return new Response(JSON.stringify([]), {
+    status: 405,
+  });
 };
 
 function findSeasonForRegion(region: Regions): Season | null {

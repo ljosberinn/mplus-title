@@ -1,15 +1,9 @@
-import {
-  json,
-  type LoaderFunctionArgs,
-  type TypedResponse,
-} from "@remix-run/node";
-import { useLoaderData, useNavigation } from "@remix-run/react";
-import { type HeadersFunction, redirect } from "@remix-run/server-runtime";
 import clsx from "clsx";
-import { type Options, type PointLabelObject } from "highcharts";
+import { type DataLabelsFormatterCallbackFunction, type Options } from "highcharts";
 import { type HighchartsReactRefObject } from "highcharts-react-official";
 import { type Regions } from "prisma/generated/prisma/enums";
 import { Fragment, lazy, Suspense, useEffect, useRef, useState } from "react";
+import { type HeadersFunction, redirect, useNavigation } from "react-router";
 import { ClientOnly } from "remix-utils/client-only";
 
 import { getAffixIconUrl, getAffixName } from "../affixes";
@@ -27,6 +21,7 @@ import {
 import { getEnhancedSeason } from "../models/season.server";
 import { type EnhancedSeason, findSeasonByName } from "../seasons";
 import { searchParamSeparator } from "../utils";
+import { type Route } from "./+types/$season";
 
 const lastModified = "Last-Modified";
 const cacheControl = "Cache-Control";
@@ -97,7 +92,7 @@ export const headers: HeadersFunction = ({ loaderHeaders }) => {
 export const loader = async ({
   params,
   request,
-}: LoaderFunctionArgs): Promise<TypedResponse<EnhancedSeason>> => {
+}: Route.LoaderArgs): Promise<Response> => {
   if (!("season" in params) || !params.season) {
     throw new Response(undefined, {
       status: 400,
@@ -169,7 +164,9 @@ export const loader = async ({
 
   headers[serverTiming] = getServerTimeHeader(timings);
 
-  return json(enhancedSeason, { headers });
+  return new Response(JSON.stringify(enhancedSeason), { headers });
+
+  // return json(enhancedSeason, { headers });
 };
 
 type ZoomExtremes = null | { min: number; max: number };
@@ -178,8 +175,10 @@ const DungeonRecords = lazy(
   () => import("../components/DungeonRecords.client"),
 );
 
-export default function Season(): JSX.Element | null {
-  const season = useLoaderData() as EnhancedSeason;
+export default function Season(
+  props: Route.ComponentProps,
+): React.ReactNode | null {
+  const season: EnhancedSeason = JSON.parse(props.loaderData);
   const prevSeason = useRef(season.slug);
   const prevExtrapolation = useRef(season.score.extrapolation);
   const [extremes, setExtremes] = useState<ZoomExtremes>(null);
@@ -273,7 +272,7 @@ const numberFormatParts = new Intl.NumberFormat().formatToParts(1234.5);
 
 const TempBanner = lazy(() => import("../components/TempBanner.client"));
 
-function Region({ season, region, extremes, onZoom }: CardProps): JSX.Element {
+function Region({ season, region, extremes, onZoom }: CardProps): React.ReactNode {
   const ref = useRef<HighchartsReactRefObject | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [isClient, setIsClient] = useState(false);
@@ -396,8 +395,9 @@ function Region({ season, region, extremes, onZoom }: CardProps): JSX.Element {
     series: season.score.series[region].map((series) => ({
       ...series,
       dataLabels: {
-        formatter,
-      },
+        formatter
+      }
+  
     })),
   };
 
@@ -666,7 +666,7 @@ function MythicStatsLink({ season, weekOffset }: MythicStatsLinkProps) {
   );
 }
 
-const formatter = function (this: PointLabelObject) {
+const formatter: DataLabelsFormatterCallbackFunction = function (this) {
   const max = this.series.data.reduce(
     (acc, dataset) => (acc > dataset.x ? acc : dataset.x),
     0,

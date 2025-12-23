@@ -1,4 +1,6 @@
-export default function StreamingTools(): JSX.Element {
+import React from "react";
+
+export default function StreamingTools(): React.ReactNode {
   return (
     <>
       We're offering two tiny, localized plaintext endpoints:
@@ -42,7 +44,8 @@ export default function StreamingTools(): JSX.Element {
           </details>
 
           <p>
-            example: `/api/cutoff/eu` yields `Current: 3669.7 | Estimation (+2 weeks): 3701.5`
+            example: `/api/cutoff/eu` yields `Current: 3669.7 | Estimation (+2
+            weeks): 3701.5`
           </p>
         </li>
       </ul>

@@ -1,2 +1,2 @@
-export { default as Highcharts} from 'highcharts'
-export * from 'highcharts-react-official';
+export { default as Highcharts } from "highcharts";
+export { HighchartsReact } from "highcharts-react-official";

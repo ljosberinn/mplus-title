@@ -1,6 +1,5 @@
-import { type ActionFunction } from "@remix-run/node";
-import { redirect } from "@remix-run/node";
 import { type Regions } from "prisma/generated/prisma/enums";
+import { type ActionFunction, redirect } from "react-router";
 
 import { setCookie } from "~/load.server";
 import { orderedRegionsBySize, searchParamSeparator } from "~/utils";

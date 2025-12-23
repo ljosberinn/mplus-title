@@ -1,6 +1,7 @@
-import { NavLink } from "@remix-run/react";
+import { type ReactNode } from "react";
+import { NavLink } from "react-router";
 
-export function Logo(): JSX.Element {
+export function Logo(): ReactNode {
   return (
     <NavLink to="/" className="flex flex-row items-center space-x-4">
       <img

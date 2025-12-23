@@ -3,6 +3,7 @@ import { FaPatreon, FaTwitter } from "react-icons/fa";
 import { SiBuymeacoffee } from "react-icons/si";
 
 import { ExternalLink } from "./ExternalLink";
+import { type ReactNode } from "react";
 
 type NavLinkProps = {
   href?: string;
@@ -14,7 +15,7 @@ export function NavLink({
   href,
   children,
   icon: Icon,
-}: NavLinkProps): JSX.Element {
+}: NavLinkProps): ReactNode {
   const body = (
     <span className="md:flex md:items-center md:justify-end">
       <Icon className="mr-2 inline h-6 w-6" />
@@ -38,7 +39,7 @@ export function NavLink({
   );
 }
 
-export function BuyMeACoffee(): JSX.Element {
+export function BuyMeACoffee(): ReactNode {
   return (
     <NavLink href="https://www.buymeacoffee.com/rOSn8DF" icon={SiBuymeacoffee}>
       Buy Me A Coffee
@@ -46,7 +47,7 @@ export function BuyMeACoffee(): JSX.Element {
   );
 }
 
-export function RaiderPatreon(): JSX.Element {
+export function RaiderPatreon(): ReactNode {
   return (
     <NavLink href="https://www.patreon.com/RaiderIO" icon={FaPatreon}>
       Raider.IO Patreon
@@ -54,7 +55,7 @@ export function RaiderPatreon(): JSX.Element {
   );
 }
 
-export function WCLPatreon(): JSX.Element {
+export function WCLPatreon(): ReactNode {
   return (
     <NavLink href="https://www.patreon.com/warcraftlogs" icon={FaPatreon}>
       WCL Patreon
@@ -62,7 +63,7 @@ export function WCLPatreon(): JSX.Element {
   );
 }
 
-export function Twitter(): JSX.Element {
+export function Twitter(): ReactNode {
   return (
     <NavLink href="https://twitter.com/xepher1s" icon={FaTwitter}>
       Twitter

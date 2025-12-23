@@ -1,5 +1,5 @@
-import { type LoaderFunctionArgs } from "@remix-run/node";
 import { Regions } from "prisma/generated/prisma/enums";
+import { type LoaderFunctionArgs } from "react-router";
 
 import { getAffixName } from "../affixes";
 import { getEnhancedSeason } from "../models/season.server";

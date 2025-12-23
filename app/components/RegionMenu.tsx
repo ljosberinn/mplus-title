@@ -1,6 +1,6 @@
-import { useNavigation, useSubmit } from "@remix-run/react";
-import { type FormEventHandler } from "react";
+import { type ReactNode, type FormEventHandler } from "react";
 import { useRef } from "react";
+import { useNavigation, useSubmit } from "react-router";
 
 import { type EnhancedSeason } from "~/seasons";
 import { isNotNull, orderedRegionsBySize } from "~/utils";
@@ -11,7 +11,7 @@ type RegionToggleProps = {
   season: EnhancedSeason;
 };
 
-export function RegionToggle({ season }: RegionToggleProps): JSX.Element {
+export function RegionToggle({ season }: RegionToggleProps): ReactNode {
   const submit = useSubmit();
   const { state: navigationState } = useNavigation();
 
@@ -28,7 +28,11 @@ export function RegionToggle({ season }: RegionToggleProps): JSX.Element {
         return acc;
       }, new FormData());
 
-    submit(formData, { action: "/regions", method: "post", replace: true });
+    void submit(formData, {
+      action: "/regions",
+      method: "post",
+      replace: true,
+    });
   };
 
   return (
@@ -36,7 +40,8 @@ export function RegionToggle({ season }: RegionToggleProps): JSX.Element {
       <ul className="flex flex-col space-y-2 px-4 pt-4 md:flex-row md:space-x-2 md:space-y-0 md:px-0 md:pt-0">
         {orderedRegionsBySize.map((region, index) => {
           const checked = season.score.regionsToDisplay.includes(region);
-          const disabled = season.score.regionsToDisplay.length === 1 && checked;
+          const disabled =
+            season.score.regionsToDisplay.length === 1 && checked;
 
           return (
             <li

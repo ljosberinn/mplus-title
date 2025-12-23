@@ -14,7 +14,7 @@ export function ExternalLink({
   children,
   className,
   title,
-}: ExternalLinkProps): JSX.Element {
+}: ExternalLinkProps): ReactNode {
   return (
     <a
       href={href}
