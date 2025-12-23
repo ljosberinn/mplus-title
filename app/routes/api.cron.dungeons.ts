@@ -1,6 +1,5 @@
-import { Regions } from "@prisma/client";
-import { json } from "@remix-run/node";
-import { type ActionFunction } from "@remix-run/server-runtime";
+import { Regions } from "prisma/generated/prisma/enums";
+import { type ActionFunction } from "react-router";
 
 import { protectCronRoute } from "~/load.server";
 import { prisma } from "~/prisma.server";
@@ -19,13 +18,17 @@ type Record = {
 
 export const action: ActionFunction = async ({ request }) => {
   if (request.method !== "POST") {
-    return json([], 404);
+    return new Response(JSON.stringify([]), {
+      status: 404,
+    });
   }
 
   const failed = await protectCronRoute(request);
 
   if (failed) {
-    return json(failed.payload, failed.status);
+    return new Response(JSON.stringify(failed.payload), {
+      status: failed.status,
+    });
   }
 
   const season = findSeasonByName("latest", [Regions.US]);
@@ -97,5 +100,5 @@ export const action: ActionFunction = async ({ request }) => {
     }),
   );
 
-  return json({ added: newDatasets.filter(Boolean) });
+  return new Response(JSON.stringify({ added: newDatasets.filter(Boolean) }));
 };

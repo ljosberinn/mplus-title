@@ -1,10 +1,13 @@
 /* eslint-disable no-console */
-import { type Prisma } from "@prisma/client";
-import { Regions } from "@prisma/client";
-import { type ActionFunction, type LoaderFunction } from "@remix-run/node";
-import { json } from "@remix-run/node";
+import { Regions } from "prisma/generated/prisma/enums";
+import { type CrossFactionHistoryCreateInput } from "prisma/generated/prisma/models";
+import { type ActionFunction, type LoaderFunction } from "react-router";
 
-import { protectCronRoute } from "~/load.server";
+import {
+  calculateExtrapolation,
+  loadDataForRegion,
+  protectCronRoute,
+} from "~/load.server";
 
 import { prisma } from "../prisma.server";
 import { type Season, seasons } from "../seasons";
@@ -30,14 +33,18 @@ const regions = [Regions.US, Regions.EU, Regions.KR, Regions.TW, Regions.CN];
 
 export const action: ActionFunction = async ({ request }) => {
   if (request.method !== "POST") {
-    return json([], 404);
+    return new Response(JSON.stringify([]), {
+      status: 404,
+    });
   }
 
   try {
     const failed = await protectCronRoute(request);
 
     if (failed) {
-      return json(failed.payload, failed.status);
+      return new Response(JSON.stringify(failed.payload), {
+        status: failed.status,
+      });
     }
 
     const latestPerRegion = await prisma.crossFactionHistory.findMany({
@@ -69,7 +76,7 @@ export const action: ActionFunction = async ({ request }) => {
     const season = findSeasonForRegion(mostOutdatedRegion.region);
 
     if (!season) {
-      return json([]);
+      return new Response(JSON.stringify([]));
     }
 
     console.info("using season:", season.name);
@@ -82,18 +89,52 @@ export const action: ActionFunction = async ({ request }) => {
     console.timeEnd("parseRegionData");
 
     if (regionData.score > 0) {
-      await prisma.crossFactionHistory.create({ data: regionData });
+      const data = await loadDataForRegion(
+        mostOutdatedRegion.region,
+        season,
+        {},
+      );
+      const extrapolation = calculateExtrapolation(
+        season,
+        mostOutdatedRegion.region,
+        data,
+        null,
+      );
+
+      if (Array.isArray(extrapolation) && extrapolation.length > 0) {
+        const [timestamp, score] = extrapolation[extrapolation.length - 1];
+
+        await Promise.all([
+          prisma.extrapolation.create({
+            data: {
+              timestamp: Math.round(timestamp / 1000),
+              region: mostOutdatedRegion.region,
+              estimatedAt: Math.round(regionData.timestamp),
+              score,
+            },
+          }),
+          prisma.crossFactionHistory.create({ data: regionData }),
+        ]);
+      } else {
+        await prisma.crossFactionHistory.create({ data: regionData });
+      }
     }
 
-    return json({ region: mostOutdatedRegion.region, regionData });
+    return new Response(
+      JSON.stringify({ region: mostOutdatedRegion.region, regionData }),
+    );
   } catch (error) {
     console.error("yikes", error);
-    return json([], 500);
+    return new Response(JSON.stringify([]), {
+      status: 500,
+    });
   }
 };
 
 export const loader: LoaderFunction = () => {
-  return json([], 405);
+  return new Response(JSON.stringify([]), {
+    status: 405,
+  });
 };
 
 function findSeasonForRegion(region: Regions): Season | null {
@@ -203,7 +244,7 @@ async function retrieveScore(
 async function parseRegionData(
   region: Regions,
   rioSeasonName: string,
-): Promise<Prisma.CrossFactionHistoryCreateInput> {
+): Promise<CrossFactionHistoryCreateInput> {
   const now = Math.round(Date.now() / 1000);
 
   console.time("retrieveLastPage");

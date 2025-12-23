@@ -1,4 +1,3 @@
-import { type Factions, type Regions } from "@prisma/client";
 import {
   type Options,
   type SeriesLineOptions,
@@ -6,6 +5,7 @@ import {
   type XAxisPlotLinesOptions,
   type YAxisPlotLinesOptions,
 } from "highcharts";
+import { type Factions, type Regions } from "prisma/generated/prisma/enums";
 
 import { type Overlay } from "~/utils";
 
@@ -45,6 +45,7 @@ export type Season = {
   patches: Record<string, Record<Regions, number>>;
   dungeons: number | Dungeon[];
   startingPeriod: number | null;
+  supportsExtrapolationHistory: boolean;
 };
 
 export type DungeonRecord = {
@@ -194,6 +195,7 @@ export const seasons: Season[] = [
       weekIndexToAffixSetId: [],
       zoneId: 47,
     },
+    supportsExtrapolationHistory: true,
   },
   {
     name: "TWW S3",
@@ -278,6 +280,7 @@ export const seasons: Season[] = [
       weekIndexToAffixSetId: [],
       zoneId: 45,
     },
+    supportsExtrapolationHistory: true,
   },
   {
     name: "TWW S2",
@@ -382,6 +385,8 @@ export const seasons: Season[] = [
     },
     seasonIcon: "https://assets.rpglogs.com/img/warcraft/zones/zone-43.png",
     startingPeriod: 0,
+    supportsExtrapolationHistory: false,
+
     wcl: {
       weekIndexToAffixSetId: [],
       zoneId: 43,
@@ -520,6 +525,8 @@ export const seasons: Season[] = [
     },
     seasonIcon: "https://assets.rpglogs.com/img/warcraft/zones/zone-39.png",
     startingPeriod: 977,
+    supportsExtrapolationHistory: false,
+
     wcl: {
       zoneId: 39,
       weekIndexToAffixSetId: [],
@@ -593,6 +600,8 @@ export const seasons: Season[] = [
     patches: {},
     seasonIcon: "https://assets.rpglogs.com/img/warcraft/zones/zone-37.png",
     startingPeriod: 956,
+    supportsExtrapolationHistory: false,
+
     wcl: {
       zoneId: 37,
       weekIndexToAffixSetId: [706, 762, 765, 767, 769, 419, 771, 775, 785, 502],
@@ -765,6 +774,7 @@ export const seasons: Season[] = [
       },
     },
     startingPeriod: 933,
+    supportsExtrapolationHistory: false,
   },
   {
     name: "DF S2",
@@ -865,6 +875,7 @@ export const seasons: Season[] = [
     },
     dungeons: 8,
     startingPeriod: 906,
+    supportsExtrapolationHistory: false,
   },
   {
     name: "DF S1",
@@ -944,6 +955,7 @@ export const seasons: Season[] = [
     },
     dungeons: 8,
     startingPeriod: 885,
+    supportsExtrapolationHistory: false,
   },
   {
     name: "SL S4",
@@ -1004,6 +1016,7 @@ export const seasons: Season[] = [
     patches: {},
     dungeons: 8,
     startingPeriod: 866,
+    supportsExtrapolationHistory: false,
   },
   {
     name: "SL S3",
@@ -1061,6 +1074,7 @@ export const seasons: Season[] = [
     patches: {},
     dungeons: 10,
     startingPeriod: 844,
+    supportsExtrapolationHistory: false,
   },
   {
     name: "SL S2",
@@ -1137,6 +1151,7 @@ export const seasons: Season[] = [
     // },
     dungeons: 8,
     startingPeriod: null,
+    supportsExtrapolationHistory: false,
   },
 ];
 

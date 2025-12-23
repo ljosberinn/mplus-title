@@ -5,6 +5,7 @@ import { ClientOnly } from "remix-utils/client-only";
 import { type EnhancedSeason } from "~/seasons";
 
 import { Highcharts, HighchartsReact } from "./Highcharts.client";
+import { ReactNode } from "react";
 
 type DungeonRecordsProps = {
   season: EnhancedSeason;
@@ -12,7 +13,7 @@ type DungeonRecordsProps = {
 
 export default function DungeonRecords({
   season,
-}: DungeonRecordsProps): JSX.Element {
+}: DungeonRecordsProps): ReactNode {
   const options: Options = {
     ...season.score.chartBlueprint,
     time: {

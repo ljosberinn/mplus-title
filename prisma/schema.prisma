@@ -1,10 +1,10 @@
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client"
+  output   = "./generated/prisma"
 }
 
 datasource db {
   provider = "mysql"
-  url      = env("DATABASE_URL")
 }
 
 model History {
@@ -19,11 +19,19 @@ model History {
 }
 
 model CrossFactionHistory {
-  id        Int     @id @default(autoincrement())
-  timestamp Int
-  region    Regions
-  score     Float
-  rank      Int
+  id            Int     @id @default(autoincrement())
+  timestamp     Int
+  region        Regions
+  score         Float
+  rank          Int
+}
+
+model Extrapolation {
+  id          Int    @id @default(autoincrement())
+  estimatedAt Int
+  timestamp   Int
+  region      Regions
+  score       Float
 }
 
 enum Factions {

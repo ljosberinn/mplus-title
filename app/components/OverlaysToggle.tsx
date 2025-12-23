@@ -1,6 +1,6 @@
-import { useNavigation, useSubmit } from "@remix-run/react";
-import { type FormEventHandler } from "react";
+import { type ReactNode, type FormEventHandler } from "react";
 import { useRef } from "react";
+import { useNavigation, useSubmit } from "react-router";
 
 import { type EnhancedSeason } from "~/seasons";
 import { extraOverlayNames, isNotNull, overlays } from "~/utils";
@@ -11,7 +11,7 @@ type OverlaysToggleProps = {
   season: EnhancedSeason;
 };
 
-export function OverlaysToggle({ season }: OverlaysToggleProps): JSX.Element {
+export function OverlaysToggle({ season }: OverlaysToggleProps): ReactNode {
   const submit = useSubmit();
   const { state: navigationState } = useNavigation();
 
@@ -28,13 +28,28 @@ export function OverlaysToggle({ season }: OverlaysToggleProps): JSX.Element {
         return acc;
       }, new FormData());
 
-    submit(formData, { action: "/overlays", method: "post", replace: true });
+    void submit(formData, {
+      action: "/overlays",
+      method: "post",
+      replace: true,
+    });
   };
 
   return (
     <fieldset disabled={navigationState !== "idle"}>
       <ul className="flex flex-col space-y-2 px-4 pt-4 md:flex-row md:space-x-2 md:space-y-0 md:px-0 md:pt-0">
         {overlays.map((overlay, index) => {
+          if (overlay === "affixes" && (season.wcl?.zoneId ?? 0) > 39) {
+            return null;
+          }
+
+          if (
+            overlay === "extrapolation" &&
+            !season.supportsExtrapolationHistory
+          ) {
+            return null;
+          }
+
           const checked = season.score.overlaysToDisplay.includes(overlay);
 
           return (

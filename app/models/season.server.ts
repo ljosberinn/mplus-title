@@ -1,9 +1,10 @@
-import { type Regions } from "@prisma/client";
+import { type Regions } from "prisma/generated/prisma/enums";
 
 import {
   calculateSeries,
   calculateXAxisPlotBands,
   calculateYAxisPlotLines,
+  loadExtrapolationHistoryForSeason,
   loadRecordsForSeason,
   type Timings,
 } from "~/load.server";
@@ -62,7 +63,13 @@ export const getEnhancedSeason = async ({
   );
 
   const regions = pRegions ?? orderedRegionsBySize;
-  const overlays = pOverlays ?? defaultOverlays;
+  const overlays = (pOverlays ?? defaultOverlays).filter((overlay) => {
+    if ((season.wcl?.zoneId ?? 0) > 39) {
+      return overlay !== "affixes";
+    }
+
+    return true;
+  });
 
   const enhancedSeason: EnhancedSeason = {
     ...season,
@@ -216,7 +223,16 @@ export const getEnhancedSeason = async ({
   await Promise.all([
     getRecordsForSeason(),
     ...Object.values(regions).map(async (region) => {
-      const data = await loadDataForRegion(region, season, timings);
+      const [data, extrapolationHistory] = await Promise.all([
+        loadDataForRegion(region, season, timings),
+        await time(
+          () => loadExtrapolationHistoryForSeason(season, region, overlays),
+          {
+            type: "loadExtrapolationHistoryForSeason",
+            timings,
+          },
+        ),
+      ]);
       enhancedSeason.score.dataByRegion[region] = data;
 
       if (data.length === 0) {
@@ -251,7 +267,8 @@ export const getEnhancedSeason = async ({
       );
 
       enhancedSeason.score.series[region] = await time(
-        () => calculateSeries(season, data, extrapolation),
+        () =>
+          calculateSeries(season, data, extrapolation, extrapolationHistory),
         { type: `calculateSeries-${region}`, timings },
       );
 

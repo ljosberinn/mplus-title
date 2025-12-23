@@ -1,6 +1,7 @@
-import { type Regions } from "@prisma/client";
+import { type Regions } from "prisma/generated/prisma/enums";
 
 import { type Season } from "../seasons";
+import { ReactNode } from "react";
 
 export type TempBannerProps = {
   season: Season;
@@ -10,7 +11,7 @@ export type TempBannerProps = {
 export default function TempBanner({
   season,
   region,
-}: TempBannerProps): JSX.Element {
+}: TempBannerProps): ReactNode {
   return (
     <div className="my-2 bg-red-500 p-2 text-center">
       Leaderboard data on Raider.io's end sadly broke as you can see below. Use{" "}

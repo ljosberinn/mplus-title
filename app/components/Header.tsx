@@ -1,4 +1,4 @@
-import { lazy, Suspense } from "react";
+import { lazy, ReactNode, Suspense } from "react";
 import { ClientOnly } from "remix-utils/client-only";
 
 import { type EnhancedSeason } from "~/seasons";
@@ -13,9 +13,11 @@ type HeaderProps = {
   season: EnhancedSeason;
 };
 
-const CustomExtrapolationForm = lazy(() => import("./CustomExtrapolationForm.client"));
+const CustomExtrapolationForm = lazy(
+  () => import("./CustomExtrapolationForm.client"),
+);
 
-export function Header({ season }: HeaderProps): JSX.Element {
+export function Header({ season }: HeaderProps): ReactNode {
   const seasonHasStarted = Object.values(season.startDates).some(
     (maybeDate) => maybeDate !== null && maybeDate <= Date.now(),
   );
@@ -57,10 +59,10 @@ export function Header({ season }: HeaderProps): JSX.Element {
                   <CustomExtrapolationForm season={season} />
                 </div>
               </div>
-            </Suspense>)}
-        </ClientOnly >
-      ) : null
-      }
+            </Suspense>
+          )}
+        </ClientOnly>
+      ) : null}
     </>
   );
 }

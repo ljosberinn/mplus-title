@@ -1,5 +1,4 @@
-import { type ActionFunction } from "@remix-run/node";
-import { redirect } from "@remix-run/node";
+import { type ActionFunction, redirect } from "react-router";
 
 import { setCookie } from "~/load.server";
 import { type Overlay, overlays, searchParamSeparator } from "~/utils";

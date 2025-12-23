@@ -1,4 +1,4 @@
-import { version } from "react";
+import { ReactNode, version } from "react";
 import { FaDiscord } from "react-icons/fa";
 
 import { ExternalLink } from "./ExternalLink";
@@ -11,7 +11,7 @@ import {
   WCLPatreon,
 } from "./NavLink";
 
-export function Footer(): JSX.Element {
+export function Footer(): ReactNode {
   return (
     <div className="px-6 text-stone-200 print:hidden">
       <footer className="mx-auto w-full max-w-screen-2xl">
@@ -72,10 +72,10 @@ export function Footer(): JSX.Element {
 
           <ExternalLink
             className="flex items-center justify-center space-x-2"
-            href="https://remix.run/"
+            href="https://reactrouter.com/"
             aria-label="Remix"
           >
-            <Remix />
+            <ReactRouter />
           </ExternalLink>
 
           <ExternalLink
@@ -193,67 +193,22 @@ function Upstash() {
   );
 }
 
-function Remix() {
+function ReactRouter() {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
       fill="none"
-      viewBox="0 0 800 800"
+      viewBox="0 0 602 360"
       className="h-4"
     >
-      <path fill="#212121" d="M0 0h800v800H0z" />
-      <g fill="#E8F2FF" filter="url(#a)">
-        <path
-          fillRule="evenodd"
-          d="M587.947 527.768c4.254 54.65 4.254 80.268 4.254 108.232H465.756c0-6.091.109-11.663.219-17.313.342-17.564.699-35.88-2.147-72.868-3.761-54.152-27.08-66.185-69.957-66.185H195v-98.525h204.889c54.16 0 81.241-16.476 81.241-60.098 0-38.357-27.081-61.601-81.241-61.601H195V163h227.456C545.069 163 606 220.912 606 313.42c0 69.193-42.877 114.319-100.799 121.84 48.895 9.777 77.48 37.605 82.746 92.508Z"
-          clipRule="evenodd"
-        />
-        <path d="M195 636v-73.447h133.697c22.332 0 27.181 16.563 27.181 26.441V636H195Z" />
-      </g>
-      <defs>
-        <filter
-          id="a"
-          width="539"
-          height="601"
-          x="131"
-          y="99"
-          colorInterpolationFilters="sRGB"
-          filterUnits="userSpaceOnUse"
-        >
-          <feFlood floodOpacity={0} result="BackgroundImageFix" />
-          <feColorMatrix
-            in="SourceAlpha"
-            result="hardAlpha"
-            values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0"
-          />
-          <feOffset />
-          <feGaussianBlur stdDeviation="28" />
-          <feComposite in2="hardAlpha" operator="out" />
-          <feColorMatrix values="0 0 0 0 0.223529 0 0 0 0 0.572549 0 0 0 0 1 0 0 0 1 0" />
-          <feBlend
-            in2="BackgroundImageFix"
-            result="effect1_dropShadow_126_53"
-          />
-          <feColorMatrix
-            in="SourceAlpha"
-            result="hardAlpha"
-            values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0"
-          />
-          <feOffset />
-          <feGaussianBlur stdDeviation="32" />
-          <feComposite in2="hardAlpha" operator="out" />
-          <feColorMatrix values="0 0 0 0 0.223529 0 0 0 0 0.572549 0 0 0 0 1 0 0 0 0.9 0" />
-          <feBlend
-            in2="effect1_dropShadow_126_53"
-            result="effect2_dropShadow_126_53"
-          />
-          <feBlend
-            in="SourceGraphic"
-            in2="effect2_dropShadow_126_53"
-            result="shape"
-          />
-        </filter>
-      </defs>
+      <path
+        fill="#F44250"
+        d="M481.36 180c0 16.572-6.721 31.572-17.603 42.42C452.875 233.28 437.845 240 421.24 240c-16.605 0-31.635 6.708-42.505 17.568-10.882 10.86-17.615 25.86-17.615 42.432 0 16.572-6.721 31.572-17.603 42.42C332.635 353.28 317.605 360 301 360c-16.605 0-31.635-6.72-42.505-17.58-10.882-10.848-17.615-25.848-17.615-42.42 0-16.572 6.733-31.572 17.615-42.432C269.365 246.708 284.395 240 301 240c16.605 0 31.635-6.72 42.517-17.58 10.882-10.848 17.603-25.848 17.603-42.42 0-33.144-26.91-60-60.12-60-16.605 0-31.635-6.72-42.505-17.58C247.613 91.572 240.88 76.572 240.88 60c0-16.572 6.733-31.572 17.615-42.432C269.365 6.708 284.395 0 301 0c33.21 0 60.12 26.856 60.12 60 0 16.572 6.733 31.572 17.615 42.42 10.87 10.86 25.9 17.58 42.505 17.58 33.21 0 60.12 26.856 60.12 60Z"
+      />
+      <path
+        fill="white"
+        d="M240.88 180c0-33.138-26.916-60-60.12-60-33.203 0-60.12 26.862-60.12 60 0 33.137 26.917 60 60.12 60 33.204 0 60.12-26.863 60.12-60ZM120.64 300c0-33.137-26.917-60-60.12-60C27.317 240 .4 266.863.4 300c0 33.138 26.917 60 60.12 60 33.203 0 60.12-26.862 60.12-60ZM601.6 300c0-33.137-26.917-60-60.12-60-33.203 0-60.12 26.863-60.12 60 0 33.138 26.917 60 60.12 60 33.203 0 60.12-26.862 60.12-60Z"
+      />
     </svg>
   );
 }
