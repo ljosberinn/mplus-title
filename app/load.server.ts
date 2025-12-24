@@ -1,5 +1,6 @@
 import { Redis } from "@upstash/redis";
 import {
+  type SeriesScatterOptions,
   type SeriesLineOptions,
   type XAxisPlotBandsOptions,
   type XAxisPlotLinesOptions,
@@ -104,7 +105,7 @@ export async function loadExtrapolationHistoryForSeason(
   season: Season,
   region: Regions,
   overlays: readonly Overlay[],
-): Promise<[number, number][]> {
+): Promise<SeriesScatterOptions["data"]> {
   if (!season.supportsExtrapolationHistory) {
     return [];
   }
@@ -135,6 +136,7 @@ export async function loadExtrapolationHistoryForSeason(
     select: {
       score: true,
       timestamp: true,
+      estimatedAt: true,
     },
   });
 
@@ -149,7 +151,11 @@ export async function loadExtrapolationHistoryForSeason(
 
       return acc;
     }, {}),
-  ).map((dataset) => [dataset.timestamp * 1000, dataset.score]);
+  ).map((dataset) => ({
+    x: dataset.timestamp * 1000,
+    y: dataset.score,
+    estimatedAt: dataset.estimatedAt * 1000,
+  }));
 }
 
 export async function loadRecordsForSeason(
@@ -705,14 +711,15 @@ export function calculateSeries(
   extrapolationHistory: Awaited<
     ReturnType<typeof loadExtrapolationHistoryForSeason>
   >,
-): SeriesLineOptions[] {
-  const options: SeriesLineOptions[] = [];
+): (SeriesLineOptions | SeriesScatterOptions)[] {
+  const options: (SeriesLineOptions | SeriesScatterOptions)[] = [];
 
   if (season.crossFactionSupport !== "complete") {
     options.push(
       {
         type: "line",
         name: "Score Horde",
+        id: "horde",
         color: colors.horde,
         data: data
           .filter((dataset) => dataset.faction === "horde")
@@ -723,6 +730,7 @@ export function calculateSeries(
       {
         type: "line",
         name: "Score Alliance",
+        id: "alliance",
         color: colors.alliance,
         data: data
           .filter((dataset) => dataset.faction === "alliance")
@@ -737,6 +745,7 @@ export function calculateSeries(
     options.push({
       type: "line",
       name: "Score",
+      id: "score",
       color: colors.xFaction,
       data: data
         .filter((dataset) => !("faction" in dataset))
@@ -749,6 +758,7 @@ export function calculateSeries(
   if (extrapolation !== null) {
     options.push({
       type: "line",
+      id: "extrapolation",
       name: "Score Extrapolated",
       description:
         "A projection of how the cutoff will evolve over time based on various parameters.",
@@ -769,9 +779,10 @@ export function calculateSeries(
     });
   }
 
-  if (extrapolationHistory.length > 0) {
+  if (Array.isArray(extrapolationHistory) && extrapolationHistory.length > 0) {
     options.push({
-      type: "line",
+      type: "scatter",
+      id: "extrapolation-history",
       name: "Extrapolation History",
       color: colors.extrapolationHistory,
       description:
@@ -787,12 +798,13 @@ export function calculateSeries(
     });
   }
 
-  options.push({
-    type: "line",
-    name: "# Characters Above Cutoff",
-    data: data
-      .filter((dataset) => dataset.rank !== null)
+  {
+    const charactersAboveCutoff = data
       .reduce<Dataset[]>((acc, dataset) => {
+        if (dataset.rank === null) {
+          return acc;
+        }
+
         const prev = acc[acc.length - 1];
 
         if (!prev || prev.rank !== dataset.rank) {
@@ -801,10 +813,18 @@ export function calculateSeries(
 
         return acc;
       }, [])
-      .map((dataset) => [dataset.ts, dataset.rank]),
-    color: "white",
-    visible: false,
-  });
+      .map((dataset) => [dataset.ts, dataset.rank]);
+
+    if (charactersAboveCutoff.length > 0) {
+      options.push({
+        type: "line",
+        name: "# Characters Above Cutoff",
+        data: charactersAboveCutoff,
+        color: "white",
+        visible: false,
+      });
+    }
+  }
 
   return options;
 }
@@ -863,8 +883,8 @@ export function calculateXAxisPlotBands(
           ? rotation
           : rotation.slice(0, 3);
 
-    // background coloring per week
     options.push({
+      id: "background-color",
       from,
       to,
       color: from > now ? `${color}50` : color,
@@ -920,6 +940,7 @@ export function calculateXAxisPlotBands(
     options.push({
       from,
       to,
+      id: "weekly-difference",
       color: "transparent",
       label: {
         verticalAlign: "bottom",

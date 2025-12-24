@@ -294,20 +294,21 @@ function Region({
 }: CardProps): React.ReactNode {
   const ref = useRef<HighchartsReactRefObject | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const [isClient, setIsClient] = useState(false);
 
   const confirmedCutoffUrl = season.confirmedCutoffs[region].source;
   const navigation = useNavigation();
 
   useEffect(() => {
     setTimeout(() => {
-      if (!isClient || !ref.current) {
+      if (!ref.current) {
         return;
       }
 
+      const chart = ref.current.chart;
+
       if (extremes) {
-        ref.current.chart.xAxis[0].setExtremes(extremes.min, extremes.max);
-        ref.current.chart.showResetZoom();
+        chart.xAxis[0].setExtremes(extremes.min, extremes.max);
+        chart.showResetZoom();
         return;
       }
 
@@ -318,7 +319,7 @@ function Region({
       }
 
       if (!zoom) {
-        ref.current.chart.xAxis[0].setExtremes();
+        chart.xAxis[0].setExtremes();
         return;
       }
 
@@ -328,14 +329,20 @@ function Region({
         return;
       }
 
-      ref.current.chart.xAxis[0].setExtremes(start, end, true);
-      ref.current.chart.showResetZoom();
-    });
-  }, [region, season.score.initialZoom, extremes, isClient]);
+      chart.xAxis[0].setExtremes(start, end);
+      chart.showResetZoom();
 
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
+      const weeklyDifferencePlotBands =
+        chart.xAxis[0].userOptions.plotBands!.filter(
+          (band) => band.id === "weekly-difference",
+        );
+      chart.xAxis[0].removePlotBand("weekly-difference");
+
+      weeklyDifferencePlotBands.forEach((band) =>
+        chart.xAxis[0].addPlotBand(band),
+      );
+    });
+  }, [region, season.score.initialZoom, extremes]);
 
   const now = Date.now();
 
@@ -413,12 +420,82 @@ function Region({
       ...season.score.chartBlueprint.yAxis,
       plotLines: season.score.yAxisPlotLines[region],
     },
-    series: season.score.series[region].map((series) => ({
-      ...series,
-      dataLabels: {
-        formatter,
-      },
-    })),
+    series: season.score.series[region].map((series) => {
+      if (series.type === "scatter") {
+        return {
+          ...series,
+          tooltip: {
+            pointFormatter() {
+              const { x, y } = this;
+
+              if (!x || !y) {
+                return "";
+              }
+
+              const formatter = new Intl.DateTimeFormat("en-US", {
+                weekday: "long",
+                month: "short",
+                day: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+                second: "2-digit",
+                hour12: true,
+              });
+              const timestamp = formatter.format(x);
+
+              const relativeFormatter = new Intl.RelativeTimeFormat("en-US", {
+                numeric: "auto",
+              });
+
+              const diffBetweenEstimationAndActualTime =
+                relativeFormatter.format(
+                  // @ts-expect-error sent from the backend
+                  -(x - this.estimatedAt) / 1000 / 60 / 60 / 24,
+                  "days",
+                );
+
+              const lines = [
+                `<small>${timestamp}</small>`,
+                `Estimated: ${diffBetweenEstimationAndActualTime}`,
+                `Expected Score: <b>${y}</b>`,
+              ];
+
+              if (x < Date.now()) {
+                const firstMatchPastThisExtrapolation =
+                  season.score.dataByRegion[region].find(
+                    (dataset) => dataset.ts > x,
+                  );
+
+                if (firstMatchPastThisExtrapolation) {
+                  const prefix =
+                    firstMatchPastThisExtrapolation.score === y
+                      ? "±"
+                      : firstMatchPastThisExtrapolation.score < y
+                        ? "+"
+                        : "-";
+                  const diff =
+                    firstMatchPastThisExtrapolation.score === y
+                      ? 0.0
+                      : firstMatchPastThisExtrapolation.score < y
+                        ? y - firstMatchPastThisExtrapolation.score
+                        : firstMatchPastThisExtrapolation.score - y;
+                  lines.push(`Difference: <b>${prefix}${diff}</b>`);
+                }
+              }
+
+              return lines.join("<br/>");
+            },
+          },
+        };
+      }
+
+      return {
+        ...series,
+        dataLabels: {
+          formatter,
+        },
+      };
+    }),
   };
 
   const indexOfCurrentWeek = findIndexOfCurrentWeek(season, region);
