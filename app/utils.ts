@@ -27,7 +27,7 @@ export const extraOverlayNames: Record<Overlay, string> = {
   patches: "Patches",
   affixes: "Affixes",
   records: "Records",
-  extrapolation: "Extrapolation",
+  extrapolation: "Extrapolation History",
 };
 
 export const isNotNull = <T>(something: T | null): something is T =>
