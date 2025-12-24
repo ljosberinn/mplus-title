@@ -138,7 +138,18 @@ export async function loadExtrapolationHistoryForSeason(
     },
   });
 
-  return data.map((dataset) => [dataset.timestamp * 1000, dataset.score]);
+  // deduplicates extrapolation data to only have each individual extrapolated value per timestamp
+  return Object.values(
+    data.reduce<Record<string, (typeof data)[number]>>((acc, dataset) => {
+      const key = [dataset.timestamp, dataset.score].join("-");
+
+      if (!(key in acc)) {
+        acc[key] = dataset;
+      }
+
+      return acc;
+    }, {}),
+  ).map((dataset) => [dataset.timestamp * 1000, dataset.score]);
 }
 
 export async function loadRecordsForSeason(
@@ -488,7 +499,7 @@ export function calculateExtrapolation(
         { length: daysUntilSeasonEndingOrThreeWeeks - 1 },
         (_, i) => {
           return [
-            lastDataset.ts + interval * (i + 1),
+            Math.round(lastDataset.ts + interval * (i + 1)),
             toOneDigit(lastDataset.score + scoreIncreaseSteps * (i + 1)),
           ];
         },
@@ -524,7 +535,7 @@ export function calculateExtrapolation(
         { length: daysUntilSeasonEndingOrThreeWeeks - 1 },
         (_, i) => {
           return [
-            lastDataset.ts + interval * (i + 1),
+            Math.round(lastDataset.ts + interval * (i + 1)),
             toOneDigit(lastDataset.score + scoreIncreaseSteps * (i + 1)),
           ];
         },
