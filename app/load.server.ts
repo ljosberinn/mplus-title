@@ -113,7 +113,7 @@ export async function loadExtrapolationHistoryForSeason(
     return [];
   }
 
-  if (season.startDates.US === null) {
+  if (season.startDates[region] === null) {
     return [];
   }
 
@@ -123,9 +123,9 @@ export async function loadExtrapolationHistoryForSeason(
     },
     where: {
       timestamp: {
-        gte: Math.round(season.startDates.US / 1000),
-        lte: season.endDates.US
-          ? Math.round(season.endDates.US / 1000)
+        gte: Math.round(season.startDates[region] / 1000),
+        lte: season.endDates[region]
+          ? Math.round(season.endDates[region] / 1000)
           : undefined,
       },
       region: {
@@ -762,7 +762,7 @@ export function calculateSeries(
       dashStyle: "ShortDash",
       marker: {
         enabled: true,
-        radius: 5,
+        radius: 3,
         symbol: "triangle",
       },
       visible: true,
@@ -779,8 +779,8 @@ export function calculateSeries(
       dashStyle: "Dot",
       marker: {
         enabled: true,
-        radius: 4,
-        symbol: "triangle-down",
+        radius: 2,
+        symbol: "circle",
       },
       visible: false,
       data: extrapolationHistory,
@@ -789,7 +789,7 @@ export function calculateSeries(
 
   options.push({
     type: "line",
-    name: "# Characters Above Cutoff (click to toggle)",
+    name: "# Characters Above Cutoff",
     data: data
       .filter((dataset) => dataset.rank !== null)
       .map((dataset) => [dataset.ts, dataset.rank]),
