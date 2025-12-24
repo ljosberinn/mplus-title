@@ -1,8 +1,19 @@
 import clsx from "clsx";
-import { type DataLabelsFormatterCallbackFunction, type Options } from "highcharts";
+import {
+  type DataLabelsFormatterCallbackFunction,
+  type Options,
+} from "highcharts";
 import { type HighchartsReactRefObject } from "highcharts-react-official";
 import { type Regions } from "prisma/generated/prisma/enums";
-import { Fragment, lazy, Suspense, useEffect, useRef, useState } from "react";
+import {
+  Fragment,
+  lazy,
+  Suspense,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { type HeadersFunction, redirect, useNavigation } from "react-router";
 import { ClientOnly } from "remix-utils/client-only";
 
@@ -178,7 +189,10 @@ const DungeonRecords = lazy(
 export default function Season(
   props: Route.ComponentProps,
 ): React.ReactNode | null {
-  const season: EnhancedSeason = JSON.parse(props.loaderData);
+  const season: EnhancedSeason = useMemo(
+    () => JSON.parse(props.loaderData),
+    [props.loaderData],
+  );
   const prevSeason = useRef(season.slug);
   const prevExtrapolation = useRef(season.score.extrapolation);
   const [extremes, setExtremes] = useState<ZoomExtremes>(null);
@@ -272,7 +286,12 @@ const numberFormatParts = new Intl.NumberFormat().formatToParts(1234.5);
 
 const TempBanner = lazy(() => import("../components/TempBanner.client"));
 
-function Region({ season, region, extremes, onZoom }: CardProps): React.ReactNode {
+function Region({
+  season,
+  region,
+  extremes,
+  onZoom,
+}: CardProps): React.ReactNode {
   const ref = useRef<HighchartsReactRefObject | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [isClient, setIsClient] = useState(false);
@@ -281,35 +300,37 @@ function Region({ season, region, extremes, onZoom }: CardProps): React.ReactNod
   const navigation = useNavigation();
 
   useEffect(() => {
-    if (!isClient || !ref.current) {
-      return;
-    }
+    setTimeout(() => {
+      if (!isClient || !ref.current) {
+        return;
+      }
 
-    if (extremes) {
-      ref.current.chart.xAxis[0].setExtremes(extremes.min, extremes.max);
+      if (extremes) {
+        ref.current.chart.xAxis[0].setExtremes(extremes.min, extremes.max);
+        ref.current.chart.showResetZoom();
+        return;
+      }
+
+      const zoom = season.score.initialZoom[region];
+
+      if (containerRef.current) {
+        containerRef.current.className = "";
+      }
+
+      if (!zoom) {
+        ref.current.chart.xAxis[0].setExtremes();
+        return;
+      }
+
+      const [start, end] = zoom;
+
+      if (!start || !end) {
+        return;
+      }
+
+      ref.current.chart.xAxis[0].setExtremes(start, end, true);
       ref.current.chart.showResetZoom();
-      return;
-    }
-
-    const zoom = season.score.initialZoom[region];
-
-    if (containerRef.current) {
-      containerRef.current.className = "";
-    }
-
-    if (!zoom) {
-      ref.current.chart.xAxis[0].setExtremes();
-      return;
-    }
-
-    const [start, end] = zoom;
-
-    if (!start || !end) {
-      return;
-    }
-
-    ref.current.chart.xAxis[0].setExtremes(start, end);
-    ref.current.chart.showResetZoom();
+    });
   }, [region, season.score.initialZoom, extremes, isClient]);
 
   useEffect(() => {
@@ -395,9 +416,8 @@ function Region({ season, region, extremes, onZoom }: CardProps): React.ReactNod
     series: season.score.series[region].map((series) => ({
       ...series,
       dataLabels: {
-        formatter
-      }
-  
+        formatter,
+      },
     })),
   };
 
