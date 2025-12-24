@@ -457,6 +457,7 @@ function Region({
               const lines = [
                 `<small>${timestamp}</small>`,
                 `Estimated: ${diffBetweenEstimationAndActualTime}`,
+                "Above is relative to the prediction, not the current time.",
                 `Expected Score: <b>${y}</b>`,
               ];
 
