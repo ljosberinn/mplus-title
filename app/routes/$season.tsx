@@ -304,10 +304,23 @@ function Region({
         return;
       }
 
+      const resetWeeklyDifferencePlotBands = () => {
+        const weeklyDifferencePlotBands =
+          chart.xAxis[0].userOptions.plotBands!.filter(
+            (band) => band.id === "weekly-difference",
+          );
+        chart.xAxis[0].removePlotBand("weekly-difference");
+
+        weeklyDifferencePlotBands.forEach((band) =>
+          chart.xAxis[0].addPlotBand(band),
+        );
+      };
+
       const chart = ref.current.chart;
 
       if (extremes) {
         chart.xAxis[0].setExtremes(extremes.min, extremes.max);
+        resetWeeklyDifferencePlotBands();
         chart.showResetZoom();
         return;
       }
@@ -320,6 +333,7 @@ function Region({
 
       if (!zoom) {
         chart.xAxis[0].setExtremes();
+        resetWeeklyDifferencePlotBands();
         return;
       }
 
@@ -332,15 +346,7 @@ function Region({
       chart.xAxis[0].setExtremes(start, end);
       chart.showResetZoom();
 
-      const weeklyDifferencePlotBands =
-        chart.xAxis[0].userOptions.plotBands!.filter(
-          (band) => band.id === "weekly-difference",
-        );
-      chart.xAxis[0].removePlotBand("weekly-difference");
-
-      weeklyDifferencePlotBands.forEach((band) =>
-        chart.xAxis[0].addPlotBand(band),
-      );
+      resetWeeklyDifferencePlotBands();
     });
   }, [region, season.score.initialZoom, extremes]);
 
@@ -408,8 +414,8 @@ function Region({
           }
 
           onZoom({
-            min: event.min,
-            max: event.max,
+            min: Math.round(event.min),
+            max: Math.round(event.max),
           });
         },
       },
