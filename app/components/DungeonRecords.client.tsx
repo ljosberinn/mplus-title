@@ -57,6 +57,11 @@ export default function DungeonRecords({
     break;
   }
 
+  const softMax = Math.min(
+    Date.now(),
+    ...Object.values(season.endDates).filter((x): x is number => x !== null),
+  );
+
   const options: Options = {
     ...season.score.chartBlueprint,
     time: {
@@ -86,7 +91,7 @@ export default function DungeonRecords({
       ...season.score.chartBlueprint.xAxis,
       plotBands: xAxisPlotBands,
       plotLines: xAxisPlotLines,
-      softMax: Date.now(),
+      softMax: softMax,
     },
     yAxis: {
       ...season.score.chartBlueprint.yAxis,
