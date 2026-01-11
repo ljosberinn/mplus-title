@@ -1115,6 +1115,23 @@ export function calculateXAxisPlotLines(
     for (let i = startDate; i <= end; i += oneWeekInMs) {
       const weeksSinceStart = Math.round((i - startDate) / oneWeekInMs) + 1;
 
+      lines.push({
+        zIndex: 100,
+        id: "week-number",
+        label: {
+          text: `W${weeksSinceStart}`,
+          align: "center",
+          rotation: 0,
+          y: 15,
+          x: 25,
+          style: {
+            color: "lightgreen",
+          },
+        },
+        color: "transparent",
+        value: i,
+      });
+
       if (weeksSinceStart === 1) {
         continue;
       }
@@ -1122,36 +1139,20 @@ export function calculateXAxisPlotLines(
       const match = data.find((dataset) => dataset.ts >= i);
 
       if (match) {
-        lines.push(
-          {
-            zIndex: 100,
-            label: {
-              text: `${match.score}`,
-              align: "center",
-              rotation: 0,
-              y: 265,
-              style: {
-                color: "lightgreen",
-              },
+        lines.push({
+          zIndex: 100,
+          label: {
+            text: `${match.score}`,
+            align: "center",
+            rotation: 0,
+            y: 265,
+            style: {
+              color: "lightgreen",
             },
-            color: "transparent",
-            value: i,
           },
-          {
-            zIndex: 100,
-            label: {
-              text: `Week ${weeksSinceStart}`,
-              align: "center",
-              rotation: 0,
-              y: 15,
-              style: {
-                color: "lightgreen",
-              },
-            },
-            color: "transparent",
-            value: i,
-          },
-        );
+          color: "transparent",
+          value: i,
+        });
       }
     }
   }

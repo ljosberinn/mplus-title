@@ -1,5 +1,10 @@
 import clsx from "clsx";
-import { type Options } from "highcharts";
+import {
+  XAxisPlotLinesLabelsOptions,
+  XAxisPlotLinesOptions,
+  type Options,
+  type XAxisPlotBandsOptions,
+} from "highcharts";
 import { ClientOnly } from "remix-utils/client-only";
 
 import { type EnhancedSeason } from "~/seasons";
@@ -14,6 +19,44 @@ type DungeonRecordsProps = {
 export default function DungeonRecords({
   season,
 }: DungeonRecordsProps): ReactNode {
+  let xAxisPlotBands: XAxisPlotBandsOptions[] = [];
+  let xAxisPlotLines: XAxisPlotLinesOptions[] = [];
+
+  for (const [region, allPlotBands] of Object.entries(
+    season.score.xAxisPlotBands,
+  )) {
+    const backgroundColorPlotBand = allPlotBands.filter(
+      (plotBand) => plotBand.id === "background-color",
+    );
+
+    if (!backgroundColorPlotBand || backgroundColorPlotBand.length === 0) {
+      continue;
+    }
+
+    xAxisPlotBands = backgroundColorPlotBand.map((plotBand) => ({
+      ...plotBand,
+      color: `${plotBand.color ?? ""}50`,
+    }));
+
+    break;
+  }
+
+  for (const [region, allPlotLines] of Object.entries(
+    season.score.xAxisPlotLines,
+  )) {
+    const weekNumberPlotLines = allPlotLines.filter(
+      (plotLine) => plotLine.id === "week-number",
+    );
+
+    if (!weekNumberPlotLines || weekNumberPlotLines.length === 0) {
+      continue;
+    }
+
+    xAxisPlotLines = weekNumberPlotLines;
+
+    break;
+  }
+
   const options: Options = {
     ...season.score.chartBlueprint,
     time: {
@@ -38,6 +81,12 @@ export default function DungeonRecords({
                   </span>
               `;
       },
+    },
+    xAxis: {
+      ...season.score.chartBlueprint.xAxis,
+      plotBands: xAxisPlotBands,
+      plotLines: xAxisPlotLines,
+      softMax: Date.now(),
     },
     yAxis: {
       ...season.score.chartBlueprint.yAxis,
