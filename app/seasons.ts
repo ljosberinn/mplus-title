@@ -211,11 +211,11 @@ export const seasons: Season[] = [
       KR: new Date("2025-08-13T23:00:00Z").getTime(),
     },
     endDates: {
-      US: new Date("2026-01-20T15:00:00Z").getTime(),
-      EU: new Date("2026-01-21T04:00:00Z").getTime(),
-      CN: new Date("2026-01-21T23:00:00Z").getTime(),
-      TW: new Date("2026-01-21T23:00:00Z").getTime(),
-      KR: new Date("2026-01-21T23:00:00Z").getTime(),
+      US: new Date("2026-01-20T15:00:00Z").getTime() - 7 * 60 * 60 * 1000,
+      EU: new Date("2026-01-21T04:00:00Z").getTime() - 7 * 60 * 60 * 1000,
+      CN: new Date("2026-01-21T23:00:00Z").getTime() - 7 * 60 * 60 * 1000,
+      TW: new Date("2026-01-21T23:00:00Z").getTime() - 7 * 60 * 60 * 1000,
+      KR: new Date("2026-01-21T23:00:00Z").getTime() - 7 * 60 * 60 * 1000,
     },
     affixes: [],
     confirmedCutoffs: {
