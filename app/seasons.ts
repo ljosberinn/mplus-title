@@ -220,12 +220,12 @@ export const seasons: Season[] = [
     affixes: [],
     confirmedCutoffs: {
       EU: {
-        score: 0,
+        score: 3945,
         source:
           "https://eu.forums.blizzard.com/en/wow/t/m-unbound-hero-title-updated-14-january/601495",
       },
       US: {
-        score: 0,
+        score: 3912,
         source:
           "https://us.forums.blizzard.com/en/wow/t/m-unbound-hero-title-updated-january-14/2227583",
       },
