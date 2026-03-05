@@ -110,7 +110,7 @@ export const dungeonSlugMetaMap: Record<
   },
   "magisters-terrace": {
     icon: "inv_achievement_dungeon_magistersterrace",
-    name: "Magisters' Terrace",
+    name: "Magister's Terrace",
   },
   "maisara-caverns": {
     icon: "inv_achievement_dungeon_maisarahills",

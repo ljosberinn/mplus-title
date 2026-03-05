@@ -162,7 +162,7 @@ export const seasons: Season[] = [
       },
       {
         slug: "magisters-terrace",
-        name: "Magisters' Terrace",
+        name: "Magister's Terrace",
       },
       {
         slug: "maisara-caverns",
@@ -191,7 +191,7 @@ export const seasons: Season[] = [
     ],
     patches: {},
     seasonIcon: "https://assets.rpglogs.com/img/warcraft/zones/zone-47.png",
-    startingPeriod: 1024,
+    startingPeriod: 1056,
     wcl: {
       weekIndexToAffixSetId: [],
       zoneId: 47,
