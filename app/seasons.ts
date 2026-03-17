@@ -1184,8 +1184,17 @@ export function findSeasonByTimestamp(
     if (regions) {
       return regions.some((region) => {
         const startDate = season.startDates[region];
+        const endDate = season.endDates[region];
 
-        return startDate && startDate < timestamp;
+        if (startDate && startDate > timestamp) {
+          return false;
+        }
+
+        if (endDate === UNKNOWN_SEASON_START_OR_ENDING) {
+          return !!startDate;
+        }
+
+        return !endDate || endDate > timestamp;
       });
     }
 
@@ -1213,13 +1222,19 @@ export function findSeasonByName(
       return ongoingSeason;
     }
 
-    const mostRecentlyStartedSeason = seasons.find(
-      (season) =>
-        season.startDates.US !== null && Date.now() >= season.startDates.US,
-    );
+    const now = Date.now();
 
-    if (mostRecentlyStartedSeason) {
-      return mostRecentlyStartedSeason;
+    for (const season of seasons) {
+      if (season.startDates.US === null) {
+        continue;
+      }
+
+      if (
+        season.startDates.US > now &&
+        season.startDates.US <= now + oneWeekInMilliseconds * 2
+      ) {
+        return season;
+      }
     }
   }
 
