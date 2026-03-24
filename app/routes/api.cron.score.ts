@@ -10,7 +10,7 @@ import {
 } from "~/load.server";
 
 import { prisma } from "../prisma.server";
-import { type Season, seasons } from "../seasons";
+import { findSeasonByName, type Season, seasons } from "../seasons";
 
 const rioBaseUrl = "https://raider.io";
 
@@ -47,6 +47,12 @@ export const action: ActionFunction = async ({ request }) => {
       });
     }
 
+    const latestSeason = findSeasonByName("latest", regions);
+
+    if (!latestSeason) {
+      return new Response(JSON.stringify([]));
+    }
+
     const latestPerRegion = await prisma.crossFactionHistory.findMany({
       where: {
         region: {
@@ -65,6 +71,12 @@ export const action: ActionFunction = async ({ request }) => {
 
     const mostOutdatedRegion = latestPerRegion.reduce((acc, dataset) => {
       if (acc.timestamp < dataset.timestamp) {
+        return acc;
+      }
+
+      const startDate = latestSeason.startDates[dataset.region];
+
+      if (startDate && startDate > dataset.timestamp) {
         return acc;
       }
 
@@ -216,13 +228,13 @@ async function retrieveScore(
   lastEligibleRank: number,
 ) {
   const scorePage =
-    lastEligibleRank <= 40 ? 0 : Math.floor(lastEligibleRank / 40);
+    lastEligibleRank <= 100 ? 0 : Math.floor(lastEligibleRank / 100);
 
   const scorePageUrl = createPageUrl(
     rioSeasonName,
-    region, // if rank is divisible by 40, e.g. 80, it would result in page 4
+    region, // if rank is divisible by 100, it would result in page 4
     // but its still on page 3
-    lastEligibleRank % 40 === 0 && lastEligibleRank > 40
+    lastEligibleRank % 100 === 0 && lastEligibleRank > 100
       ? scorePage - 1
       : scorePage,
   );
