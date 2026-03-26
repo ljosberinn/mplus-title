@@ -53,39 +53,79 @@ export const action: ActionFunction = async ({ request }) => {
       return new Response(JSON.stringify([]));
     }
 
-    const latestPerRegion = await prisma.crossFactionHistory.findMany({
-      where: {
-        region: {
-          in: regions,
+    const latestPerRegion = (
+      await prisma.crossFactionHistory.findMany({
+        where: {
+          region: {
+            in: regions,
+          },
         },
-      },
-      orderBy: {
-        timestamp: "desc",
-      },
-      select: {
-        timestamp: true,
-        region: true,
-      },
-      distinct: ["region"],
-    });
+        orderBy: {
+          timestamp: "desc",
+        },
+        select: {
+          timestamp: true,
+          region: true,
+        },
+        distinct: ["region"],
+      })
+    ).sort((a, b) => a.timestamp - b.timestamp);
 
-    const mostOutdatedRegion = latestPerRegion.reduce((acc, dataset) => {
-      if (acc.timestamp < dataset.timestamp) {
-        return acc;
+    const now = Date.now();
+
+    // bucket unlocked regions into: no current-season data yet vs. has current-season data
+    const unlockedMissingCurrentSeason: Regions[] = [];
+    const unlockedWithCurrentSeason: { region: Regions; timestamp: number }[] =
+      [];
+
+    for (const region of regions) {
+      const startDate = latestSeason.startDates[region];
+      if (!startDate || startDate >= now) {
+        // season not yet unlocked here
+        continue;
       }
 
-      const startDate = latestSeason.startDates[dataset.region];
-
-      if (startDate && startDate > dataset.timestamp) {
-        return acc;
+      const latestForRegion = latestPerRegion.find(
+        (dataset) => dataset.region === region,
+      );
+      if (!latestForRegion) {
+        continue;
       }
 
-      return dataset;
-    }, latestPerRegion[0]);
+      if (latestForRegion.timestamp * 1000 < startDate) {
+        unlockedMissingCurrentSeason.push(region);
+      } else {
+        unlockedWithCurrentSeason.push({
+          region,
+          timestamp: latestForRegion.timestamp,
+        });
+      }
+    }
 
-    console.info("most outdated region:", mostOutdatedRegion.region);
+    let mostOutdatedRegion: Regions | null = null;
 
-    const season = findSeasonForRegion(mostOutdatedRegion.region);
+    if (unlockedMissingCurrentSeason.length > 0) {
+      // among regions with no current-season data, prefer the one that unlocked earliest
+      unlockedMissingCurrentSeason.sort(
+        (a, b) => latestSeason.startDates[a]! - latestSeason.startDates[b]!,
+      );
+      mostOutdatedRegion = unlockedMissingCurrentSeason[0];
+      console.log(
+        `picking ${mostOutdatedRegion} as most outdated: no entry for current season yet`,
+      );
+    } else {
+      // all unlocked regions have current-season data — pick the one with the oldest timestamp
+      unlockedWithCurrentSeason.sort((a, b) => a.timestamp - b.timestamp);
+      mostOutdatedRegion = unlockedWithCurrentSeason[0]?.region ?? null;
+    }
+
+    if (!mostOutdatedRegion) {
+      mostOutdatedRegion = latestPerRegion[0].region;
+    }
+
+    console.info("most outdated region:", mostOutdatedRegion);
+
+    const season = findSeasonForRegion(mostOutdatedRegion);
 
     if (!season) {
       return new Response(JSON.stringify([]));
@@ -94,21 +134,14 @@ export const action: ActionFunction = async ({ request }) => {
     console.info("using season:", season.name);
 
     console.time("parseRegionData");
-    const regionData = await parseRegionData(
-      mostOutdatedRegion.region,
-      season.rioKey,
-    );
+    const regionData = await parseRegionData(mostOutdatedRegion, season.rioKey);
     console.timeEnd("parseRegionData");
 
     if (regionData.score > 0) {
-      const data = await loadDataForRegion(
-        mostOutdatedRegion.region,
-        season,
-        {},
-      );
+      const data = await loadDataForRegion(mostOutdatedRegion, season, {});
       const extrapolation = calculateExtrapolation(
         season,
-        mostOutdatedRegion.region,
+        mostOutdatedRegion,
         data,
         null,
       );
@@ -120,7 +153,7 @@ export const action: ActionFunction = async ({ request }) => {
           prisma.extrapolation.create({
             data: {
               timestamp: Math.round(timestamp / 1000),
-              region: mostOutdatedRegion.region,
+              region: mostOutdatedRegion,
               estimatedAt: Math.round(regionData.timestamp),
               score,
             },
@@ -133,7 +166,7 @@ export const action: ActionFunction = async ({ request }) => {
     }
 
     return new Response(
-      JSON.stringify({ region: mostOutdatedRegion.region, regionData }),
+      JSON.stringify({ region: mostOutdatedRegion, regionData }),
     );
   } catch (error) {
     console.error("yikes", error);
@@ -196,6 +229,7 @@ async function determineLastEligibleRank(
   try {
     const lastPageResponse = await fetch(url);
     const lastPageJson = await lastPageResponse.json();
+    console.log(url);
 
     const lastEntry =
       lastPageJson.rankings.rankedCharacters[
@@ -204,7 +238,7 @@ async function determineLastEligibleRank(
 
     retries = 0;
 
-    return Math.floor(lastEntry.rank * 0.001);
+    return Math.max(1, Math.floor(lastEntry.rank * 0.001));
   } catch {
     const prevPage = lastPage - 1;
 
@@ -262,16 +296,6 @@ async function parseRegionData(
   console.time("retrieveLastPage");
   const lastPage = await retrieveLastPage(rioSeasonName, region);
   console.timeEnd("retrieveLastPage");
-
-  if (!lastPage) {
-    console.warn("Could not parse last page, bailing without data.", lastPage);
-    return {
-      score: 0,
-      rank: 0,
-      timestamp: now,
-      region,
-    };
-  }
 
   console.time("determineLastEligibleRank");
   const lastEligibleRank = await determineLastEligibleRank(
