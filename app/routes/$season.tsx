@@ -2,6 +2,7 @@ import clsx from "clsx";
 import {
   type DataLabelsFormatterCallbackFunction,
   type Options,
+  type XAxisPlotBandsOptions,
 } from "highcharts";
 import { type HighchartsReactRefObject } from "highcharts-react-official";
 import { type Regions } from "prisma/generated/prisma/enums";
@@ -264,6 +265,10 @@ function findIndexOfCurrentWeek(season: EnhancedSeason, region: Regions) {
     (latestDataset.ts - startDate) / 1000 / 60 / 60 / 24 / 7,
   );
 
+  if (season.affixes.length === 0) {
+    return result;
+  }
+
   if (result === season.affixes.length) {
     return 0;
   }
@@ -419,7 +424,12 @@ function Region({
           });
         },
       },
-      plotBands: season.score.xAxisPlotBands[region],
+      plotBands: addMythicStatsLinksToBands(
+        season.score.xAxisPlotBands[region],
+        season.startingPeriod,
+        season.affixes.length,
+        now,
+      ),
       plotLines: season.score.xAxisPlotLines[region],
     },
     yAxis: {
@@ -517,6 +527,7 @@ function Region({
     timePassedSinceSeasonStart / 1000 / 60 / 60 / 24 / 7;
 
   const cycles =
+    season.affixes.length > 0 &&
     weeksPassedSinceSeasonStart > season.affixes.length
       ? Math.ceil(weeksPassedSinceSeasonStart / season.affixes.length) - 1
       : 0;
@@ -768,6 +779,48 @@ function MythicStatsLink({ season, weekOffset }: MythicStatsLinkProps) {
       <img src="/mythic-stats.png" loading="lazy" className="h-4 w-4" alt="" />
     </a>
   );
+}
+
+function addMythicStatsLinksToBands(
+  bands: XAxisPlotBandsOptions[],
+  startingPeriod: number | null,
+  affixesLength: number,
+  now: number,
+): XAxisPlotBandsOptions[] {
+  if (affixesLength > 0 || !startingPeriod) {
+    return bands;
+  }
+
+  let weekIndex = 0;
+
+  return bands.map((band) => {
+    if (band.id !== "background-color") {
+      return band;
+    }
+
+    const index = weekIndex++;
+
+    if ((Number(band.from) ?? Infinity) > now) {
+      return band;
+    }
+
+    const dimensions = 30;
+
+    return {
+      ...band,
+      label: {
+        ...band.label,
+        useHTML: true,
+        align: "center",
+        verticalAlign: "top",
+        x: 0,
+        y: dimensions / 2,
+        style: {},
+        rotation: 0,
+        text: `<a href="https://mythicstats.com/period/${startingPeriod + index}" target="_blank" rel="noopener noreferrer" title="MythicStats for week ${index + 1}"><img src="/mythic-stats.png" loading="lazy" width="${dimensions}" height="${dimensions}" alt="" /></a>`,
+      },
+    };
+  });
 }
 
 const formatter: DataLabelsFormatterCallbackFunction = function (this) {
