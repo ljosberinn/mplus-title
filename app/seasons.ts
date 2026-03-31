@@ -129,9 +129,9 @@ export const seasons: Season[] = [
     startDates: {
       US: new Date("2026-03-24T15:00:00Z").getTime(),
       EU: new Date("2026-03-25T04:00:00Z").getTime(),
-      CN: new Date("2026-03-24T23:00:00Z").getTime(),
-      TW: new Date("2026-03-24T23:00:00Z").getTime(),
-      KR: new Date("2026-03-24T23:00:00Z").getTime(),
+      CN: new Date("2026-03-25T23:00:00Z").getTime(),
+      TW: new Date("2026-03-25T23:00:00Z").getTime(),
+      KR: new Date("2026-03-25T23:00:00Z").getTime(),
     },
     endDates: {
       US: null,
