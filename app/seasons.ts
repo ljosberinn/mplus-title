@@ -154,7 +154,25 @@ export const seasons: Season[] = [
       TW: { score: 0, source: null },
       CN: { score: 0, source: null },
     },
-    dungeonHotfixes: {},
+    dungeonHotfixes: {
+      "Academy +1 min": {
+        US:
+          new Date("2026-03-24T15:00:00Z").getTime() +
+          2 * 7 * 24 * 60 * 60 * 1000,
+        EU:
+          new Date("2026-03-25T04:00:00Z").getTime() +
+          2 * 7 * 24 * 60 * 60 * 1000,
+        CN:
+          new Date("2026-03-25T23:00:00Z").getTime() +
+          2 * 7 * 24 * 60 * 60 * 1000,
+        TW:
+          new Date("2026-03-25T23:00:00Z").getTime() +
+          2 * 7 * 24 * 60 * 60 * 1000,
+        KR:
+          new Date("2026-03-25T23:00:00Z").getTime() +
+          2 * 7 * 24 * 60 * 60 * 1000,
+      },
+    },
     dungeons: [
       {
         slug: "algethar-academy",
