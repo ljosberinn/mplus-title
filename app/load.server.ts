@@ -40,6 +40,8 @@ function getCrossFactionHistory(
       timestamp: true,
       score: true,
       rank: true,
+      score100: true,
+      rank100: true,
     },
     orderBy: {
       timestamp: "desc",
@@ -236,7 +238,7 @@ export async function loadDataForRegion(
 ): Promise<Dataset[]> {
   const gte = season.startDates[region];
   const lte = season.endDates[region] ?? undefined;
-  const key = [season.slug, region].join(searchParamSeparator);
+  const key = [season.slug, region, "v2"].join(searchParamSeparator);
 
   const { persist, load } = setupRedisProviders();
 
@@ -275,6 +277,14 @@ export async function loadDataForRegion(
             score:
               "customScore" in dataset ? dataset.customScore : dataset.score,
             rank: "rank" in dataset ? dataset.rank : null,
+            score100:
+              "score100" in dataset && dataset.score100 > 0
+                ? dataset.score100
+                : null,
+            rank100:
+              "rank100" in dataset && dataset.rank100 > 0
+                ? dataset.rank100
+                : null,
           };
 
           if ("faction" in dataset) {
@@ -388,7 +398,10 @@ export function calculateExtrapolation(
 ):
   | null
   | [number, number][]
-  | { from: Omit<Dataset, "rank">; to: Omit<Dataset, "rank"> } {
+  | {
+      from: Omit<Dataset, "rank" | "rank100" | "score100">;
+      to: Omit<Dataset, "rank" | "rank100" | "score100">;
+    } {
   let seasonEnding = season.endDates[region];
 
   if (seasonEnding && Date.now() >= seasonEnding) {
@@ -702,6 +715,7 @@ const colors = {
   xFaction: "#EEE7D8",
   extrapolation: "#ccaa8aff",
   extrapolationHistory: "gray",
+  top1: "orange",
 } as const;
 
 export function calculateSeries(
@@ -744,7 +758,7 @@ export function calculateSeries(
   if (season.crossFactionSupport !== "none") {
     options.push({
       type: "line",
-      name: "Score",
+      name: "Score 0.1%",
       id: "score",
       color: colors.xFaction,
       data: data
@@ -795,6 +809,20 @@ export function calculateSeries(
       },
       visible: false,
       data: extrapolationHistory,
+    });
+  }
+
+  if (data.some((dataset) => dataset.score100 !== null)) {
+    options.push({
+      type: "line",
+      name: "Score 1%",
+      id: "score100",
+      color: colors.top1,
+      data: data
+        .filter((dataset) => dataset.score100 !== null)
+        .map((dataset) => {
+          return [dataset.ts, dataset.score100];
+        }),
     });
   }
 
@@ -1335,9 +1363,8 @@ function calcTwwS2LevelCompletionLines(
     const total =
       (base + perLevelPoints * level + affixPoints) * numberOfDungeons;
 
-    let match: Omit<Dataset, "rank"> | undefined = data.find(
-      (dataset) => dataset.score >= total,
-    );
+    let match: Omit<Dataset, "rank" | "rank100" | "score100"> | undefined =
+      data.find((dataset) => dataset.score >= total);
 
     if (!match && Array.isArray(extrapolation)) {
       const extrapolationMatchIndex = extrapolation.findIndex(
@@ -1436,13 +1463,14 @@ function calcTwwS1LevelCompletionLines(
     const total =
       (base + perLevelPoints * level + affixPoints) * numberOfDungeons;
 
-    let match: Omit<Dataset, "rank"> | undefined = data.find((dataset) => {
-      if (dataset.ts - startDate < oneWeekInMs) {
-        return dataset.score >= total;
-      }
+    let match: Omit<Dataset, "rank" | "rank100" | "score100"> | undefined =
+      data.find((dataset) => {
+        if (dataset.ts - startDate < oneWeekInMs) {
+          return dataset.score >= total;
+        }
 
-      return false;
-    });
+        return false;
+      });
 
     if (!match && Array.isArray(extrapolation)) {
       const extrapolationMatchIndex = extrapolation.findIndex(
@@ -1554,9 +1582,10 @@ function calcOldLevelCompletionLines(
     const bothWeeks = set1 + set2;
     const allDungeonsBothWeeks = bothWeeks * numberOfDungeons;
 
-    let match: Omit<Dataset, "rank"> | undefined = data.find((dataset) => {
-      return dataset.score >= allDungeonsBothWeeks;
-    });
+    let match: Omit<Dataset, "rank" | "rank100" | "score100"> | undefined =
+      data.find((dataset) => {
+        return dataset.score >= allDungeonsBothWeeks;
+      });
 
     // if we have an extrapolation, check whether a key level threshold is
     // reached during the extrapolation window

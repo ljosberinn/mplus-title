@@ -212,14 +212,14 @@ async function retrieveLastPage(
 
 let retries = 0;
 
-async function determineLastEligibleRank(
+async function determineLastEligibleRanks(
   rioSeasonName: string,
   region: Regions,
   lastPage: number,
-): Promise<number> {
+): Promise<{ top01: number; top1: number }> {
   if (retries === 3) {
     console.debug("too many retries to determine last eligible rank, bailing");
-    return 0;
+    return { top01: 0, top1: 0 };
   }
 
   retries++;
@@ -238,16 +238,19 @@ async function determineLastEligibleRank(
 
     retries = 0;
 
-    return Math.max(1, Math.floor(lastEntry.rank * 0.001));
+    return {
+      top01: Math.max(1, Math.floor(lastEntry.rank * 0.001)),
+      top1: Math.max(1, Math.floor(lastEntry.rank * 0.01)),
+    };
   } catch {
     const prevPage = lastPage - 1;
 
     if (prevPage === 0) {
       console.debug("probably no entries yet, bailing");
-      return 0;
+      return { top01: 0, top1: 0 };
     }
 
-    return determineLastEligibleRank(rioSeasonName, region, prevPage);
+    return determineLastEligibleRanks(rioSeasonName, region, prevPage);
   }
 }
 
@@ -297,39 +300,51 @@ async function parseRegionData(
   const lastPage = await retrieveLastPage(rioSeasonName, region);
   console.timeEnd("retrieveLastPage");
 
-  console.time("determineLastEligibleRank");
-  const lastEligibleRank = await determineLastEligibleRank(
+  console.time("determineLastEligibleRanks");
+  const { top01, top1 } = await determineLastEligibleRanks(
     rioSeasonName,
     region,
     lastPage,
   );
-  console.timeEnd("determineLastEligibleRank");
+  console.timeEnd("determineLastEligibleRanks");
 
-  if (lastEligibleRank === 0) {
+  if (top01 === 0 || top1 === 0) {
     console.warn(
       "Could not parse last eligible rank, bailing without data.",
-      lastEligibleRank,
+      top01,
+      top1,
     );
+
     return {
       score: 0,
       rank: 0,
       timestamp: now,
       region,
+      rank100: 0,
+      score100: 0,
     };
   }
 
-  console.time("retrieveScore");
-  const score = await retrieveScore(rioSeasonName, region, lastEligibleRank);
-  console.timeEnd("retrieveScore");
+  console.time("retrieveScore top1");
+  const [score, score100] = await Promise.all([
+    retrieveScore(rioSeasonName, region, top01),
+    retrieveScore(rioSeasonName, region, top1),
+  ]);
+  console.timeEnd("retrieveScore top1");
 
   console.info(
-    `Established score for ${region} at ${lastEligibleRank} of ${rioSeasonName} as ${score}`,
+    `Top 0.1%: Established score for ${region} at ${top1} of ${rioSeasonName} as ${score}`,
+  );
+  console.info(
+    `Top 1%: Established score for ${region} at ${top01} of ${rioSeasonName} as ${score100}`,
   );
 
   return {
     score,
-    rank: lastEligibleRank,
+    rank: top01,
     timestamp: now,
     region,
+    rank100: top1,
+    score100: score100,
   };
 }

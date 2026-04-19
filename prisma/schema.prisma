@@ -24,6 +24,8 @@ model CrossFactionHistory {
   region        Regions
   score         Float
   rank          Int
+  score100      Float   @default(0)
+  rank100       Int     @default(0)
 }
 
 model Extrapolation {

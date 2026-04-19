@@ -63,8 +63,8 @@ export type EnhancedSeason = Season & {
       | null
       | [number, number][]
       | {
-          from: Omit<Dataset, "rank">;
-          to: Omit<Dataset, "rank">;
+          from: Omit<Dataset, "rank" | "rank100" | "score100">;
+          to: Omit<Dataset, "rank" | "rank100" | "score100">;
         }
     >;
     initialZoom: Record<Regions, null | [number, number]>;
@@ -84,6 +84,8 @@ export type Dataset = {
   score: number;
   faction?: Factions;
   rank: number | null;
+  score100: number | null;
+  rank100: number | null;
 };
 
 function offsetStartDateForRegion(timestamp: number, region: Regions): number {
