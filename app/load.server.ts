@@ -938,7 +938,7 @@ export function calculateXAxisPlotBands(
       },
     });
 
-    const { allianceDiff, hordeDiff, xFactionDiff } =
+    const { allianceDiff, hordeDiff, xFactionDiff, score100Diff } =
       calculateFactionDiffForWeek(
         data,
         crossFactionSupport,
@@ -962,7 +962,12 @@ export function calculateXAxisPlotBands(
       (crossFactionSupport === "partial" && xFactionDiff === 0)
     ) {
     } else {
-      text.push(createWeekDiffString(xFactionDiff, colors.xFaction));
+      const xFactionStr = createWeekDiffString(xFactionDiff, colors.xFaction);
+      const score100Str =
+        score100Diff !== 0
+          ? ` | ${createWeekDiffString(score100Diff, colors.top1)}`
+          : "";
+      text.push(xFactionStr + score100Str);
     }
 
     options.push({
@@ -1256,7 +1261,12 @@ function calculateFactionDiffForWeek(
   isFirstWeek: boolean,
   from: number,
   to: number,
-): { hordeDiff: number; allianceDiff: number; xFactionDiff: number } {
+): {
+  hordeDiff: number;
+  allianceDiff: number;
+  xFactionDiff: number;
+  score100Diff: number;
+} {
   const hasCompleteXFactionSupport = crossFactionSupport === "complete";
   const thisWeeksData = data.filter(
     (dataset) => dataset.ts >= from && dataset.ts <= to,
@@ -1293,9 +1303,16 @@ function calculateFactionDiffForWeek(
     }
   }
 
+  const score100Data = thisWeeksData.filter(
+    (dataset) => dataset.score100 !== null,
+  );
+  const score100StartMatch = score100Data[0];
+  const score100EndMatch = score100Data[score100Data.length - 1];
+
   let hordeDiff = 0;
   let allianceDiff = 0;
   let xFactionDiff = 0;
+  let score100Diff = 0;
 
   if (hordeEndMatch && hordeStartMatch) {
     hordeDiff =
@@ -1319,10 +1336,20 @@ function calculateFactionDiffForWeek(
         : xFactionStartMatch.score);
   }
 
+  if (score100EndMatch && score100StartMatch) {
+    const firstScore100InData = data.find((d) => d.score100 !== null);
+    score100Diff =
+      score100EndMatch.score100! -
+      (isFirstWeek && score100StartMatch === firstScore100InData
+        ? 0
+        : score100StartMatch.score100!);
+  }
+
   return {
     hordeDiff,
     allianceDiff,
     xFactionDiff,
+    score100Diff,
   };
 }
 
