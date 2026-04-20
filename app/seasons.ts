@@ -209,7 +209,25 @@ export const seasons: Season[] = [
         name: "Windrunner Spire",
       },
     ],
-    patches: {},
+    patches: {
+      "12.0.5": {
+        US:
+          new Date("2026-03-24T15:00:00Z").getTime() +
+          4 * 7 * 24 * 60 * 60 * 1000,
+        EU:
+          new Date("2026-03-25T04:00:00Z").getTime() +
+          4 * 7 * 24 * 60 * 60 * 1000,
+        CN:
+          new Date("2026-03-25T23:00:00Z").getTime() +
+          4 * 7 * 24 * 60 * 60 * 1000,
+        TW:
+          new Date("2026-03-25T23:00:00Z").getTime() +
+          4 * 7 * 24 * 60 * 60 * 1000,
+        KR:
+          new Date("2026-03-25T23:00:00Z").getTime() +
+          4 * 7 * 24 * 60 * 60 * 1000,
+      },
+    },
     seasonIcon: "https://assets.rpglogs.com/img/warcraft/zones/zone-47.png",
     startingPeriod: 1056,
     wcl: {
