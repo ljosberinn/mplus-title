@@ -9,9 +9,9 @@
     "resolveJsonModule": true,
     "target": "ES2019",
     "strict": true,
-    "baseUrl": ".",
     "paths": {
-      "~/*": ["./app/*"]
+      "~/*": ["./app/*"],
+      "prisma/generated/*": ["./prisma/generated/*"]
     },
     "allowSyntheticDefaultImports": true,
     "noEmit": true,

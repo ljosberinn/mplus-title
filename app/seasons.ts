@@ -101,6 +101,9 @@ function offsetStartDateForRegion(timestamp: number, region: Regions): number {
     case "CN": {
       return timestamp + 111_600_000;
     }
+    default: {
+      return timestamp;
+    }
   }
 }
 
@@ -116,6 +119,9 @@ function offsetEndDateForRegion(timestamp: number, region: Regions): number {
     case "TW":
     case "CN": {
       return timestamp + 129_600_000;
+    }
+    default: {
+      return timestamp;
     }
   }
 }

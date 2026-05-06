@@ -43,7 +43,7 @@ export const links: Route.LinksFunction = () => {
   ] satisfies ReturnType<LinksFunction>;
 };
 
-export default function App(): JSX.Element {
+export default function App() {
   const title = "Title Cutoff History & Estimation";
   const url = "https://mplus-title.vercel.app/";
   const description =

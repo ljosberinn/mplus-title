@@ -32,6 +32,6 @@ export const loader: LoaderFunction = ({ request }) => {
   return redirect(`/${latest.slug}${asString ? `?${asString}` : ""}`, 307);
 };
 
-export default function Index(): JSX.Element {
+export default function Index() {
   return <Outlet />;
 }

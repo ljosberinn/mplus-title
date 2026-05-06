@@ -213,7 +213,7 @@ export async function loadRecordsForSeason(
           type: "line",
           data: [],
           name,
-          // @ts-expect-error doesn't matter
+          // @ts-expect-error iconUrl is not in SeriesLineOptions but Highcharts uses it
           iconUrl: dungeonMetaInformation
             ? `https://wow.zamimg.com/images/wow/icons/medium/${dungeonMetaInformation.icon}.jpg`
             : null,
