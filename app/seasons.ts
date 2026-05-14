@@ -197,6 +197,23 @@ export const seasons: Season[] = [
           new Date("2026-03-25T23:00:00Z").getTime() +
           5 * 7 * 24 * 60 * 60 * 1000,
       },
+      "Turbo Boost": {
+        US:
+          new Date("2026-03-24T15:00:00Z").getTime() +
+          7 * 7 * 24 * 60 * 60 * 1000,
+        EU:
+          new Date("2026-03-25T04:00:00Z").getTime() +
+          7 * 7 * 24 * 60 * 60 * 1000,
+        CN:
+          new Date("2026-03-25T23:00:00Z").getTime() +
+          7 * 7 * 24 * 60 * 60 * 1000,
+        TW:
+          new Date("2026-03-25T23:00:00Z").getTime() +
+          7 * 7 * 24 * 60 * 60 * 1000,
+        KR:
+          new Date("2026-03-25T23:00:00Z").getTime() +
+          7 * 7 * 24 * 60 * 60 * 1000,
+      },
     },
     dungeons: [
       {
