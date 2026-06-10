@@ -481,17 +481,17 @@ function Region({
                 numeric: "auto",
               });
 
-              const diffBetweenEstimationAndActualTime =
-                relativeFormatter.format(
-                  // @ts-expect-error sent from the backend
-                  -(x - this.estimatedAt) / 1000 / 60 / 60 / 24,
-                  "days",
-                );
+              const diffBetweenEstimationAndNow = relativeFormatter.format(
+                // @ts-expect-error sent from the backend
+                // eslint-disable-next-line unicorn/consistent-destructuring
+                -(Date.now() - this.estimatedAt) / 1000 / 60 / 60 / 24,
+                "days",
+              );
 
               const lines = [
                 `<small>${timestamp}</small>`,
-                `Estimated: ${diffBetweenEstimationAndActualTime}`,
-                "Above is relative to the prediction, not the current time.",
+                `Estimated: ${diffBetweenEstimationAndNow}`,
+                "Score predicted to reach cutoff at the time shown above.",
                 `Expected Score: <b>${y}</b>`,
               ];
 
@@ -510,11 +510,11 @@ function Region({
                         : "-";
                   const diff =
                     firstMatchPastThisExtrapolation.score === y
-                      ? 0.0
+                      ? 0
                       : firstMatchPastThisExtrapolation.score < y
                         ? y - firstMatchPastThisExtrapolation.score
                         : firstMatchPastThisExtrapolation.score - y;
-                  lines.push(`Difference: <b>${prefix}${diff}</b>`);
+                  lines.push(`Difference: <b>${prefix}${diff.toFixed(1)}</b>`);
                 }
               }
 
