@@ -774,8 +774,10 @@ export function calculateSeries(
       type: "line",
       id: "extrapolation",
       name: "Score Extrapolated",
-      description:
-        "A projection of how the cutoff will evolve over time based on various parameters.",
+      accessibility: {
+        description:
+          "A projection of how the cutoff will evolve over time based on various parameters.",
+      },
       color: colors.extrapolation,
       data: Array.isArray(extrapolation)
         ? extrapolation
@@ -799,8 +801,10 @@ export function calculateSeries(
       id: "extrapolation-history",
       name: "Extrapolation History",
       color: colors.extrapolationHistory,
-      description:
-        "Series of data the score was expected to be at for a given point in time. Useful to compare how accurate prediction was.",
+      accessibility: {
+        description:
+          "Series of data the score was expected to be at for a given point in time. Useful to compare how accurate prediction was.",
+      },
       dashStyle: "Dot",
       marker: {
         enabled: true,

@@ -321,11 +321,27 @@ function Region({
         );
       };
 
+      // useHTML: true labels aren't repositioned by setExtremes in production
+      // (React strict mode's double-effect masks this locally). Re-adding forces
+      // Highcharts to recalculate their pixel positions for the current zoom.
+      const resetBackgroundColorPlotBands = () => {
+        const backgroundColorBands =
+          chart.xAxis[0].userOptions.plotBands!.filter(
+            (band) => band.id === "background-color",
+          );
+        chart.xAxis[0].removePlotBand("background-color");
+
+        backgroundColorBands.forEach((band) =>
+          chart.xAxis[0].addPlotBand(band),
+        );
+      };
+
       const chart = ref.current.chart;
 
       if (extremes) {
         chart.xAxis[0].setExtremes(extremes.min, extremes.max);
         resetWeeklyDifferencePlotBands();
+        resetBackgroundColorPlotBands();
         chart.showResetZoom();
         return;
       }
@@ -339,6 +355,7 @@ function Region({
       if (!zoom) {
         chart.xAxis[0].setExtremes();
         resetWeeklyDifferencePlotBands();
+        resetBackgroundColorPlotBands();
         return;
       }
 
@@ -352,6 +369,7 @@ function Region({
       chart.showResetZoom();
 
       resetWeeklyDifferencePlotBands();
+      resetBackgroundColorPlotBands();
     });
   }, [region, season.score.initialZoom, extremes]);
 
@@ -770,12 +788,7 @@ function MythicStatsLink({ season, weekOffset }: MythicStatsLinkProps) {
   const href = `https://mythicstats.com/period/${season.startingPeriod + weekOffset}`;
 
   return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      title="MythicStats for this week"
-    >
+    <a href={href} target="_blank" title="MythicStats for this week">
       <img src="/mythic-stats.png" loading="lazy" className="h-4 w-4" alt="" />
     </a>
   );
