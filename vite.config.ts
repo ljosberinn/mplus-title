@@ -1,9 +1,25 @@
 import { reactRouter } from "@react-router/dev/vite";
 import tailwindcss from "@tailwindcss/vite";
+import ReactCompilerPlugin from "babel-plugin-react-compiler";
 import { defineConfig } from "vite";
-import tsconfigPaths from "vite-tsconfig-paths";
+import babel from "vite-plugin-babel";
 
-// eslint-disable-next-line import/no-default-export
 export default defineConfig({
-  plugins: [tailwindcss(), reactRouter(), tsconfigPaths()],
+  resolve: { tsconfigPaths: true },
+  plugins: [
+    tailwindcss(),
+    reactRouter(),
+    babel({
+      include: [/\/app\/.*\.[jt]sx?$/u],
+      babelConfig: {
+        plugins: [
+          [
+            "@babel/plugin-syntax-typescript",
+            { isTSX: true, allExtensions: true },
+          ],
+          ReactCompilerPlugin,
+        ],
+      },
+    }),
+  ],
 });
