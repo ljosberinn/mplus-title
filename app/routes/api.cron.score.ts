@@ -196,7 +196,7 @@ function findSeasonForRegion(region: Regions): Season | null {
 
 function createPageUrl(rioSeasonName: string, region: Regions, page = 0) {
   // return `${rioBaseUrl}/mythic-plus-character-rankings/${rioSeasonName}/${region}/all/all/${page}`;
-  return `${rioBaseUrl}/api/mythic-plus/rankings/characters?region=${region}&season=${rioSeasonName}&class=all&role=all&page=${page}`;
+  return `${rioBaseUrl}/api/mythic-plus/rankings/characters?region=${region.toLowerCase()}&season=${rioSeasonName}&class=all&role=all&page=${page}`;
 }
 
 async function retrieveLastPage(
