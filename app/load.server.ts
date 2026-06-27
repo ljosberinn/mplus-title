@@ -1,5 +1,6 @@
 import { Redis } from "@upstash/redis";
 import {
+  type SeriesArearangeOptions,
   type SeriesLineOptions,
   type SeriesScatterOptions,
   type XAxisPlotBandsOptions,
@@ -821,6 +822,122 @@ const colors = {
   top1: "orange",
 } as const;
 
+// Per-day half-width of the confidence band, as a fraction of the predicted
+// score. Calibrated by leave-one-season-out conformal prediction in
+// scripts/backtest-advanced.ts: ±~1.7% at the 21-day lead gave ~90% coverage.
+// The band starts at zero width "now" and grows linearly with the lead.
+const CONFORMAL_BAND_RATE_PER_DAY = 0.0172 / 21;
+
+/**
+ * Derives an arearange [x, low, high] band around an extrapolation trajectory.
+ * Width is ~0 at the anchor (now) and widens with the lead time; the lower bound
+ * never drops below the current score, since the cutoff cannot decrease.
+ */
+export function calculateExtrapolationBand(
+  extrapolation: ReturnType<typeof calculateExtrapolation>,
+): [number, number, number][] {
+  if (extrapolation === null) {
+    return [];
+  }
+
+  const points: [number, number][] = Array.isArray(extrapolation)
+    ? extrapolation
+    : [
+        [extrapolation.from.ts, extrapolation.from.score],
+        [extrapolation.to.ts, extrapolation.to.score],
+      ];
+
+  if (points.length === 0) {
+    return [];
+  }
+
+  const anchorTs = points[0][0];
+  const anchorScore = points[0][1];
+
+  return points.map(([ts, score]): [number, number, number] => {
+    const daysAhead = (ts - anchorTs) / dayInMs;
+    const halfWidth = score * CONFORMAL_BAND_RATE_PER_DAY * daysAhead;
+
+    return [
+      ts,
+      toOneDigit(Math.max(anchorScore, score - halfWidth)),
+      toOneDigit(score + halfWidth),
+    ];
+  });
+}
+
+type ChartSeries =
+  | SeriesLineOptions
+  | SeriesScatterOptions
+  | SeriesArearangeOptions;
+
+/** Pushes a dashed extrapolation line plus its confidence band onto `options`. */
+function pushExtrapolationSeries(
+  options: ChartSeries[],
+  extrapolation: ReturnType<typeof calculateExtrapolation>,
+  config: {
+    lineId: string;
+    bandId: string;
+    name: string;
+    bandName: string;
+    color: string;
+  },
+): void {
+  if (extrapolation === null) {
+    return;
+  }
+
+  const data: [number, number][] = Array.isArray(extrapolation)
+    ? extrapolation
+    : [
+        [extrapolation.from.ts, extrapolation.from.score],
+        [extrapolation.to.ts, extrapolation.to.score],
+      ];
+
+  // push the band first so the extrapolation line renders on top of it
+  const band = calculateExtrapolationBand(extrapolation);
+
+  if (band.length > 0) {
+    options.push({
+      type: "arearange",
+      id: config.bandId,
+      name: config.bandName,
+      accessibility: {
+        description:
+          "Confidence band around the extrapolation; historically ~90% of outcomes landed within it.",
+      },
+      color: config.color,
+      fillOpacity: 0.15,
+      lineWidth: 0,
+      data: band,
+      marker: {
+        enabled: false,
+      },
+      enableMouseTracking: false,
+      visible: true,
+    });
+  }
+
+  options.push({
+    type: "line",
+    id: config.lineId,
+    name: config.name,
+    accessibility: {
+      description:
+        "A projection of how the cutoff will evolve over time based on various parameters.",
+    },
+    color: config.color,
+    data,
+    dashStyle: "ShortDash",
+    marker: {
+      enabled: true,
+      radius: 3,
+      symbol: "triangle",
+    },
+    visible: true,
+  });
+}
+
 export function calculateSeries(
   season: Season,
   data: Dataset[],
@@ -828,8 +945,9 @@ export function calculateSeries(
   extrapolationHistory: Awaited<
     ReturnType<typeof loadExtrapolationHistoryForSeason>
   >,
-): (SeriesLineOptions | SeriesScatterOptions)[] {
-  const options: (SeriesLineOptions | SeriesScatterOptions)[] = [];
+  extrapolation100: ReturnType<typeof calculateExtrapolation> = null,
+): ChartSeries[] {
+  const options: ChartSeries[] = [];
 
   if (season.crossFactionSupport !== "complete") {
     options.push(
@@ -872,31 +990,13 @@ export function calculateSeries(
     });
   }
 
-  if (extrapolation !== null) {
-    options.push({
-      type: "line",
-      id: "extrapolation",
-      name: "Score Extrapolated",
-      accessibility: {
-        description:
-          "A projection of how the cutoff will evolve over time based on various parameters.",
-      },
-      color: colors.extrapolation,
-      data: Array.isArray(extrapolation)
-        ? extrapolation
-        : [
-            [extrapolation.from.ts, extrapolation.from.score],
-            [extrapolation.to.ts, extrapolation.to.score],
-          ],
-      dashStyle: "ShortDash",
-      marker: {
-        enabled: true,
-        radius: 3,
-        symbol: "triangle",
-      },
-      visible: true,
-    });
-  }
+  pushExtrapolationSeries(options, extrapolation, {
+    lineId: "extrapolation",
+    bandId: "extrapolation-confidence",
+    name: "Score Extrapolated",
+    bandName: "Extrapolation Confidence",
+    color: colors.extrapolation,
+  });
 
   if (Array.isArray(extrapolationHistory) && extrapolationHistory.length > 0) {
     options.push({
@@ -930,6 +1030,14 @@ export function calculateSeries(
         .map((dataset) => {
           return [dataset.ts, dataset.score100];
         }),
+    });
+
+    pushExtrapolationSeries(options, extrapolation100, {
+      lineId: "extrapolation-score100",
+      bandId: "extrapolation-score100-confidence",
+      name: "Score 1% Extrapolated",
+      bandName: "Score 1% Confidence",
+      color: colors.top1,
     });
   }
 

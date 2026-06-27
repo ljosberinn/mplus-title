@@ -244,6 +244,22 @@ export const getEnhancedSeason = async ({
         { type: `calculateExtrapolation-${region}`, timings },
       );
 
+      // top 1% extrapolation is calculated for display only - never persisted
+      const extrapolation100 = await time(
+        () => {
+          const data100 = data
+            .filter(
+              (dataset) => dataset.score100 !== null && dataset.score100 > 0,
+            )
+            .map((dataset) => ({ ...dataset, score: dataset.score100! }));
+
+          return data100.length > 0
+            ? calculateExtrapolation(season, region, data100, extrapolationEnd)
+            : null;
+        },
+        { type: `calculateExtrapolation100-${region}`, timings },
+      );
+
       enhancedSeason.score.xAxisPlotLines[region] = await time(
         () =>
           calculateXAxisPlotLines(
@@ -268,7 +284,13 @@ export const getEnhancedSeason = async ({
 
       enhancedSeason.score.series[region] = await time(
         () =>
-          calculateSeries(season, data, extrapolation, extrapolationHistory),
+          calculateSeries(
+            season,
+            data,
+            extrapolation,
+            extrapolationHistory,
+            extrapolation100,
+          ),
         { type: `calculateSeries-${region}`, timings },
       );
 

@@ -1,4 +1,5 @@
 import Highcharts from "highcharts";
+import "highcharts/highcharts-more"; // arearange (extrapolation confidence band)
 import "highcharts/modules/accessibility";
 
 // Allow rel attribute so <a rel="noopener noreferrer"> renders without warning #33

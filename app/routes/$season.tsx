@@ -455,6 +455,47 @@ function Region({
       plotLines: season.score.yAxisPlotLines[region],
     },
     series: season.score.series[region].map((series) => {
+      // faint low/high numbers at the right edge of the confidence band
+      if (series.type === "arearange") {
+        const faintLabel = {
+          color: "#9ca3af",
+          fontSize: "10px",
+          fontWeight: "normal",
+          textOutline: "none",
+        };
+
+        // in Highcharts v12 the formatter's `this` is the Point itself, and an
+        // arearange point exposes `low`/`high` directly
+        type BandPoint = {
+          x?: number;
+          high: number;
+          series: { data: { x: number }[] };
+        };
+
+        const atLastPoint = (self: BandPoint, value: number): number | null => {
+          const max = self.series.data.reduce(
+            (acc, point) => (acc > point.x ? acc : point.x),
+            0,
+          );
+          return self.x === max ? Math.round(value) : null;
+        };
+
+        return {
+          ...series,
+          // only the upper bound; the lower bound is clamped to the current
+          // score, so labelling it would just repeat today's value
+          dataLabels: {
+            enabled: true,
+            crop: false,
+            overflow: "allow" as const,
+            style: faintLabel,
+            formatter(this: BandPoint) {
+              return atLastPoint(this, this.high);
+            },
+          },
+        };
+      }
+
       if (series.type === "scatter") {
         return {
           ...series,

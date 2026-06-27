@@ -1,4 +1,5 @@
 import {
+  type SeriesArearangeOptions,
   type SeriesScatterOptions,
   type Options,
   type SeriesLineOptions,
@@ -73,7 +74,10 @@ export type EnhancedSeason = Season & {
     yAxisPlotLines: Record<Regions, YAxisPlotLinesOptions[]>;
     regionsToDisplay: Regions[];
     overlaysToDisplay: Overlay[];
-    series: Record<Regions, (SeriesLineOptions | SeriesScatterOptions)[]>;
+    series: Record<
+      Regions,
+      (SeriesLineOptions | SeriesScatterOptions | SeriesArearangeOptions)[]
+    >;
     chartBlueprint: Options;
   };
   records: SeriesLineOptions[];
