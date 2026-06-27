@@ -1,7 +1,7 @@
 import { Redis } from "@upstash/redis";
 import {
-  type SeriesScatterOptions,
   type SeriesLineOptions,
+  type SeriesScatterOptions,
   type XAxisPlotBandsOptions,
   type XAxisPlotLinesOptions,
   type YAxisPlotLinesOptions,
@@ -17,7 +17,8 @@ import { type Dataset, type EnhancedSeason, type Season } from "./seasons";
 import { type Overlay, searchParamSeparator } from "./utils";
 import { orderedRegionsBySize, overlays } from "./utils";
 
-const oneWeekInMs = 7 * 24 * 60 * 60 * 1000;
+const dayInMs = 24 * 60 * 60 * 1000;
+const oneWeekInMs = 7 * dayInMs;
 
 function getCrossFactionHistory(
   region: Regions,
@@ -480,95 +481,197 @@ export function calculateExtrapolation(
     lastDataset.ts + (daysUntilSeasonEndingOrThreeWeeks / 7) * oneWeekInMs;
   const timeUntilExtrapolationEnd = to - lastDataset.ts;
 
-  // given a couple weeks past the first four, apply weighting on older weeks
-  if (
-    passedWeeksDiff.length >= 4 &&
-    timeUntilExtrapolationEnd > oneWeekInMs / 7
-  ) {
-    const interval =
-      timeUntilExtrapolationEnd / daysUntilSeasonEndingOrThreeWeeks;
-    const scoreIncreaseSteps =
-      [...passedWeeksDiff].reverse().reduce((acc, diff, index, arr) => {
-        // applies a <1 factor on the total increase a week saw based on how far
-        // it was in the past. e.g. the current week should never be penalized
-        // as its most indicative of the near future development. however, the
-        // further the week is in the past, the less relevant we consider it due
-        // to:
-        // - gearing
-        // - dungeon and class tuning
-        // - routes developing
-        // - simple experience
-        // - meta development
-        // - tech discoveries
-        // the downside of it is naturally, it's never aware of affix set
-        // dynamics, e.g. multiple bad weeks in a row will skew prediction if
-        // there's good weeks coming up.
-
-        const factor =
-          index === 0 ? 1 : 1 - (1 - 0.1) * (index / (arr.length - 1)) ** 1.5;
-
-        return acc + diff * factor;
-      }, 0) /
-      passedWeeksDiff.length /
-      7;
-
-    return [
-      [lastDataset.ts, lastDataset.score],
-      ...Array.from<number, [number, number]>(
-        { length: daysUntilSeasonEndingOrThreeWeeks - 1 },
-        (_, i) => {
-          return [
-            Math.round(lastDataset.ts + interval * (i + 1)),
-            toOneDigit(lastDataset.score + scoreIncreaseSteps * (i + 1)),
-          ];
-        },
-      ),
-      [
-        to,
-        toOneDigit(
-          lastDataset.score +
-            scoreIncreaseSteps * daysUntilSeasonEndingOrThreeWeeks,
-        ),
-      ],
-    ];
-  }
-
-  const timePassed = lastDataset.ts - firstRelevantDataset.ts;
-  const daysPassed = timePassed / 1000 / 60 / 60 / 24;
-  const factor = daysUntilSeasonEndingOrThreeWeeks / daysPassed;
-
-  const score = toOneDigit(
-    lastDataset.score +
-      (lastDataset.score - firstRelevantDataset.score) * factor,
+  const predictScoreAt = buildScorePredictor(
+    data,
+    passedWeeksDiff,
+    seasonStart,
+    lastDataset,
   );
 
   if (timeUntilExtrapolationEnd > oneWeekInMs / 7) {
     const interval =
       timeUntilExtrapolationEnd / daysUntilSeasonEndingOrThreeWeeks;
-    const scoreIncreaseSteps =
-      (score - lastDataset.score) / daysUntilSeasonEndingOrThreeWeeks;
 
-    return [
+    const rawPoints: [number, number][] = [
       [lastDataset.ts, lastDataset.score],
       ...Array.from<number, [number, number]>(
         { length: daysUntilSeasonEndingOrThreeWeeks - 1 },
         (_, i) => {
-          return [
-            Math.round(lastDataset.ts + interval * (i + 1)),
-            toOneDigit(lastDataset.score + scoreIncreaseSteps * (i + 1)),
-          ];
+          const ts = Math.round(lastDataset.ts + interval * (i + 1));
+          return [ts, predictScoreAt(ts)];
         },
       ),
-      [to, score],
+      [to, predictScoreAt(to)],
     ];
+
+    // the cutoff can never decrease, so enforce a monotonic trajectory
+    let runningMax = lastDataset.score;
+
+    return rawPoints.map(([ts, score], index): [number, number] => {
+      runningMax = Math.max(runningMax, score);
+      return [ts, index === 0 ? lastDataset.score : toOneDigit(runningMax)];
+    });
   }
 
   return {
     from: lastDataset,
     to: {
-      score,
+      score: toOneDigit(Math.max(lastDataset.score, predictScoreAt(to))),
       ts: to,
     },
+  };
+}
+
+const LOG_BLEND_WEIGHT = 0.7;
+const DAMPED_ALPHA = 0.3;
+const DAMPED_BETA = 0.1;
+// damping is close to 1 because the horizon spans ~21 daily steps; smaller
+// values would decay the trend away long before the horizon is reached
+const DAMPED_PHI = 0.97;
+
+function fitLeastSquares(
+  xs: number[],
+  ys: number[],
+): { slope: number; intercept: number } {
+  const n = xs.length;
+  const sumX = xs.reduce((acc, x) => acc + x, 0);
+  const sumY = ys.reduce((acc, y) => acc + y, 0);
+  const sumXX = xs.reduce((acc, x) => acc + x * x, 0);
+  const sumXY = xs.reduce((acc, x, index) => acc + x * ys[index], 0);
+
+  const denominator = n * sumXX - sumX * sumX;
+  const slope = denominator === 0 ? 0 : (n * sumXY - sumX * sumY) / denominator;
+  const intercept = (sumY - slope * sumX) / n;
+
+  return { slope, intercept };
+}
+
+/** Collapses data to one score per calendar day, gaps forward-filled. */
+function toDailySeries(
+  data: Dataset[],
+  seasonStart: number,
+): { day: number; score: number }[] {
+  if (data.length === 0) {
+    return [];
+  }
+
+  const byDay = new Map<number, number>();
+  for (const dataset of data) {
+    byDay.set(Math.floor((dataset.ts - seasonStart) / dayInMs), dataset.score);
+  }
+
+  const days = [...byDay.keys()].sort((a, b) => a - b);
+  const series: { day: number; score: number }[] = [];
+  let lastKnown = byDay.get(days[0])!;
+
+  for (let day = days[0]; day <= days[days.length - 1]; day++) {
+    if (byDay.has(day)) {
+      lastKnown = byDay.get(day)!;
+    }
+    series.push({ day, score: lastKnown });
+  }
+
+  return series;
+}
+
+/**
+ * Builds the "logDamped" predictor: given the season data so far it precomputes
+ * the three sub-models once and returns a function giving the projected score at
+ * any future timestamp.
+ *
+ * The projection is the mean of:
+ *  - logBlend: a log(time) curve fit (deceleration) blended with the recent,
+ *    recency-weighted weekly rate (responsiveness), and
+ *  - dampedTrend: Holt linear smoothing with a damped trend.
+ *
+ * The two have opposite biases (the log side leans high, the damped side low),
+ * so averaging them largely cancels the bias.
+ */
+function buildScorePredictor(
+  data: Dataset[],
+  weeklyDiffWindow: number[],
+  seasonStart: number,
+  lastDataset: Dataset,
+): (ts: number) => number {
+  const { ts: lastTs, score: lastScore } = lastDataset;
+
+  // skip the volatile first four weeks
+  const warmup = data.filter(
+    (dataset) => dataset.ts >= seasonStart + 4 * oneWeekInMs,
+  );
+
+  // 1) logarithmic curve: score ~ ln(days since season start)
+  const logFit =
+    warmup.length >= 2
+      ? fitLeastSquares(
+          warmup.map((dataset) =>
+            Math.log((dataset.ts - seasonStart) / dayInMs),
+          ),
+          warmup.map((dataset) => dataset.score),
+        )
+      : null;
+
+  // 2) recency-weighted recent weekly rate (newest week 1, oldest ~0.1),
+  // normalised by the sum of weights so it stays a true weighted mean
+  const recentWeeks = [...weeklyDiffWindow].reverse();
+  let weightedSum = 0;
+  let weightTotal = 0;
+  recentWeeks.forEach((diff, index) => {
+    const factor =
+      index === 0
+        ? 1
+        : 1 - (1 - 0.1) * (index / (recentWeeks.length - 1)) ** 1.5;
+    weightedSum += diff * factor;
+    weightTotal += factor;
+  });
+  const weeklyRate = weightTotal > 0 ? weightedSum / weightTotal : 0;
+
+  // 3) Holt damped-trend smoothing over a regular daily series
+  const series = toDailySeries(warmup, seasonStart);
+  let level = series.length > 0 ? series[0].score : lastScore;
+  let trend = series.length >= 2 ? series[1].score - series[0].score : 0;
+  for (let i = 1; i < series.length; i++) {
+    const previousLevel = level;
+    level =
+      DAMPED_ALPHA * series[i].score +
+      (1 - DAMPED_ALPHA) * (level + DAMPED_PHI * trend);
+    trend =
+      DAMPED_BETA * (level - previousLevel) +
+      (1 - DAMPED_BETA) * DAMPED_PHI * trend;
+  }
+  const lastDay = series.length > 0 ? series[series.length - 1].day : 0;
+
+  return (ts: number): number => {
+    const horizonWeeks = (ts - lastTs) / oneWeekInMs;
+
+    const logScore = logFit
+      ? Math.max(
+          logFit.intercept +
+            logFit.slope * Math.log((ts - seasonStart) / dayInMs),
+          lastScore,
+        )
+      : lastScore;
+    const weightedScore = lastScore + weeklyRate * horizonWeeks;
+    const logBlend =
+      LOG_BLEND_WEIGHT * logScore + (1 - LOG_BLEND_WEIGHT) * weightedScore;
+
+    let damped = lastScore;
+    if (series.length >= 2) {
+      const steps = Math.round((ts - seasonStart) / dayInMs - lastDay);
+      if (steps <= 0) {
+        damped = Math.max(level, lastScore);
+      } else {
+        let damping = 0;
+        let phiPower = DAMPED_PHI;
+        for (let i = 0; i < steps; i++) {
+          damping += phiPower;
+          phiPower *= DAMPED_PHI;
+        }
+        damped = Math.max(level + trend * damping, lastScore);
+      }
+    }
+
+    return (logBlend + damped) / 2;
   };
 }
 
@@ -652,9 +755,9 @@ export function determineOverlaysToDisplayFromSearchParams(
     return null;
   }
 
-  const fromSearchParams = maybeOverlays.split(searchParamSeparator);
+  const fromSearchParams = new Set(maybeOverlays.split(searchParamSeparator));
 
-  return overlays.filter((plotline) => fromSearchParams.includes(plotline));
+  return overlays.filter((plotline) => fromSearchParams.has(plotline));
 }
 
 export function determineOverlaysToDisplayFromCookies(
@@ -839,7 +942,7 @@ export function calculateSeries(
 
         const prev = acc[acc.length - 1];
 
-        if (!prev || prev.rank !== dataset.rank) {
+        if (prev?.rank !== dataset.rank) {
           acc.push(dataset);
         }
 
@@ -881,7 +984,7 @@ export function calculateXAxisPlotBands(
   const seasonEnd = season.endDates[region];
   const { affixes, crossFactionSupport, wcl } = season;
 
-  let weeks = affixes.length * 3;
+  let weeks: number;
 
   if (seasonEnd) {
     weeks = (seasonEnd - seasonStart) / oneWeekInMs + 1;
@@ -968,9 +1071,9 @@ export function calculateXAxisPlotBands(
     } else {
       const xFactionStr = createWeekDiffString(xFactionDiff, colors.xFaction);
       const score100Str =
-        score100Diff !== 0
-          ? ` | ${createWeekDiffString(score100Diff, colors.top1)}`
-          : "";
+        score100Diff === 0
+          ? ""
+          : ` | ${createWeekDiffString(score100Diff, colors.top1)}`;
       text.push(xFactionStr + score100Str);
     }
 
@@ -1276,8 +1379,8 @@ function calculateFactionDiffForWeek(
     (dataset) => dataset.ts >= from && dataset.ts <= to,
   );
 
-  let horde = [];
-  let alliance = [];
+  let horde: Dataset[];
+  let alliance: Dataset[];
   let hordeEndMatch = null;
   let hordeStartMatch = null;
   let allianceEndMatch = null;
