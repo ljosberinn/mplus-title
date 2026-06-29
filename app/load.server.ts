@@ -5,7 +5,7 @@ import { env } from "~/env/server";
 import { calculateFactionDiffForWeek, toOneDigit } from "./chart/builders";
 import { type Dataset, type Season } from "./seasons";
 import { type Overlay, searchParamSeparator } from "./utils";
-import { orderedRegionsBySize, overlays } from "./utils";
+import { overlays } from "./utils";
 
 const dayInMs = 24 * 60 * 60 * 1000;
 const oneWeekInMs = 7 * dayInMs;
@@ -361,7 +361,9 @@ export function determineOverlaysToDisplayFromSearchParams(
 
   const maybeOverlays = params.get("overlays");
 
-  if (!maybeOverlays) {
+  // Absent param ⇒ default (all overlays); present-but-empty (`?overlays=`) ⇒
+  // explicit none. See `parseOverlaysFromSearchParams` for the rationale.
+  if (maybeOverlays === null) {
     return null;
   }
 
@@ -391,32 +393,6 @@ export function determineOverlaysToDisplayFromCookies(
       values.includes(overlay),
     );
     return filteredOverlays.length > 0 ? filteredOverlays : null;
-  } catch {
-    return null;
-  }
-}
-
-export function determineRegionsToDisplayFromCookies(
-  request: Request,
-): Regions[] | null {
-  const cookie = request.headers.get("Cookie") ?? request.headers.get("cookie");
-
-  if (!cookie) {
-    return null;
-  }
-
-  const raw = cookie.split("; ").find((row) => row.includes("regions"));
-
-  if (!raw) {
-    return null;
-  }
-
-  try {
-    const values = raw.split("=")[1]?.split(searchParamSeparator);
-    const filteredRegions = orderedRegionsBySize.filter((region) =>
-      values.includes(region),
-    );
-    return filteredRegions.length > 0 ? filteredRegions : null;
   } catch {
     return null;
   }

@@ -1,9 +1,14 @@
-import { type FormEventHandler,type ReactNode } from "react";
+import { type FormEventHandler, type ReactNode } from "react";
 import { useRef } from "react";
 import { useNavigation, useSubmit } from "react-router";
 
 import { type EnhancedSeason } from "~/seasons";
-import { extraOverlayNames, isNotNull, overlays } from "~/utils";
+import {
+  extraOverlayNames,
+  isNotNull,
+  overlays,
+  searchParamSeparator,
+} from "~/utils";
 
 import { linkClassName } from "./tokens";
 
@@ -36,7 +41,14 @@ export function OverlaysToggle({ season }: OverlaysToggleProps): ReactNode {
   };
 
   return (
-    <fieldset disabled={navigationState !== "idle"}>
+    // The checkboxes are uncontrolled (`defaultChecked`), so re-keying on the
+    // resolved selection remounts them whenever it changes without a direct
+    // click (e.g. back/forward, or deselecting the last overlay), keeping the
+    // DOM state in sync with the URL instead of drifting.
+    <fieldset
+      key={season.score.overlaysToDisplay.join(searchParamSeparator)}
+      disabled={navigationState !== "idle"}
+    >
       <ul className="flex flex-col space-y-2 px-4 pt-4 md:flex-row md:space-x-2 md:space-y-0 md:px-0 md:pt-0">
         {overlays.map((overlay, index) => {
           if (overlay === "affixes" && (season.wcl?.zoneId ?? 0) > 39) {

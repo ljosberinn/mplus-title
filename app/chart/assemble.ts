@@ -75,12 +75,14 @@ export function buildEnhancedSeason(
       season,
       region,
       data,
+      extrapolation,
     );
     score.series[region] = calculateSeries(
       season,
       data,
       extrapolation,
       extrapolationHistory,
+      overlays,
       extrapolation100,
     );
 

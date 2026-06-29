@@ -45,6 +45,25 @@ export function toOneDigit(int: number): number {
   return Number.parseFloat(int.toFixed(1));
 }
 
+/**
+ * The last timestamp the extrapolation reaches (its target), or null when there
+ * is no extrapolation. This is what pushes the right edge of the graph into the
+ * future, so week bands and week-number markers extend out to it.
+ */
+function extrapolationEndTs(extrapolation: Extrapolation): number | null {
+  if (extrapolation === null) {
+    return null;
+  }
+
+  if (Array.isArray(extrapolation)) {
+    return extrapolation.length > 0
+      ? extrapolation[extrapolation.length - 1][0]
+      : null;
+  }
+
+  return extrapolation.to.ts;
+}
+
 // Per-day upper margin of the confidence band, as a fraction of the *current*
 // (anchor) score. Calibrated by leave-one-season-out, ONE-SIDED conformal
 // prediction in scripts/backtest-advanced.ts: the 0.9-quantile of the signed
@@ -149,6 +168,7 @@ export function calculateSeries(
   data: Dataset[],
   extrapolation: Extrapolation,
   extrapolationHistory: ScatterPoint[],
+  overlays: readonly Overlay[],
   extrapolation100: Extrapolation = null,
 ): ChartSeries[] {
   const options: ChartSeries[] = [];
@@ -202,7 +222,11 @@ export function calculateSeries(
     color: colors.extrapolation,
   });
 
-  if (Array.isArray(extrapolationHistory) && extrapolationHistory.length > 0) {
+  if (
+    overlays.includes("extrapolation") &&
+    Array.isArray(extrapolationHistory) &&
+    extrapolationHistory.length > 0
+  ) {
     options.push({
       type: "scatter",
       id: "extrapolation-history",
@@ -275,6 +299,7 @@ export function calculateXAxisPlotBands(
   season: Season,
   region: Regions,
   data: Dataset[],
+  extrapolation: Extrapolation,
 ): PlotBand[] {
   const seasonStart = season.startDates[region];
 
@@ -285,17 +310,17 @@ export function calculateXAxisPlotBands(
   const seasonEnd = season.endDates[region];
   const { crossFactionSupport } = season;
 
-  let weeks: number;
+  // bands run until the right edge of the graph, which the extrapolation can
+  // push far into the future. For an ended season that means the season end;
+  // otherwise the latest of now (+3 weeks of empty future weeks, as before),
+  // the last data point and the extrapolation target.
+  const extrapolationEnd = extrapolationEndTs(extrapolation);
+  const lastDataTs = data.length > 0 ? data[data.length - 1].ts : seasonStart;
+  const graphEnd = seasonEnd
+    ? Math.max(seasonEnd, extrapolationEnd ?? 0)
+    : Math.max(Date.now() + oneWeekInMs * 3, lastDataTs, extrapolationEnd ?? 0);
 
-  if (seasonEnd) {
-    weeks = (seasonEnd - seasonStart) / oneWeekInMs + 1;
-  } else {
-    const hasExtrapolation = true;
-    weeks =
-      (Date.now() + (hasExtrapolation ? oneWeekInMs * 3 : 0) - seasonStart) /
-        oneWeekInMs +
-      1;
-  }
+  const weeks = (graphEnd - seasonStart) / oneWeekInMs + 1;
 
   const now = Date.now();
 
@@ -495,7 +520,10 @@ export function calculateXAxisPlotLines(
   }
 
   if (startDate) {
-    const end = endDate ?? Date.now();
+    // week markers run to the right edge of the graph too — the extrapolation
+    // can push that past the season end / now into the future (e.g. W14).
+    const extrapolationEnd = extrapolationEndTs(extrapolation);
+    const end = Math.max(endDate ?? Date.now(), extrapolationEnd ?? 0);
 
     for (let i = startDate; i <= end; i += oneWeekInMs) {
       const weeksSinceStart = Math.round((i - startDate) / oneWeekInMs) + 1;

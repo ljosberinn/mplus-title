@@ -30,7 +30,6 @@ import { time, type Timings } from "../load.server";
 import {
   determineOverlaysToDisplayFromCookies,
   determineOverlaysToDisplayFromSearchParams,
-  determineRegionsToDisplayFromCookies,
   determineRegionsToDisplayFromSearchParams,
   getServerTimeHeader,
 } from "../load.server";
@@ -41,10 +40,12 @@ import {
 } from "../seasons";
 import {
   parseOverlaysFromSearchParams,
+  parseRegionsFromPath,
+  regionsToPathSegment,
   resolveOverlaysToDisplay,
   searchParamSeparator,
 } from "../utils";
-import { type Route } from "./+types/$season";
+import { type Route } from "./+types/$season.($regions)";
 
 const lastModified = "Last-Modified";
 const cacheControl = "Cache-Control";
@@ -144,23 +145,51 @@ export const loader = async ({
     });
   }
 
+  const url = new URL(request.url);
+
+  // Legacy compat: regions used to live in `?regions=`. Promote them into the
+  // path (308, method-preserving, so bookmarks/crawlers update) and strip the
+  // query param, keeping everything else (overlays, extrapolationEndDate). A
+  // path segment, when present, wins over the legacy query.
+  if (url.searchParams.has("regions")) {
+    const promoted = params.regions
+      ? regionsToPathSegment(parseRegionsFromPath(params.regions) ?? [])
+      : regionsToPathSegment(
+          determineRegionsToDisplayFromSearchParams(request) ?? [],
+        );
+
+    url.searchParams.delete("regions");
+    const query = url.searchParams.toString();
+
+    return redirect(
+      `/${season.slug}${promoted ? `/${promoted}` : ""}${query ? `?${query}` : ""}`,
+      308,
+    );
+  }
+
+  const regions = parseRegionsFromPath(params.regions);
+
+  // Canonicalise the region segment: drop invalid/duplicate tokens, normalise
+  // ordering, and collapse an explicit "all regions" list to the bare path.
+  // `regionsToPathSegment(null-list)` is "" ⇒ the bare `/{season}`.
+  const canonicalSegment = regions ? regionsToPathSegment(regions) : "";
+
+  if ((params.regions ?? "") !== canonicalSegment) {
+    const query = url.searchParams.toString();
+
+    return redirect(
+      `/${season.slug}${canonicalSegment ? `/${canonicalSegment}` : ""}${query ? `?${query}` : ""}`,
+      308,
+    );
+  }
+
   const timings: Timings = {};
 
   const searchParamOverlays = await time(
     () => determineOverlaysToDisplayFromSearchParams(request),
     { type: "determineOverlaysToDisplayFromSearchParams", timings },
   );
-  const searchParamRegions = await time(
-    () => determineRegionsToDisplayFromSearchParams(request),
-    { type: "determineRegionsToDisplayFromSearchParams", timings },
-  );
 
-  const cookieRegions = searchParamRegions
-    ? null
-    : await time(() => determineRegionsToDisplayFromCookies(request), {
-        type: "determineRegionsToDisplayFromCookies",
-        timings,
-      });
   const cookieOverlays = searchParamOverlays
     ? null
     : await time(() => determineOverlaysToDisplayFromCookies(request), {
@@ -168,21 +197,17 @@ export const loader = async ({
         timings,
       });
 
-  if (cookieRegions || cookieOverlays) {
-    const params = new URLSearchParams();
+  // Overlays still round-trip through a cookie: promote the cookie selection
+  // into the query (preserving the region path segment) so the client rebuilds
+  // annotations from the URL.
+  if (cookieOverlays) {
+    url.searchParams.set("overlays", cookieOverlays.join(searchParamSeparator));
 
-    if (cookieOverlays) {
-      params.append("overlays", cookieOverlays.join(searchParamSeparator));
-    }
-
-    if (cookieRegions) {
-      params.append("regions", cookieRegions.join(searchParamSeparator));
-    }
-
-    return redirect(`/${season.slug}?${params.toString()}`, 307);
+    return redirect(
+      `/${season.slug}${canonicalSegment ? `/${canonicalSegment}` : ""}?${url.searchParams.toString()}`,
+      307,
+    );
   }
-
-  const regions = searchParamRegions;
 
   const {
     data: seasonData,
@@ -201,8 +226,9 @@ export const loader = async ({
 
 /**
  * Overlays are a pure client concern (the browser rebuilds annotations from the
- * URL), so an overlay-only change must not refetch. Only a season, region or
- * extrapolation-end-date change alters the server payload.
+ * URL), so an overlay-only change must not refetch. A season or region change is
+ * now a pathname change (regions live in the path), which already revalidates;
+ * the only remaining query input to the payload is `extrapolationEndDate`.
  */
 export function shouldRevalidate({
   currentUrl,
@@ -212,10 +238,10 @@ export function shouldRevalidate({
     return true;
   }
 
-  const changed = (key: string) =>
-    currentUrl.searchParams.get(key) !== nextUrl.searchParams.get(key);
-
-  return changed("regions") || changed("extrapolationEndDate");
+  return (
+    currentUrl.searchParams.get("extrapolationEndDate") !==
+    nextUrl.searchParams.get("extrapolationEndDate")
+  );
 }
 
 /**
@@ -232,13 +258,15 @@ export function shouldRevalidate({
  */
 const seasonDataCache = new Map<string, SeasonLoaderData>();
 
-const cacheKey = (request: Request, season: string): string => {
+const cacheKey = (
+  request: Request,
+  season: string,
+  regions: string,
+): string => {
   const { searchParams } = new URL(request.url);
-  return [
-    season,
-    searchParams.get("regions") ?? "",
-    searchParams.get("extrapolationEndDate") ?? "",
-  ].join("|");
+  return [season, regions, searchParams.get("extrapolationEndDate") ?? ""].join(
+    "|",
+  );
 };
 
 export async function clientLoader({
@@ -248,7 +276,7 @@ export async function clientLoader({
 }: Route.ClientLoaderArgs): Promise<SeasonLoaderData> {
   const season = params.season ?? "";
   const cacheable = hasSeasonEndedForAllRegions(season);
-  const key = cacheKey(request, season);
+  const key = cacheKey(request, season, params.regions ?? "");
 
   if (cacheable) {
     const cached = seasonDataCache.get(key);
@@ -344,7 +372,9 @@ export default function Season(
         <Suspense fallback={null}>
           <Await resolve={recordsStream} errorElement={null}>
             {(records) =>
-              Array.isArray(records) && records.length > 0 ? (
+              overlays.includes("records") &&
+              Array.isArray(records) &&
+              records.length > 0 ? (
                 <ClientOnly fallback={null}>
                   {() => (
                     <DungeonRecords

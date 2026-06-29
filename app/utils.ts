@@ -34,6 +34,41 @@ export const isNotNull = <T>(something: T | null): something is T =>
   something !== null;
 
 /**
+ * Client-safe mirror of `determineRegionsToDisplayFromSearchParams`, but over a
+ * path segment (`params.regions`) instead of the query string. Splits on `~`,
+ * keeps only valid `Regions`, and returns `null` (⇒ all regions) when the
+ * segment is absent or yields nothing valid.
+ */
+export function parseRegionsFromPath(
+  value: string | undefined,
+): Regions[] | null {
+  if (!value) {
+    return null;
+  }
+
+  const maybeRegions = value
+    .split(searchParamSeparator)
+    .filter((maybeRegion): maybeRegion is Regions => maybeRegion in Regions);
+
+  return maybeRegions.length === 0 ? null : maybeRegions;
+}
+
+/**
+ * Canonical region path segment for a selection: empty string when *all* regions
+ * are selected (the bare `/{season}` path is the canonical "all"), otherwise the
+ * `~`-joined region list in the canonical `orderedRegionsBySize` order.
+ */
+export function regionsToPathSegment(regions: readonly Regions[]): string {
+  if (regions.length >= orderedRegionsBySize.length) {
+    return "";
+  }
+
+  return orderedRegionsBySize
+    .filter((region) => regions.includes(region))
+    .join(searchParamSeparator);
+}
+
+/**
  * Client-safe mirror of `determineOverlaysToDisplayFromSearchParams` — reads the
  * `overlays` query param without pulling in the server-only `load.server` module.
  */
@@ -42,7 +77,11 @@ export function parseOverlaysFromSearchParams(
 ): Overlay[] | null {
   const maybeOverlays = params.get("overlays");
 
-  if (!maybeOverlays) {
+  // An *absent* param means "default" (⇒ all overlays). A *present but empty*
+  // param (`?overlays=`) is an explicit empty selection (⇒ none) and must not
+  // collapse back to the all-on default, otherwise deselecting the last overlay
+  // silently re-enables every overlay (incl. the Dungeon Records chart).
+  if (maybeOverlays === null) {
     return null;
   }
 

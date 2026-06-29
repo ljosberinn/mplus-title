@@ -36,6 +36,37 @@ function valueAtOrBefore(
   return null;
 }
 
+/** The index of the last non-null point of a (sparse) series, or -1. */
+function lastDefinedIndex(ys: ArrayLike<number | null | undefined>): number {
+  for (let i = ys.length - 1; i >= 0; i -= 1) {
+    const v = ys[i];
+    if (v !== null && v !== undefined) {
+      return i;
+    }
+  }
+  return -1;
+}
+
+/**
+ * Short tag for a dungeon name, used in the end-of-line label. Multi-word names
+ * become an initialism ("Nexus-Point Xenas" → "NPX"); single-word names use
+ * their first three letters ("Skyreach" → "SKY"). Splits on any non-alphanumeric
+ * run (spaces, hyphens, punctuation).
+ */
+function abbreviate(name: string): string {
+  const words = name.split(/[^A-Za-z0-9]+/u).filter(Boolean);
+
+  if (words.length === 0) {
+    return name.slice(0, 3).toUpperCase();
+  }
+
+  if (words.length === 1) {
+    return words[0].slice(0, 3).toUpperCase();
+  }
+
+  return words.map((word) => word[0].toUpperCase()).join("");
+}
+
 /**
  * Positions the cursor tooltip near (left, top) but keeps it inside the plot
  * overlay: flips to the other side of the cursor when it would overflow an edge,
@@ -127,6 +158,86 @@ export default function UplotDungeonRecords({
         ctx.fillStyle = line.labelColor;
         ctx.fillText(line.label, x + 3 * dpr, bbox.top + 4 * dpr);
       }
+      ctx.restore();
+    };
+
+    // abbreviation per dungeon line, computed once per config.
+    const endLabelAbbr = new Map<number, string>();
+    for (const i of config.lineSeriesIdx) {
+      const { label } = config.series[i];
+      if (typeof label === "string") {
+        endLabelAbbr.set(i, abbreviate(label));
+      }
+    }
+
+    // Draws each visible dungeon line's final value at its last point as
+    // "<abbr> +<level>" (e.g. "NPX +24"), nudged to the side that fits and
+    // greedily de-overlapped vertically so clustered endpoints stay readable.
+    const drawEndLabels = (u: uPlot) => {
+      const { ctx, bbox, data, series } = u;
+      const right = bbox.left + bbox.width;
+
+      type EndLabel = { x: number; y: number; text: string; color: string };
+      const labels: EndLabel[] = [];
+
+      for (const i of config.lineSeriesIdx) {
+        const line = series[i];
+        if (!line.show) {
+          continue;
+        }
+
+        const ys = data[i];
+        const lastIdx = lastDefinedIndex(ys);
+        if (lastIdx < 0) {
+          continue;
+        }
+
+        const value = ys[lastIdx]!;
+        const xPos = u.valToPos(data[0][lastIdx], "x", true);
+        if (xPos < bbox.left || xPos > right) {
+          continue;
+        }
+
+        const abbr = endLabelAbbr.get(i) ?? "";
+        labels.push({
+          x: xPos,
+          y: u.valToPos(value, "y", true),
+          text: abbr ? `${abbr} +${value}` : `+${value}`,
+          color: typeof line.stroke === "string" ? line.stroke : "#fff",
+        });
+      }
+
+      ctx.save();
+      ctx.font = `${11 * dpr}px sans-serif`;
+      ctx.textBaseline = "middle";
+      ctx.lineWidth = 3 * dpr;
+      ctx.lineJoin = "round";
+
+      // greedy top-to-bottom declutter so overlapping endpoints don't stack.
+      const lineH = 13 * dpr;
+      labels.sort((a, b) => a.y - b.y);
+      let lastY = -Infinity;
+      for (const label of labels) {
+        const y = Math.min(
+          Math.max(label.y, bbox.top + lineH / 2),
+          bbox.top + bbox.height - lineH / 2,
+        );
+        label.y = y - lastY < lineH ? lastY + lineH : y;
+        lastY = label.y;
+      }
+
+      for (const label of labels) {
+        const { width } = ctx.measureText(label.text);
+        const fitsRight = label.x + 6 * dpr + width <= right - 2 * dpr;
+        ctx.textAlign = fitsRight ? "left" : "right";
+        const tx = fitsRight ? label.x + 6 * dpr : label.x - 6 * dpr;
+
+        ctx.strokeStyle = "rgba(0,0,0,0.85)";
+        ctx.strokeText(label.text, tx, label.y);
+        ctx.fillStyle = label.color;
+        ctx.fillText(label.text, tx, label.y);
+      }
+
       ctx.restore();
     };
 
@@ -251,7 +362,7 @@ export default function UplotDungeonRecords({
           },
         ],
         drawClear: [drawWeekBands],
-        draw: [drawWeekLines],
+        draw: [drawWeekLines, drawEndLabels],
         setCursor: [updateTooltip],
         setSeries: [applyFocusWidths],
       },

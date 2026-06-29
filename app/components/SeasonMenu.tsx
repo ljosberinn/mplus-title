@@ -1,9 +1,10 @@
 /**
  * Season switcher: a lightweight grouped dropdown keyed on the season
  * `expansion` field. SSR-safe — a controlled `<details>`-style
- * popover with click-outside + Escape handling, no client-only gate. Preserves
- * the `?params` passthrough, the disabled/selected logic, and adds
- * `prefetch="intent"` so hovering a season warms its loader.
+ * popover with click-outside + Escape handling, no client-only gate. Carries the
+ * current region path segment and the `?params` passthrough across a season
+ * switch, keeps the disabled/selected logic, and adds `prefetch="intent"` so
+ * hovering a season warms its loader.
  */
 import clsx from "clsx";
 import { type ReactNode, useEffect, useRef, useState } from "react";
@@ -43,7 +44,7 @@ export function SeasonMenu(): ReactNode {
   const now = Date.now();
   const navigation = useNavigation();
   const [params] = useSearchParams();
-  const { season: selectedSeasonSlug } = useParams();
+  const { season: selectedSeasonSlug, regions: regionSegment } = useParams();
 
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -156,7 +157,7 @@ export function SeasonMenu(): ReactNode {
                           <NavLink
                             role="menuitem"
                             prefetch="intent"
-                            to={`/${season.slug}${paramsAsString}`}
+                            to={`/${season.slug}${regionSegment ? `/${regionSegment}` : ""}${paramsAsString}`}
                             onClick={() => {
                               setOpen(false);
                             }}
