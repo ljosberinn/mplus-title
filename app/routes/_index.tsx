@@ -1,3 +1,4 @@
+import { type ReactNode } from "react";
 import { type LoaderFunction, Outlet, redirect } from "react-router";
 
 import {
@@ -32,6 +33,6 @@ export const loader: LoaderFunction = ({ request }) => {
   return redirect(`/${latest.slug}${asString ? `?${asString}` : ""}`, 307);
 };
 
-export default function Index() {
+export default function Index(): ReactNode {
   return <Outlet />;
 }

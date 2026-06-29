@@ -101,7 +101,7 @@ export default function CustomExtrapolationForm({
                 ref.current.value,
               );
 
-              navigate(window.location.pathname + url.search);
+              void navigate(window.location.pathname + url.search);
             }
           }}
         >
@@ -156,7 +156,7 @@ export default function CustomExtrapolationForm({
             )}
             type="reset"
             onClick={() => {
-              navigate(window.location.pathname);
+              void navigate(window.location.pathname);
             }}
           >
             Reset

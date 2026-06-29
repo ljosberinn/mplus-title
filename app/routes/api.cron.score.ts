@@ -50,23 +50,24 @@ export const action: ActionFunction = async ({ request }) => {
       return new Response(JSON.stringify([]));
     }
 
-    const latestPerRegion = (
-      await prisma.crossFactionHistory.findMany({
-        where: {
-          region: {
-            in: regions,
-          },
+    const latestPerRegionRows = await prisma.crossFactionHistory.findMany({
+      where: {
+        region: {
+          in: regions,
         },
-        orderBy: {
-          timestamp: "desc",
-        },
-        select: {
-          timestamp: true,
-          region: true,
-        },
-        distinct: ["region"],
-      })
-    ).sort((a, b) => a.timestamp - b.timestamp);
+      },
+      orderBy: {
+        timestamp: "desc",
+      },
+      select: {
+        timestamp: true,
+        region: true,
+      },
+      distinct: ["region"],
+    });
+    const latestPerRegion = latestPerRegionRows.sort(
+      (a, b) => a.timestamp - b.timestamp,
+    );
 
     const now = Date.now();
 

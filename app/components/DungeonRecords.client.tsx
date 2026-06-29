@@ -42,7 +42,8 @@ export default function DungeonRecords({
 
     xAxisPlotBands = backgroundColorPlotBand.map((plotBand) => ({
       ...plotBand,
-      color: `${plotBand.color ?? ""}50`,
+      // colour is a hex string here; append the alpha suffix to fade the band.
+      color: `${typeof plotBand.color === "string" ? plotBand.color : ""}50`,
     }));
 
     break;

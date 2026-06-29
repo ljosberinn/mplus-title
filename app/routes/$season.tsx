@@ -775,8 +775,8 @@ function Region({
               ? season.wcl.weekIndexToAffixSetId[index]
               : null;
 
-          let startTimeOfWeek = 0;
-          let endTimeOfWeek = 0;
+          let startTimeOfWeek: number;
+          let endTimeOfWeek: number;
           let startTime: Date | null = null;
           let endTime: Date | null = null;
           let weekOffset = 0;
