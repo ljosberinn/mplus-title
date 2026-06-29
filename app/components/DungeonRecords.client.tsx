@@ -1,16 +1,20 @@
 import clsx from "clsx";
 import {
-  XAxisPlotLinesLabelsOptions,
-  XAxisPlotLinesOptions,
   type Options,
   type XAxisPlotBandsOptions,
+  type XAxisPlotLinesOptions,
 } from "highcharts";
+import { lazy, type ReactNode, Suspense } from "react";
+import { useSearchParams } from "react-router";
 import { ClientOnly } from "remix-utils/client-only";
 
 import { type EnhancedSeason } from "~/seasons";
 
 import { Highcharts, HighchartsReact } from "./Highcharts.client";
-import { ReactNode } from "react";
+
+const UplotDungeonRecords = lazy(
+  () => import("../chart/UplotDungeonRecords.client"),
+);
 
 type DungeonRecordsProps = {
   season: EnhancedSeason;
@@ -19,6 +23,9 @@ type DungeonRecordsProps = {
 export default function DungeonRecords({
   season,
 }: DungeonRecordsProps): ReactNode {
+  const [searchParams] = useSearchParams();
+  const useUplot = searchParams.get("renderer") === "uplot";
+
   let xAxisPlotBands: XAxisPlotBandsOptions[] = [];
   let xAxisPlotLines: XAxisPlotLinesOptions[] = [];
 
@@ -91,7 +98,7 @@ export default function DungeonRecords({
       ...season.score.chartBlueprint.xAxis,
       plotBands: xAxisPlotBands,
       plotLines: xAxisPlotLines,
-      softMax: softMax,
+      softMax,
     },
     yAxis: {
       ...season.score.chartBlueprint.yAxis,
@@ -117,11 +124,17 @@ export default function DungeonRecords({
       </h1>
       <div className="rounded-lg bg-gray-700 p-4">
         <div className="h-[39vh] lg:h-[30vh]">
-          <ClientOnly fallback={null}>
-            {() => (
-              <HighchartsReact highcharts={Highcharts} options={options} />
-            )}
-          </ClientOnly>
+          {useUplot ? (
+            <Suspense fallback={null}>
+              <UplotDungeonRecords season={season} />
+            </Suspense>
+          ) : (
+            <ClientOnly fallback={null}>
+              {() => (
+                <HighchartsReact highcharts={Highcharts} options={options} />
+              )}
+            </ClientOnly>
+          )}
         </div>
       </div>
     </section>

@@ -3,11 +3,8 @@ import { Regions } from "prisma/generated/prisma/enums";
 import { type CrossFactionHistoryCreateInput } from "prisma/generated/prisma/models";
 import { type ActionFunction, type LoaderFunction } from "react-router";
 
-import {
-  calculateExtrapolation,
-  loadDataForRegion,
-  protectCronRoute,
-} from "~/load.server";
+import { loadDataForRegion } from "~/data.server";
+import { calculateExtrapolation, protectCronRoute } from "~/load.server";
 
 import { prisma } from "../prisma.server";
 import { findSeasonByName, type Season, seasons } from "../seasons";

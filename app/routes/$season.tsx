@@ -15,13 +15,24 @@ import {
   useRef,
   useState,
 } from "react";
-import { type HeadersFunction, redirect, useNavigation } from "react-router";
+import {
+  Await,
+  data,
+  type HeadersFunction,
+  redirect,
+  type ShouldRevalidateFunctionArgs,
+  useNavigation,
+  useSearchParams,
+} from "react-router";
 import { ClientOnly } from "remix-utils/client-only";
 
 import { getAffixIconUrl, getAffixName } from "../affixes";
+import { buildEnhancedSeason } from "../chart/assemble";
 import { Footer } from "../components/Footer";
 import { Header } from "../components/Header";
 import { Highcharts, HighchartsReact } from "../components/Highcharts.client";
+import { decode, type SeasonData } from "../data";
+import { assembleSeasonData } from "../data.server";
 import { time, type Timings } from "../load.server";
 import {
   determineOverlaysToDisplayFromCookies,
@@ -30,9 +41,16 @@ import {
   determineRegionsToDisplayFromSearchParams,
   getServerTimeHeader,
 } from "../load.server";
-import { getEnhancedSeason } from "../models/season.server";
-import { type EnhancedSeason, findSeasonByName } from "../seasons";
-import { searchParamSeparator } from "../utils";
+import {
+  type EnhancedSeason,
+  findSeasonByName,
+  hasSeasonEndedForAllRegions,
+} from "../seasons";
+import {
+  parseOverlaysFromSearchParams,
+  resolveOverlaysToDisplay,
+  searchParamSeparator,
+} from "../utils";
 import { type Route } from "./+types/$season";
 
 const lastModified = "Last-Modified";
@@ -101,10 +119,22 @@ export const headers: HeadersFunction = ({ loaderHeaders }) => {
   return headers;
 };
 
+/**
+ * Loader payload: the compact `SeasonData` (charts paint from this immediately)
+ * plus the dungeon `records` as a streamed promise — RR Single Fetch
+ * streams it and the component renders it via <Await>, so the secondary dungeon
+ * records chart doesn't block first paint. `data.records` stays empty.
+ */
+type SeasonLoaderData = SeasonData & {
+  recordsStream: Promise<SeasonData["records"]>;
+};
+
 export const loader = async ({
   params,
   request,
-}: Route.LoaderArgs): Promise<Response> => {
+}: Route.LoaderArgs): Promise<
+  Response | ReturnType<typeof data<SeasonLoaderData>>
+> => {
   if (!("season" in params) || !params.season) {
     throw new Response(undefined, {
       status: 400,
@@ -160,26 +190,91 @@ export const loader = async ({
   }
 
   const regions = searchParamRegions;
-  const overlays = searchParamOverlays;
 
-  const { season: enhancedSeason, headers } = await time(
-    () =>
-      getEnhancedSeason({
-        request,
-        regions,
-        overlays,
-        season,
-        timings,
-      }),
-    { type: "getEnhancedSeason", timings },
+  const {
+    data: seasonData,
+    recordsPromise,
+    headers,
+  } = await time(
+    () => assembleSeasonData({ request, regions, season, timings }),
+    { type: "assembleSeasonData", timings },
   );
 
   headers[serverTiming] = getServerTimeHeader(timings);
 
-  return new Response(JSON.stringify(enhancedSeason), { headers });
-
-  // return json(enhancedSeason, { headers });
+  // stream the (secondary) dungeon records so the chart data paints first.
+  return data({ ...seasonData, recordsStream: recordsPromise }, { headers });
 };
+
+/**
+ * Overlays are a pure client concern (the browser rebuilds annotations from the
+ * URL), so an overlay-only change must not refetch. Only a season, region or
+ * extrapolation-end-date change alters the server payload.
+ */
+export function shouldRevalidate({
+  currentUrl,
+  nextUrl,
+}: ShouldRevalidateFunctionArgs): boolean {
+  if (currentUrl.pathname !== nextUrl.pathname) {
+    return true;
+  }
+
+  const changed = (key: string) =>
+    currentUrl.searchParams.get(key) !== nextUrl.searchParams.get(key);
+
+  return changed("regions") || changed("extrapolationEndDate");
+}
+
+/**
+ * In-memory payload cache (W7). Keyed by the same inputs that trigger a
+ * revalidation (slug + regions + extrapolation end), it lets client navigations
+ * — back/forward, re-visiting a season — skip the server round-trip. It returns
+ * the *same raw `SeasonData`* the server loader returns, so the component still
+ * decodes in its `useMemo`: there is no SSR/client shape mismatch and no
+ * `HydrateFallback` is needed (`clientLoader` is intentionally not marked
+ * `hydrate`, so the SSR payload is used as-is on first paint).
+ *
+ * Only *ended* seasons are cached — they are immutable. The live season always
+ * revalidates so its cutoffs never go stale on a re-visit.
+ */
+const seasonDataCache = new Map<string, SeasonLoaderData>();
+
+const cacheKey = (request: Request, season: string): string => {
+  const { searchParams } = new URL(request.url);
+  return [
+    season,
+    searchParams.get("regions") ?? "",
+    searchParams.get("extrapolationEndDate") ?? "",
+  ].join("|");
+};
+
+export async function clientLoader({
+  request,
+  params,
+  serverLoader,
+}: Route.ClientLoaderArgs): Promise<SeasonLoaderData> {
+  const season = params.season ?? "";
+  const cacheable = hasSeasonEndedForAllRegions(season);
+  const key = cacheKey(request, season);
+
+  if (cacheable) {
+    const cached = seasonDataCache.get(key);
+
+    if (cached) {
+      return cached;
+    }
+  }
+
+  // the streamed `recordsStream` promise resolves once; for ended (immutable)
+  // seasons caching the resolved value is safe and makes re-visits instant.
+  const seasonData = (await serverLoader()) as SeasonLoaderData;
+
+  if (cacheable) {
+    seasonDataCache.set(key, seasonData);
+  }
+
+  return seasonData;
+}
 
 type ZoomExtremes = null | { min: number; max: number };
 
@@ -190,9 +285,35 @@ const DungeonRecords = lazy(
 export default function Season(
   props: Route.ComponentProps,
 ): React.ReactNode | null {
-  const season: EnhancedSeason = useMemo(
-    () => JSON.parse(props.loaderData),
+  const [searchParams] = useSearchParams();
+
+  // RR's `SerializeFrom` widens the Highcharts types inside `records`, so the
+  // inferred loaderData type isn't structurally identical to `SeasonData`
+  // despite being so at runtime; narrow it back at this boundary. `records` is
+  // empty here (streamed via `recordsStream`); the charts don't need it.
+  const decoded = useMemo(
+    () => decode(props.loaderData as SeasonData),
     [props.loaderData],
+  );
+  const recordsStream = props.loaderData.recordsStream;
+  const seasonConfig = useMemo(
+    () => findSeasonByName(decoded.slug, null),
+    [decoded.slug],
+  );
+  const overlays = useMemo(
+    () =>
+      resolveOverlaysToDisplay(
+        seasonConfig?.wcl?.zoneId,
+        parseOverlaysFromSearchParams(searchParams),
+      ),
+    [seasonConfig, searchParams],
+  );
+  // the season config is always found (the loader validated the slug), so the
+  // non-null assertion is safe; the client rebuilds the chart from the compact
+  // payload + bundled config instead of receiving the baked `EnhancedSeason`.
+  const season: EnhancedSeason = useMemo(
+    () => buildEnhancedSeason(decoded, seasonConfig!, overlays),
+    [decoded, seasonConfig, overlays],
   );
   const prevSeason = useRef(season.slug);
   const prevExtrapolation = useRef(season.score.extrapolation);
@@ -226,15 +347,25 @@ export default function Season(
           );
         })}
 
-        {season.records.length > 0 ? (
-          <ClientOnly fallback={null}>
-            {() => (
-              <Suspense fallback={null}>
-                <DungeonRecords season={season} />
-              </Suspense>
-            )}
-          </ClientOnly>
-        ) : null}
+        {/* dungeon records stream in so they don't block the charts. */}
+        <Suspense fallback={null}>
+          <Await resolve={recordsStream} errorElement={null}>
+            {(records) =>
+              Array.isArray(records) && records.length > 0 ? (
+                <ClientOnly fallback={null}>
+                  {() => (
+                    <DungeonRecords
+                      season={{
+                        ...season,
+                        records: records as EnhancedSeason["records"],
+                      }}
+                    />
+                  )}
+                </ClientOnly>
+              ) : null
+            }
+          </Await>
+        </Suspense>
       </main>
       <Footer />
     </>
@@ -290,6 +421,7 @@ type CardProps = {
 const numberFormatParts = new Intl.NumberFormat().formatToParts(1234.5);
 
 const TempBanner = lazy(() => import("../components/TempBanner.client"));
+const UplotChart = lazy(() => import("../chart/UplotChart.client"));
 
 function Region({
   season,
@@ -299,6 +431,9 @@ function Region({
 }: CardProps): React.ReactNode {
   const ref = useRef<HighchartsReactRefObject | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
+
+  const [searchParams] = useSearchParams();
+  const useUplot = searchParams.get("renderer") === "uplot";
 
   const confirmedCutoffUrl = season.confirmedCutoffs[region].source;
   const navigation = useNavigation();
@@ -336,7 +471,7 @@ function Region({
         );
       };
 
-      const chart = ref.current.chart;
+      const { chart } = ref.current;
 
       if (extremes) {
         chart.xAxis[0].setExtremes(extremes.min, extremes.max);
@@ -803,13 +938,24 @@ function Region({
 
       <div className="h-[39vh] lg:h-[30vh]" ref={containerRef}>
         <ClientOnly fallback={null}>
-          {() => (
-            <HighchartsReact
-              highcharts={Highcharts}
-              options={options}
-              ref={ref}
-            />
-          )}
+          {() =>
+            useUplot ? (
+              <Suspense fallback={null}>
+                <UplotChart
+                  season={season}
+                  region={region}
+                  extremes={extremes}
+                  onZoom={onZoom}
+                />
+              </Suspense>
+            ) : (
+              <HighchartsReact
+                highcharts={Highcharts}
+                options={options}
+                ref={ref}
+              />
+            )
+          }
         </ClientOnly>
       </div>
     </section>
@@ -829,7 +975,12 @@ function MythicStatsLink({ season, weekOffset }: MythicStatsLinkProps) {
   const href = `https://mythicstats.com/period/${season.startingPeriod + weekOffset}`;
 
   return (
-    <a href={href} target="_blank" title="MythicStats for this week">
+    <a
+      href={href}
+      target="_blank"
+      title="MythicStats for this week"
+      rel="noreferrer"
+    >
       <img src="/mythic-stats.png" loading="lazy" className="h-4 w-4" alt="" />
     </a>
   );

@@ -32,3 +32,39 @@ export const extraOverlayNames: Record<Overlay, string> = {
 
 export const isNotNull = <T>(something: T | null): something is T =>
   something !== null;
+
+/**
+ * Client-safe mirror of `determineOverlaysToDisplayFromSearchParams` — reads the
+ * `overlays` query param without pulling in the server-only `load.server` module.
+ */
+export function parseOverlaysFromSearchParams(
+  params: URLSearchParams,
+): Overlay[] | null {
+  const maybeOverlays = params.get("overlays");
+
+  if (!maybeOverlays) {
+    return null;
+  }
+
+  const fromSearchParams = new Set(maybeOverlays.split(searchParamSeparator));
+
+  return overlays.filter((overlay) => fromSearchParams.has(overlay));
+}
+
+/**
+ * Resolves the overlays a chart should display: the parsed selection (or all
+ * overlays by default), minus `affixes` for modern seasons (`zoneId > 39`).
+ * Mirrors the default filtering previously done in `getEnhancedSeason`.
+ */
+export function resolveOverlaysToDisplay(
+  zoneId: number | undefined,
+  parsed: Overlay[] | null,
+): Overlay[] {
+  return (parsed ?? [...overlays]).filter((overlay) => {
+    if ((zoneId ?? 0) > 39) {
+      return overlay !== "affixes";
+    }
+
+    return true;
+  });
+}

@@ -1,35 +1,11 @@
 import { type Regions } from "prisma/generated/prisma/enums";
 
-import {
-  calculateSeries,
-  calculateXAxisPlotBands,
-  calculateYAxisPlotLines,
-  loadExtrapolationHistoryForSeason,
-  loadRecordsForSeason,
-  type Timings,
-} from "~/load.server";
-import {
-  calculateExtrapolation,
-  calculateXAxisPlotLines,
-  calculateZoom,
-  determineExpirationTimestamp,
-  determineExtrapolationEnd,
-  loadDataForRegion,
-  time,
-} from "~/load.server";
-import { type Season } from "~/seasons";
-import { type EnhancedSeason, hasSeasonEndedForAllRegions } from "~/seasons";
-import {
-  isNotNull,
-  orderedRegionsBySize,
-  type Overlay,
-  overlays as defaultOverlays,
-} from "~/utils";
-
-const lastModified = "Last-Modified";
-const cacheControl = "Cache-Control";
-const eTag = "ETag";
-const expires = "Expires";
+import { buildEnhancedSeason } from "~/chart/assemble";
+import { decode } from "~/data";
+import { assembleSeasonData } from "~/data.server";
+import { type Timings } from "~/load.server";
+import { type EnhancedSeason, type Season } from "~/seasons";
+import { type Overlay, resolveOverlaysToDisplay } from "~/utils";
 
 type GetEnhancedSeasonParams = {
   overlays: Overlay[] | null;
@@ -42,308 +18,35 @@ type GetEnhancedSeasonResult = {
   headers: Record<string, string>;
   season: EnhancedSeason;
 };
+
+/**
+ * Server-side `EnhancedSeason` builder for the JSON API routes. Shares the exact
+ * assemble path used by the `$season` route's client: compact `SeasonData` ->
+ * `decode()` -> `buildEnhancedSeason()`. The main route ships the compact
+ * `SeasonData` instead and assembles in the browser.
+ */
 export const getEnhancedSeason = async ({
   overlays: pOverlays,
   request,
-  regions: pRegions,
+  regions,
   season,
   timings,
 }: GetEnhancedSeasonParams): Promise<GetEnhancedSeasonResult> => {
-  const headers: Record<string, string> = {};
-
-  if (hasSeasonEndedForAllRegions(season.slug)) {
-    const thirtyDays = 30 * 24 * 60 * 60;
-    headers[cacheControl] =
-      `public, max-age=${thirtyDays}, s-maxage=${thirtyDays}, immutable`;
-  }
-
-  const extrapolationEnd = await time(
-    () => determineExtrapolationEnd(request),
-    { type: "determineExtrapolationEnd", timings },
-  );
-
-  const regions = pRegions ?? orderedRegionsBySize;
-  const overlays = (pOverlays ?? defaultOverlays).filter((overlay) => {
-    if ((season.wcl?.zoneId ?? 0) > 39) {
-      return overlay !== "affixes";
-    }
-
-    return true;
+  const { data, recordsPromise, headers } = await assembleSeasonData({
+    request,
+    regions,
+    season,
+    timings,
   });
 
-  const enhancedSeason: EnhancedSeason = {
-    ...season,
-    records: [],
-    score: {
-      regionsToDisplay: regions,
-      overlaysToDisplay: [...overlays],
-      dataByRegion: {
-        EU: [],
-        US: [],
-        KR: [],
-        TW: [],
-        CN: [],
-      },
-      extrapolation: {
-        EU: null,
-        KR: null,
-        TW: null,
-        US: null,
-        CN: null,
-      },
-      initialZoom: {
-        EU: null,
-        KR: null,
-        TW: null,
-        US: null,
-        CN: null,
-      },
-      xAxisPlotLines: {
-        EU: [],
-        US: [],
-        KR: [],
-        TW: [],
-        CN: [],
-      },
-      yAxisPlotLines: {
-        EU: [],
-        US: [],
-        KR: [],
-        TW: [],
-        CN: [],
-      },
-      xAxisPlotBands: {
-        EU: [],
-        US: [],
-        KR: [],
-        TW: [],
-        CN: [],
-      },
-      series: {
-        EU: [],
-        US: [],
-        KR: [],
-        TW: [],
-        CN: [],
-      },
-      chartBlueprint: {
-        accessibility: {
-          enabled: true,
-        },
-        title: {
-          text: "",
-        },
-        chart: {
-          backgroundColor: "transparent",
-          zooming: {
-            type: "x",
-            resetButton: {
-              position: {
-                verticalAlign: "middle",
-              },
-            },
-          },
-        },
-        credits: {
-          enabled: false,
-        },
-        legend: {
-          itemStyle: {
-            color: "#c2c7d0",
-            fontSize: "15px",
-          },
-          itemHoverStyle: {
-            color: "#fff",
-          },
-        },
-        xAxis: {
-          title: {
-            text: "Date",
-            style: {
-              color: "#fff",
-              lineColor: "#333",
-              tickColor: "#333",
-            },
-          },
-          labels: {
-            style: {
-              color: "#fff",
-              fontWeight: "normal",
-            },
-          },
-          type: "datetime",
-          plotBands: [],
-          plotLines: [],
-        },
-        yAxis: {
-          title: {
-            text: "Score",
-            style: {
-              color: "#fff",
-            },
-          },
-          gridLineColor: `rgba(255, 255, 255, 0.25)`,
-          labels: {
-            style: {
-              color: "#fff",
-              fontWeight: "normal",
-            },
-          },
-          plotLines: [],
-        },
-        tooltip: {
-          shared: true,
-          outside: true,
-        },
-        plotOptions: {
-          line: {
-            dataLabels: {
-              enabled: true,
-              color: "#fff",
-            },
-            marker: {
-              lineColor: "#333",
-              enabled: false,
-            },
-          },
-        },
-      },
-    },
-  };
-
-  const now = Date.now();
-
-  async function getRecordsForSeason() {
-    enhancedSeason.records = await time(
-      () => loadRecordsForSeason(season, overlays),
-      { type: "loadRecordsForSeason", timings },
-    );
-  }
-
-  await Promise.all([
-    getRecordsForSeason(),
-    ...Object.values(regions).map(async (region) => {
-      const [data, extrapolationHistory] = await Promise.all([
-        loadDataForRegion(region, season, timings),
-        await time(
-          () => loadExtrapolationHistoryForSeason(season, region, overlays),
-          {
-            type: "loadExtrapolationHistoryForSeason",
-            timings,
-          },
-        ),
-      ]);
-      enhancedSeason.score.dataByRegion[region] = data;
-
-      if (data.length === 0) {
-        return;
-      }
-
-      const extrapolation = await time(
-        () => calculateExtrapolation(season, region, data, extrapolationEnd),
-        { type: `calculateExtrapolation-${region}`, timings },
-      );
-
-      // top 1% extrapolation is calculated for display only - never persisted
-      const extrapolation100 = await time(
-        () => {
-          const data100 = data
-            .filter(
-              (dataset) => dataset.score100 !== null && dataset.score100 > 0,
-            )
-            .map((dataset) => ({ ...dataset, score: dataset.score100! }));
-
-          return data100.length > 0
-            ? calculateExtrapolation(season, region, data100, extrapolationEnd)
-            : null;
-        },
-        { type: `calculateExtrapolation100-${region}`, timings },
-      );
-
-      enhancedSeason.score.xAxisPlotLines[region] = await time(
-        () =>
-          calculateXAxisPlotLines(
-            season,
-            region,
-            data,
-            extrapolation,
-            overlays,
-          ),
-        { type: `calculateXAxisPlotLines-${region}`, timings },
-      );
-
-      enhancedSeason.score.yAxisPlotLines[region] = await time(
-        () => calculateYAxisPlotLines(season, region),
-        { type: `calculateYAxisPlotLines-${region}`, timings },
-      );
-
-      enhancedSeason.score.xAxisPlotBands[region] = await time(
-        () => calculateXAxisPlotBands(season, region, data, overlays),
-        { type: `calculateXAxisPlotBands-${region}`, timings },
-      );
-
-      enhancedSeason.score.series[region] = await time(
-        () =>
-          calculateSeries(
-            season,
-            data,
-            extrapolation,
-            extrapolationHistory,
-            extrapolation100,
-          ),
-        { type: `calculateSeries-${region}`, timings },
-      );
-
-      const seasonEnding = season.endDates[region];
-
-      // season ended, no need for zoomies or extrapolation
-      if (seasonEnding && seasonEnding <= now) {
-        return;
-      }
-
-      enhancedSeason.score.extrapolation[region] = extrapolation;
-
-      enhancedSeason.score.initialZoom[region] = await time(
-        () => calculateZoom(season, region, data, extrapolation),
-        { type: `calculateZoom-${region}`, timings },
-      );
-    }),
-  ]);
-
-  const mostRecentDataset = Object.values(enhancedSeason.score.dataByRegion)
-    .flat()
-    .reduce((acc, dataset) => (acc > dataset.ts ? acc : dataset.ts), 0);
-
-  headers[lastModified] = new Date(mostRecentDataset).toUTCString();
-
-  const shortestExpiry = await time(
-    () =>
-      regions
-        .map((region) =>
-          determineExpirationTimestamp(
-            season,
-            region,
-            enhancedSeason.score.dataByRegion[region],
-          ),
-        )
-        .reduce(
-          (acc, expiry) => (acc > expiry ? expiry : acc),
-          Number.POSITIVE_INFINITY,
-        ),
-    { type: "shortestExpiry", timings },
+  // JSON API consumers get the full object (no streaming), so await the records
+  // the route streams and re-attach them before assembling.
+  const overlays = resolveOverlaysToDisplay(season.wcl?.zoneId, pOverlays);
+  const enhancedSeason = buildEnhancedSeason(
+    decode({ ...data, records: await recordsPromise }),
+    season,
+    overlays,
   );
-
-  headers[expires] = new Date(shortestExpiry * 1000 + Date.now()).toUTCString();
-  headers[eTag] = [
-    season.slug,
-    mostRecentDataset,
-    extrapolationEnd,
-    ...regions,
-    ...overlays,
-  ]
-    .filter(isNotNull)
-    .sort((a, b) => (a > b ? 1 : -1))
-    .join("-");
 
   return { season: enhancedSeason, headers };
 };

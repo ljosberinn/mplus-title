@@ -1,36 +1,43 @@
-import { type Node } from "@react-types/shared";
+/**
+ * Season switcher: a lightweight grouped dropdown keyed on the season
+ * `expansion` field. SSR-safe — a controlled `<details>`-style
+ * popover with click-outside + Escape handling, no client-only gate. Preserves
+ * the `?params` passthrough, the disabled/selected logic, and adds
+ * `prefetch="intent"` so hovering a season warms its loader.
+ */
 import clsx from "clsx";
-import { type RefObject, type ReactNode } from "react";
-import { useRef } from "react";
-import { type AriaButtonProps, type AriaPopoverProps } from "react-aria";
-import { type AriaMenuProps } from "react-aria";
-import {
-  Overlay,
-  useButton,
-  useMenu,
-  useMenuItem,
-  useMenuSection,
-  useMenuTrigger,
-  usePopover,
-} from "react-aria";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import {
   NavLink,
   useNavigation,
   useParams,
   useSearchParams,
 } from "react-router";
-import { type OverlayTriggerState, type TreeState } from "react-stately";
-import { type MenuTriggerProps } from "react-stately";
-import {
-  Item,
-  Section,
-  useMenuTriggerState,
-  useTreeState,
-} from "react-stately";
-import { ClientOnly } from "remix-utils/client-only";
 
-import { type Season } from "~/seasons";
-import { seasons } from "~/seasons";
+import { type Expansion, type Season, seasons } from "~/seasons";
+
+/** Heading shown per group; matches the previous uppercased slug-prefix. */
+const expansionLabel = (expansion: Expansion): string =>
+  expansion.toUpperCase();
+
+type SeasonGroup = { expansion: Expansion; seasons: Season[] };
+
+/** Group consecutive seasons by expansion, preserving the source order. */
+function groupByExpansion(list: Season[]): SeasonGroup[] {
+  const groups: SeasonGroup[] = [];
+
+  for (const season of list) {
+    const last = groups.at(-1);
+
+    if (last?.expansion === season.expansion) {
+      last.seasons.push(season);
+    } else {
+      groups.push({ expansion: season.expansion, seasons: [season] });
+    }
+  }
+
+  return groups;
+}
 
 export function SeasonMenu(): ReactNode {
   const now = Date.now();
@@ -38,68 +45,104 @@ export function SeasonMenu(): ReactNode {
   const [params] = useSearchParams();
   const { season: selectedSeasonSlug } = useParams();
 
-  const paramsAsString = params ? `?${params.toString()}` : "";
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+
+  const paramsAsString = params.toString() ? `?${params.toString()}` : "";
 
   const selectedSeason = seasons.find(
     (season) => season.slug === selectedSeasonSlug,
   );
 
-  const label = selectedSeason ? (
-    <SeasonNavItemBody season={selectedSeason} />
-  ) : (
-    <>Seasons</>
-  );
+  // close on outside click / Escape while open.
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
 
-  const fallback = <Button buttonRef={{ current: null }}>{label}</Button>;
+    const onPointerDown = (event: PointerEvent) => {
+      if (!containerRef.current?.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setOpen(false);
+      }
+    };
+
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [open]);
+
+  const groups = groupByExpansion(seasons);
 
   return (
-    <ClientOnly fallback={fallback}>
-      {() => (
-        <MenuButton label={label}>
-          {seasons
-            .reduce<{ label: string; seasons: Season[] }[]>((acc, season) => {
-              const lastSection = acc[acc.length - 1];
-              const [prefix] = season.slug.split("-");
+    <div ref={containerRef} className="relative">
+      <button
+        type="button"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        onClick={() => {
+          setOpen((prev) => !prev);
+        }}
+        className="flex space-x-2 rounded-lg bg-gray-700 px-4 py-2 font-medium text-white outline-none ring-gray-500 transition-all duration-200 ease-in-out hover:bg-gray-500 focus:outline-none focus:ring-2"
+      >
+        {selectedSeason ? (
+          <SeasonNavItemBody season={selectedSeason} />
+        ) : (
+          <span>Seasons</span>
+        )}
+        <span
+          aria-hidden="true"
+          className={clsx("pl-1 transition-all", open && "rotate-180")}
+        >
+          ▼
+        </span>
+      </button>
 
-              if (lastSection) {
-                const lastSeasonOfLastSection =
-                  lastSection.seasons[lastSection.seasons.length - 1];
-                const [otherPrefix] = lastSeasonOfLastSection.slug.split("-");
+      {open && (
+        <div
+          role="menu"
+          className="absolute right-0 z-50 mt-1 w-56 overflow-hidden rounded-md bg-gray-700 shadow-lg"
+        >
+          {groups.map((group, groupIndex) => {
+            const isFirstGroup = groupIndex === 0;
+            const isLastGroup = groupIndex === groups.length - 1;
 
-                if (prefix === otherPrefix) {
-                  lastSection.seasons.push(season);
-                  return acc;
-                }
-              }
-
-              acc.push({ label: prefix, seasons: [season] });
-
-              return acc;
-            }, [])
-            .map((section, sectionIndex, sections) => {
-              const isLastSection = sectionIndex === sections.length - 1;
-
-              return (
-                <Section
-                  key={section.label}
-                  title={section.label.toUpperCase()}
+            return (
+              <div key={group.expansion}>
+                <span
+                  className={clsx(
+                    "inline-block w-full bg-gray-600 px-4 py-1 text-lg font-semibold text-white",
+                    isFirstGroup && "rounded-t-lg",
+                  )}
                 >
-                  {section.seasons.map((season, index, seasons) => {
+                  {expansionLabel(group.expansion)}
+                </span>
+                <ul className="m-0 list-none p-0">
+                  {group.seasons.map((season, index) => {
+                    const isSelected = selectedSeason?.slug === season.slug;
                     const disabled =
-                      selectedSeason?.slug === season.slug ||
+                      isSelected ||
                       season.startDates.US === null ||
                       season.startDates.US > now ||
                       navigation.state !== "idle";
 
                     const isLast =
-                      isLastSection && index === seasons.length - 1;
+                      isLastGroup && index === group.seasons.length - 1;
 
                     return (
-                      <Item key={season.slug} textValue={season.name}>
+                      <li key={season.slug}>
                         {disabled ? (
                           <span
                             className={clsx(
-                              "flex flex-1 space-x-2 bg-gray-800 px-4 py-2 text-white outline-none grayscale transition-all duration-200 ease-in-out",
+                              "flex flex-1 items-center space-x-2 bg-gray-800 px-4 py-2 text-white outline-none grayscale transition-all duration-200 ease-in-out",
                               navigation.state === "idle"
                                 ? "cursor-not-allowed"
                                 : "cursor-wait",
@@ -107,193 +150,38 @@ export function SeasonMenu(): ReactNode {
                             )}
                           >
                             <SeasonNavItemBody season={season} />
+                            {isSelected && <span aria-hidden="true">✅</span>}
                           </span>
                         ) : (
                           <NavLink
+                            role="menuitem"
+                            prefetch="intent"
+                            to={`/${season.slug}${paramsAsString}`}
+                            onClick={() => {
+                              setOpen(false);
+                            }}
                             className={clsx(
-                              "flex flex-1 space-x-2 bg-gray-700 px-4 py-2 text-white outline-none transition-all duration-200 ease-in-out hover:bg-gray-500",
+                              "flex flex-1 items-center space-x-2 bg-gray-700 px-4 py-2 text-white outline-none transition-all duration-200 ease-in-out hover:bg-gray-500",
                               isLast && "rounded-b-lg",
                             )}
-                            to={`/${season.slug}${paramsAsString}`}
                           >
                             <SeasonNavItemBody season={season} />
                           </NavLink>
                         )}
-                      </Item>
+                      </li>
                     );
                   })}
-                </Section>
-              );
-            })}
-        </MenuButton>
+                </ul>
+              </div>
+            );
+          })}
+        </div>
       )}
-    </ClientOnly>
+    </div>
   );
 }
 
-type PopoverProps = {
-  children: ReactNode;
-  state: OverlayTriggerState;
-} & Omit<AriaPopoverProps, "popoverRef">;
-
-function Popover({ children, state, ...props }: PopoverProps) {
-  const popoverRef = useRef<HTMLDivElement | null>(null);
-  const { popoverProps, underlayProps } = usePopover(
-    {
-      ...props,
-      popoverRef,
-    },
-    state,
-  );
-
-  return (
-    <Overlay>
-      <div {...underlayProps} className="fixed inset-0" />
-      <div
-        {...popoverProps}
-        ref={popoverRef}
-        style={popoverProps.style}
-        className="mt-1 space-y-1 rounded-md shadow-lg"
-      >
-        {children}
-      </div>
-    </Overlay>
-  );
-}
-
-function Button(
-  props: AriaButtonProps & {
-    buttonRef: RefObject<HTMLButtonElement | null>;
-  },
-) {
-  const ref = props.buttonRef;
-  const { buttonProps } = useButton(props, ref);
-
-  return (
-    <button
-      {...buttonProps}
-      ref={ref}
-      type="button"
-      className="flex space-x-2 rounded-lg bg-gray-700 px-4 py-2 font-medium text-white outline-none ring-gray-500 transition-all duration-200 ease-in-out hover:bg-gray-500 focus:outline-none focus:ring-2"
-    >
-      {props.children}
-    </button>
-  );
-}
-
-type MenuItemProps<T> = {
-  item: Node<T>;
-  state: TreeState<T>;
-};
-
-function MenuItem<T>({ item, state }: MenuItemProps<T>) {
-  const ref = useRef<HTMLLIElement | null>(null);
-  const { menuItemProps, isSelected } = useMenuItem(
-    { key: item.key },
-    state,
-    ref,
-  );
-
-  return (
-    <li
-      {...menuItemProps}
-      // otherwise prevents `a` interaction
-      onPointerUp={undefined}
-      ref={ref}
-      className={clsx("flex cursor-pointer justify-between outline-none")}
-    >
-      {item.rendered}
-      {isSelected && <span aria-hidden="true">✅</span>}
-    </li>
-  );
-}
-
-function Menu<T extends object>(props: AriaMenuProps<T>) {
-  const state = useTreeState(props);
-
-  const ref = useRef<HTMLUListElement | null>(null);
-  const { menuProps } = useMenu(props, state, ref);
-
-  return (
-    <ul {...menuProps} ref={ref} className="m-0 w-56 list-none rounded-md">
-      {[...state.collection].map((item) =>
-        item.type === "section" ? (
-          <MenuSection key={item.key} section={item} state={state} />
-        ) : (
-          <MenuItem key={item.key} item={item} state={state} />
-        ),
-      )}
-    </ul>
-  );
-}
-
-type MenuButtonProps<T> = {
-  label?: ReactNode;
-} & AriaMenuProps<T> &
-  MenuTriggerProps;
-
-function MenuButton<T extends object>(props: MenuButtonProps<T>) {
-  const state = useMenuTriggerState(props);
-  const ref = useRef(null);
-  const { menuTriggerProps, menuProps } = useMenuTrigger<T>({}, state, ref);
-
-  return (
-    <>
-      <Button {...menuTriggerProps} buttonRef={ref}>
-        {props.label}
-        <span
-          aria-hidden="true"
-          className={clsx("pl-1 transition-all", state.isOpen && "rotate-180")}
-        >
-          ▼
-        </span>
-      </Button>
-      {state.isOpen && (
-        <Popover state={state} triggerRef={ref} placement="bottom end">
-          <Menu {...props} {...menuProps} />
-        </Popover>
-      )}
-    </>
-  );
-}
-
-type MenuSectionProps<T> = {
-  section: Node<T>;
-  state: TreeState<T>;
-};
-
-function MenuSection<T>({ section, state }: MenuSectionProps<T>) {
-  const { itemProps, headingProps, groupProps } = useMenuSection({
-    heading: section.rendered,
-    "aria-label": section["aria-label"],
-  });
-
-  const isFirst = section.key === state.collection.getFirstKey();
-
-  return (
-    <li {...itemProps}>
-      {section.rendered && (
-        <span
-          {...headingProps}
-          className={clsx(
-            "inline-block w-full bg-gray-600 px-4 py-1 text-lg font-semibold",
-            isFirst && "rounded-t-lg",
-          )}
-        >
-          {section.rendered}
-        </span>
-      )}
-      <ul {...groupProps} className="list-none p-0">
-        {/* literally how its mentioned in the docs and state.collection.getChildren is not a fn */}
-        {[...section.childNodes].map((node) => (
-          <MenuItem key={node.key} item={node} state={state} />
-        ))}
-      </ul>
-    </li>
-  );
-}
-
-function SeasonNavItemBody({ season }: { season: Season }) {
+function SeasonNavItemBody({ season }: { season: Season }): ReactNode {
   return (
     <>
       <img

@@ -1,0 +1,526 @@
+/**
+ * Server-only data layer: owns the DB reads and the era-merge in one
+ * place, then assembles the compact `SeasonData` wire payload — loads the
+ * per-region `Dataset[]`, runs the (server-side, regression-guarded)
+ * extrapolation, columnar-encodes the points and computes the cache headers.
+ *
+ * The merge of the legacy `history` (faction) + modern `crossFactionHistory`
+ * eras, the Redis cache and the per-region dedupe live here now (moved out of
+ * `load.server.ts`, which keeps only the extrapolation math + request/cookie
+ * helpers). The derived presentation (series/plotBands/plotLines/blueprint) is
+ * not built here — the browser rebuilds it from `decode()` + the bundled season
+ * config via `app/chart/assemble.ts`.
+ */
+import { Redis } from "@upstash/redis";
+import { type SeriesLineOptions, type SeriesScatterOptions } from "highcharts";
+import { type Regions } from "prisma/generated/prisma/enums";
+
+import { env } from "~/env/server";
+
+import {
+  encodeSeries,
+  type ExtrapolationHistoryTuple,
+  type RegionPayload,
+  type SeasonData,
+} from "./data";
+import { dungeonSlugMetaMap } from "./dungeons";
+import {
+  calculateExtrapolation,
+  determineExtrapolationEnd,
+  time,
+  type Timings,
+} from "./load.server";
+import { prisma } from "./prisma.server";
+import {
+  type Dataset,
+  hasSeasonEndedForAllRegions,
+  type Season,
+} from "./seasons";
+import { isNotNull, orderedRegionsBySize, searchParamSeparator } from "./utils";
+
+const lastModified = "Last-Modified";
+const cacheControl = "Cache-Control";
+const eTag = "ETag";
+const expires = "Expires";
+
+type AssembleSeasonDataParams = {
+  request: Request;
+  regions: Regions[] | null;
+  season: Season;
+  timings: Timings;
+};
+
+type AssembleSeasonDataResult = {
+  data: SeasonData;
+  /** Dungeon records, loaded lazily and streamed to the client via <Await>
+   * (the JSON API path awaits it). `data.records` stays empty on the wire. */
+  recordsPromise: Promise<SeasonData["records"]>;
+  headers: Record<string, string>;
+};
+
+export async function assembleSeasonData({
+  request,
+  regions: pRegions,
+  season,
+  timings,
+}: AssembleSeasonDataParams): Promise<AssembleSeasonDataResult> {
+  const headers: Record<string, string> = {};
+
+  if (hasSeasonEndedForAllRegions(season.slug)) {
+    const thirtyDays = 30 * 24 * 60 * 60;
+    headers[cacheControl] =
+      `public, max-age=${thirtyDays}, s-maxage=${thirtyDays}, immutable`;
+  }
+
+  const extrapolationEnd = await time(
+    () => determineExtrapolationEnd(request),
+    { type: "determineExtrapolationEnd", timings },
+  );
+
+  const regions = pRegions ?? orderedRegionsBySize;
+
+  const dataByRegion: Record<Regions, Dataset[]> = {
+    EU: [],
+    US: [],
+    KR: [],
+    TW: [],
+    CN: [],
+  };
+  const regionPayloads: Partial<Record<Regions, RegionPayload>> = {};
+
+  // Dungeon records feed only the secondary DungeonRecords chart, so load them
+  // as a promise the loader streams in via <Await> rather than blocking first
+  // paint on the dungeonHistory query. The JSON API path awaits it instead.
+  const recordsPromise = loadRecordsForSeason(season);
+
+  await Promise.all(
+    regions.map(async (region) => {
+      const [data, extrapolationHistory] = await Promise.all([
+        loadDataForRegion(region, season, timings),
+        time(() => loadExtrapolationHistoryForSeason(season, region), {
+          type: "loadExtrapolationHistoryForSeason",
+          timings,
+        }),
+      ]);
+
+      dataByRegion[region] = data;
+
+      if (data.length === 0) {
+        return;
+      }
+
+      const extrapolation = await time(
+        () => calculateExtrapolation(season, region, data, extrapolationEnd),
+        { type: `calculateExtrapolation-${region}`, timings },
+      );
+
+      // top 1% extrapolation is calculated for display only - never persisted
+      const extrapolation100 = await time(
+        () => {
+          const data100 = data
+            .filter(
+              (dataset) => dataset.score100 !== null && dataset.score100 > 0,
+            )
+            .map((dataset) => ({ ...dataset, score: dataset.score100! }));
+
+          return data100.length > 0
+            ? calculateExtrapolation(season, region, data100, extrapolationEnd)
+            : null;
+        },
+        { type: `calculateExtrapolation100-${region}`, timings },
+      );
+
+      regionPayloads[region] = {
+        series: encodeSeries(data),
+        extrapolation,
+        extrapolation100,
+        extrapolationHistory: (Array.isArray(extrapolationHistory)
+          ? extrapolationHistory
+          : []
+        )
+          .filter(isNotNull)
+          .map((point): ExtrapolationHistoryTuple => {
+            // loadExtrapolationHistoryForSeason yields { x, y, estimatedAt };
+            // Highcharts' broad point type loses that, so narrow it here.
+            const { x, y, estimatedAt } = point as {
+              x: number;
+              y: number;
+              estimatedAt: number;
+            };
+            return [x, y, estimatedAt];
+          }),
+      };
+    }),
+  );
+
+  const mostRecentDataset = Object.values(dataByRegion)
+    .flat()
+    .reduce((acc, dataset) => (acc > dataset.ts ? acc : dataset.ts), 0);
+
+  headers[lastModified] = new Date(mostRecentDataset).toUTCString();
+
+  const shortestExpiry = await time(
+    () =>
+      regions
+        .map((region) =>
+          determineExpirationTimestamp(season, region, dataByRegion[region]),
+        )
+        .reduce(
+          (acc, expiry) => (acc > expiry ? expiry : acc),
+          Number.POSITIVE_INFINITY,
+        ),
+    { type: "shortestExpiry", timings },
+  );
+
+  headers[expires] = new Date(shortestExpiry * 1000 + Date.now()).toUTCString();
+  headers[eTag] = [season.slug, mostRecentDataset, extrapolationEnd, ...regions]
+    .filter(isNotNull)
+    .sort((a, b) => (a > b ? 1 : -1))
+    .join("-");
+
+  const data: SeasonData = {
+    slug: season.slug,
+    regionsToDisplay: regions,
+    regions: regionPayloads,
+    records: [],
+  };
+
+  return { data, recordsPromise, headers };
+}
+
+// ---------------------------------------------------------------------------
+// Read layer (moved here from load.server.ts in W5): DB queries, era-merge,
+// dedupe and the per-region Redis cache.
+// ---------------------------------------------------------------------------
+
+function getCrossFactionHistory(
+  region: Regions,
+  gte: number | null,
+  lte?: number,
+) {
+  if (!gte) {
+    return [];
+  }
+
+  return prisma.crossFactionHistory.findMany({
+    where: {
+      region,
+      timestamp: {
+        gte: Math.ceil(gte / 1000),
+        lte: lte ? Math.ceil(lte / 1000) : lte,
+      },
+    },
+    select: {
+      timestamp: true,
+      score: true,
+      rank: true,
+      score100: true,
+      rank100: true,
+    },
+    orderBy: {
+      timestamp: "desc",
+    },
+  });
+}
+
+function getHistory(region: Regions, gte: number | null, lte?: number) {
+  if (!gte) {
+    return [];
+  }
+
+  return prisma.history.findMany({
+    where: {
+      region,
+      timestamp: {
+        gte: Math.ceil(gte / 1000),
+        lte: lte ? Math.ceil(lte / 1000) : lte,
+      },
+    },
+    select: {
+      timestamp: true,
+      faction: true,
+      customScore: true,
+    },
+    orderBy: {
+      timestamp: "desc",
+    },
+  });
+}
+
+function setupRedisProviders() {
+  const upstash = new Redis({
+    url: env.UPSTASH_REDIS_REST_URL,
+    token: env.UPSTASH_REDIS_REST_TOKEN,
+  });
+
+  const persist = (data: Dataset[], key: string, expiry: number) => {
+    if (env.NODE_ENV === "development") {
+      return;
+    }
+
+    return upstash.set(key, data, {
+      ex: expiry,
+    });
+  };
+
+  const load = async (key: string): Promise<Dataset[] | null> => {
+    if (env.NODE_ENV === "development") {
+      return null;
+    }
+
+    return upstash.get(key);
+  };
+
+  return {
+    persist,
+    load,
+  };
+}
+
+export async function loadExtrapolationHistoryForSeason(
+  season: Season,
+  region: Regions,
+): Promise<SeriesScatterOptions["data"]> {
+  if (!season.supportsExtrapolationHistory) {
+    return [];
+  }
+
+  if (season.startDates[region] === null) {
+    return [];
+  }
+
+  const data = await prisma.extrapolation.findMany({
+    orderBy: {
+      timestamp: "asc",
+    },
+    where: {
+      timestamp: {
+        gte: Math.round(season.startDates[region] / 1000),
+        lte: season.endDates[region]
+          ? Math.round(season.endDates[region] / 1000)
+          : undefined,
+      },
+      region: {
+        equals: region,
+      },
+    },
+    select: {
+      score: true,
+      timestamp: true,
+      estimatedAt: true,
+    },
+  });
+
+  // deduplicates extrapolation data to only have each individual extrapolated value per timestamp
+  return Object.values(
+    data.reduce<Record<string, (typeof data)[number]>>((acc, dataset) => {
+      const key = [dataset.timestamp, dataset.score].join("-");
+
+      if (!(key in acc)) {
+        acc[key] = dataset;
+      }
+
+      return acc;
+    }, {}),
+  ).map((dataset) => ({
+    x: dataset.timestamp * 1000,
+    y: dataset.score,
+    estimatedAt: dataset.estimatedAt * 1000,
+  }));
+}
+
+export async function loadRecordsForSeason(
+  season: Season,
+): Promise<SeriesLineOptions[]> {
+  if (
+    typeof season.dungeons === "number" ||
+    season.dungeons.length === 0 ||
+    season.startDates.US === null ||
+    season.slug === "df-season-4"
+  ) {
+    return [];
+  }
+
+  const data = await prisma.dungeonHistory.findMany({
+    orderBy: {
+      timestamp: "asc",
+    },
+    where: {
+      timestamp: {
+        gte: Math.round(season.startDates.US / 1000),
+        lte: season.endDates.US
+          ? Math.round(season.endDates.US / 1000)
+          : undefined,
+      },
+      keyLevel: {
+        gte: 12,
+      },
+    },
+    select: {
+      slug: true,
+      keyLevel: true,
+      timestamp: true,
+    },
+  });
+
+  return Object.values(
+    data.reduce<Record<string, SeriesLineOptions>>((acc, dataset) => {
+      if (!(dataset.slug in acc)) {
+        const dungeonMetaInformation =
+          dataset.slug in dungeonSlugMetaMap
+            ? dungeonSlugMetaMap[dataset.slug]
+            : null;
+
+        const name = (dungeonMetaInformation?.name ?? dataset.slug).replace(
+          "The ",
+          "",
+        );
+
+        acc[dataset.slug] = {
+          type: "line",
+          data: [],
+          name,
+          // @ts-expect-error iconUrl is not in SeriesLineOptions but Highcharts uses it
+          iconUrl: dungeonMetaInformation
+            ? `https://wow.zamimg.com/images/wow/icons/medium/${dungeonMetaInformation.icon}.jpg`
+            : null,
+        };
+      }
+
+      const arr = acc[dataset.slug].data;
+
+      if (Array.isArray(arr)) {
+        arr.push([dataset.timestamp * 1000, dataset.keyLevel]);
+      }
+
+      return acc;
+    }, {}),
+  );
+}
+
+/**
+ * Drops consecutive samples whose score is unchanged, keeping the first sample,
+ * the last sample, and every point where the score actually moved. Operates on
+ * the already-merged, ascending-by-timestamp datasets.
+ */
+function dropUnchangedScores(datasets: Dataset[]): Dataset[] {
+  return datasets.reduce<Dataset[]>((acc, dataset, index, arr) => {
+    const next = arr[index + 1];
+    const last = acc[acc.length - 1];
+
+    if (acc.length === 0 || !next || last.score !== dataset.score) {
+      acc.push(dataset);
+    }
+
+    return acc;
+  }, []);
+}
+
+export async function loadDataForRegion(
+  region: Regions,
+  season: Season,
+  timings: Timings,
+): Promise<Dataset[]> {
+  const gte = season.startDates[region];
+  const lte = season.endDates[region] ?? undefined;
+  const key = [season.slug, region, "v2"].join(searchParamSeparator);
+
+  const { persist, load } = setupRedisProviders();
+
+  const cached = await time(() => load(key), {
+    type: `loadFromRedis-${region}`,
+    timings,
+  });
+
+  if (cached) {
+    return cached;
+  }
+
+  const [rawHistory, rawCrossFactionHistory] = await Promise.all([
+    time(
+      () =>
+        season.crossFactionSupport === "complete"
+          ? []
+          : getHistory(region, gte, lte),
+      { type: `getHistory-${region}`, timings },
+    ),
+    time(
+      () =>
+        season.crossFactionSupport === "none"
+          ? []
+          : getCrossFactionHistory(region, gte, lte),
+      { type: `getCrossFactionHistory-${region}`, timings },
+    ),
+  ]);
+
+  const datasets = await time(
+    () =>
+      dropUnchangedScores(
+        [...rawHistory, ...rawCrossFactionHistory]
+          .map((dataset) => {
+            const next: Dataset = {
+              ts: Number(dataset.timestamp) * 1000,
+              score:
+                "customScore" in dataset ? dataset.customScore : dataset.score,
+              rank: "rank" in dataset ? dataset.rank : null,
+              score100:
+                "score100" in dataset && dataset.score100 > 0
+                  ? dataset.score100
+                  : null,
+              rank100:
+                "rank100" in dataset && dataset.rank100 > 0
+                  ? dataset.rank100
+                  : null,
+            };
+
+            if ("faction" in dataset) {
+              next.faction = dataset.faction;
+            }
+
+            return next;
+          })
+          .filter((dataset) => dataset.score > 0)
+          .sort((a, b) => a.ts - b.ts),
+      ),
+    { type: `normalizeDatasets-${region}`, timings },
+  );
+
+  await time(
+    () =>
+      persist(
+        datasets,
+        key,
+        determineExpirationTimestamp(season, region, datasets),
+      ),
+    { type: `persist-${region}`, timings },
+  );
+
+  return datasets;
+}
+
+export function determineExpirationTimestamp(
+  season: Season,
+  region: Regions,
+  datasets: Dataset[],
+): number {
+  const latestDataset =
+    datasets.length > 0 ? datasets[datasets.length - 1] : null;
+
+  const expiry = 5 * 60;
+
+  if (!latestDataset) {
+    return expiry;
+  }
+
+  const endDate = season.endDates[region];
+
+  if (endDate && endDate < Date.now()) {
+    return 30 * 24 * 60 * 60;
+  }
+
+  const threshold = 60 * 60 * 1000;
+  const timeSinceUpdate = Date.now() - latestDataset.ts;
+  const remaining = Math.round((threshold - timeSinceUpdate) / 1000 / 60) * 60;
+
+  return remaining > 0 ? remaining : expiry;
+}
