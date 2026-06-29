@@ -16,6 +16,10 @@ model History {
   customScore Float
   rioRank     Int
   rioScore    Float
+
+  // read path filters `region = ? AND timestamp BETWEEN ? AND ?` ordered by
+  // timestamp; without this every query full-scans the table.
+  @@index([region, timestamp])
 }
 
 model CrossFactionHistory {
@@ -26,6 +30,10 @@ model CrossFactionHistory {
   rank          Int
   score100      Float   @default(0)
   rank100       Int     @default(0)
+
+  // primary read path: `region = ? AND timestamp BETWEEN ? AND ?` ordered by
+  // timestamp (loadDataForRegion + the cron's distinct-by-region lookup).
+  @@index([region, timestamp])
 }
 
 model Extrapolation {
@@ -34,6 +42,9 @@ model Extrapolation {
   timestamp   Int
   region      Regions
   score       Float
+
+  // loadExtrapolationHistoryForSeason: `region = ? AND timestamp BETWEEN ? AND ?`.
+  @@index([region, timestamp])
 }
 
 enum Factions {
@@ -54,4 +65,8 @@ model DungeonHistory {
   timestamp Int
   slug      String
   keyLevel  Int
+
+  // loadRecordsForSeason: `timestamp BETWEEN ? AND ? AND keyLevel >= 12`
+  // ordered by timestamp.
+  @@index([timestamp, keyLevel])
 }
