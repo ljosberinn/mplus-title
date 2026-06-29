@@ -1,8 +1,8 @@
 /**
- * uPlot renderer for the Dungeon Records chart (Step 3 parity, opt-in via
- * `?renderer=uplot`). One line per dungeon (highest key level over time) drawn
- * over the same faded week backgrounds + lightgreen week-number markers the
- * Highcharts version showed, with a custom icon legend and a cursor tooltip.
+ * The Dungeon Records chart renderer (uPlot — the only renderer). One line per
+ * dungeon (highest key level over time) drawn over faded week backgrounds +
+ * lightgreen week-number markers, with a custom icon legend and a cursor
+ * tooltip.
  */
 import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import uPlot from "uplot";
@@ -94,38 +94,38 @@ export default function UplotDungeonRecords({
     const dpr = uPlot.pxRatio;
 
     const drawWeekBands = (u: uPlot) => {
-      const ctx = u.ctx;
+      const { ctx, bbox } = u;
       ctx.save();
       // confine to the plot area — custom hook drawing isn't clipped by uPlot.
       ctx.beginPath();
-      ctx.rect(u.bbox.left, u.bbox.top, u.bbox.width, u.bbox.height);
+      ctx.rect(bbox.left, bbox.top, bbox.width, bbox.height);
       ctx.clip();
       ctx.globalAlpha = 0.25;
       config.weekBands.forEach((band, index) => {
         const x0 = u.valToPos(band.from, "x", true);
         const x1 = u.valToPos(band.to, "x", true);
         ctx.fillStyle = index % 2 === 0 ? "#4b5563" : "#1f2937";
-        ctx.fillRect(x0, u.bbox.top, x1 - x0, u.bbox.height);
+        ctx.fillRect(x0, bbox.top, x1 - x0, bbox.height);
       });
       ctx.restore();
     };
 
     const drawWeekLines = (u: uPlot) => {
-      const ctx = u.ctx;
+      const { ctx, bbox } = u;
       ctx.save();
       ctx.font = `${10 * dpr}px sans-serif`;
       ctx.textBaseline = "top";
       for (const line of config.weekLines) {
         const x = u.valToPos(line.value, "x", true);
-        if (x < u.bbox.left || x > u.bbox.left + u.bbox.width || !line.label) {
+        if (x < bbox.left || x > bbox.left + bbox.width || !line.label) {
           continue;
         }
         ctx.lineWidth = 3 * dpr;
         ctx.lineJoin = "round";
         ctx.strokeStyle = "rgba(0,0,0,0.85)";
-        ctx.strokeText(line.label, x + 3 * dpr, u.bbox.top + 4 * dpr);
+        ctx.strokeText(line.label, x + 3 * dpr, bbox.top + 4 * dpr);
         ctx.fillStyle = line.labelColor;
-        ctx.fillText(line.label, x + 3 * dpr, u.bbox.top + 4 * dpr);
+        ctx.fillText(line.label, x + 3 * dpr, bbox.top + 4 * dpr);
       }
       ctx.restore();
     };
@@ -135,8 +135,8 @@ export default function UplotDungeonRecords({
       if (!tt) {
         return;
       }
-      const idx = u.cursor.idx;
-      const left = u.cursor.left;
+      const { idx } = u.cursor;
+      const { left } = u.cursor;
       if (
         idx === null ||
         idx === undefined ||
@@ -193,10 +193,7 @@ export default function UplotDungeonRecords({
       seriesIdx: number | null,
       opts: uPlot.Series,
     ) => {
-      if (
-        (opts as { focus?: boolean }).focus !== true ||
-        seriesIdx === lastFocus
-      ) {
+      if (!(opts as { focus?: boolean }).focus || seriesIdx === lastFocus) {
         return;
       }
       lastFocus = seriesIdx;

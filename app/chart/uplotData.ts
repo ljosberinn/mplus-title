@@ -217,7 +217,7 @@ export function buildUplotConfig(
   const lineIdxById = new Map<string, number>();
 
   for (const s of rawSeries) {
-    const color = (s.color as string) ?? "#fff";
+    const color = s.color ?? "#fff";
     const label = s.name ?? s.type ?? "series";
     const visible = s.visible ?? true;
     const points = toPoints2(s.data);
@@ -252,8 +252,7 @@ export function buildUplotConfig(
     }
 
     const isScatter = s.type === "scatter";
-    const isExtrapolation =
-      "dashStyle" in s && s.dashStyle === "ShortDash" && !isScatter;
+    const isExtrapolation = s.dashed && !isScatter;
 
     data.push(align(points));
     const seriesIdx = series.length;
@@ -317,7 +316,7 @@ export function buildUplotConfig(
     color: band.color,
     points: band.points,
     linkedSeriesIdx:
-      band.lineId !== null ? (lineIdxById.get(band.lineId) ?? null) : null,
+      band.lineId === null ? null : (lineIdxById.get(band.lineId) ?? null),
   }));
 
   // the primary cutoff lines (0.1% / 1%) — their last-point value label is
@@ -331,12 +330,9 @@ export function buildUplotConfig(
   )
     .filter((line) => typeof line.value === "number")
     .map((line) => ({
-      value: Math.round(Number(line.value) / 1000),
-      color: (line.color as string) ?? "#fff",
-      labelColor:
-        (line.label?.style?.color as string) ??
-        (line.color as string) ??
-        "#fff",
+      value: Math.round(line.value / 1000),
+      color: line.color ?? "#fff",
+      labelColor: line.label?.color ?? line.color ?? "#fff",
       label: line.label?.text ?? "",
       labelY: typeof line.label?.y === "number" ? line.label.y : 0,
     }));
@@ -346,22 +342,19 @@ export function buildUplotConfig(
   )
     .filter((line) => typeof line.value === "number")
     .map((line) => ({
-      value: Number(line.value),
-      color:
-        (line.label?.style?.color as string) ??
-        (line.color as string) ??
-        "#fff",
+      value: line.value,
+      color: line.label?.color ?? line.color ?? "#fff",
       label: line.label?.text ?? "",
     }));
 
   const weekBands: WeekBand[] = (season.score.xAxisPlotBands[region] ?? [])
     .filter((band) => band.id === "background-color")
     .map((band, index) => ({
-      from: Math.round(Number(band.from) / 1000),
-      to: Math.round(Number(band.to) / 1000),
+      from: Math.round(band.from / 1000),
+      to: Math.round(band.to / 1000),
       // colour encodes future weeks via a trailing alpha ("...50")
       color: index % 2 === 0 ? stripeEven : stripeOdd,
-      future: typeof band.color === "string" && band.color.endsWith("50"),
+      future: band.color.endsWith("50"),
     }));
 
   const weeklyDiffs: WeekDiff[] = (season.score.xAxisPlotBands[region] ?? [])
@@ -379,6 +372,9 @@ export function buildUplotConfig(
   // MythicStats links sit in the week backgrounds, but only for seasons without
   // an affix rotation (affix seasons surface them in the header affix row) and
   // only for weeks that have already started — mirrors addMythicStatsLinksToBands.
+  // direct read (not destructuring) so it doesn't trip
+  // unicorn/consistent-destructuring against the other `season.*` reads below.
+  // eslint-disable-next-line prefer-destructuring
   const startingPeriod = season.startingPeriod;
   const mythicLinks: MythicLink[] =
     season.affixes.length === 0 && startingPeriod

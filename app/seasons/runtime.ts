@@ -1,14 +1,11 @@
-import {
-  type Options,
-  type SeriesArearangeOptions,
-  type SeriesLineOptions,
-  type SeriesScatterOptions,
-  type XAxisPlotBandsOptions,
-  type XAxisPlotLinesOptions,
-  type YAxisPlotLinesOptions,
-} from "highcharts";
 import { type Factions, type Regions } from "prisma/generated/prisma/enums";
 
+import {
+  type ChartSeries,
+  type PlotBand,
+  type PlotLine,
+  type RecordSeries,
+} from "~/chart/types";
 import { type Overlay } from "~/utils";
 
 // `Affix` is only needed for the `affixes` field's type below. Importing the
@@ -80,18 +77,14 @@ export type EnhancedSeason = Season & {
         }
     >;
     initialZoom: Record<Regions, null | [number, number]>;
-    xAxisPlotLines: Record<Regions, XAxisPlotLinesOptions[]>;
-    xAxisPlotBands: Record<Regions, XAxisPlotBandsOptions[]>;
-    yAxisPlotLines: Record<Regions, YAxisPlotLinesOptions[]>;
+    xAxisPlotLines: Record<Regions, PlotLine[]>;
+    xAxisPlotBands: Record<Regions, PlotBand[]>;
+    yAxisPlotLines: Record<Regions, PlotLine[]>;
     regionsToDisplay: Regions[];
     overlaysToDisplay: Overlay[];
-    series: Record<
-      Regions,
-      (SeriesLineOptions | SeriesScatterOptions | SeriesArearangeOptions)[]
-    >;
-    chartBlueprint: Options;
+    series: Record<Regions, ChartSeries[]>;
   };
-  records: SeriesLineOptions[];
+  records: RecordSeries[];
 };
 
 export type Dataset = {

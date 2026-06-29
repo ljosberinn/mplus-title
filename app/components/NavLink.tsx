@@ -1,9 +1,9 @@
+import { type ReactNode } from "react";
 import { type IconType } from "react-icons";
 import { FaPatreon, FaTwitter } from "react-icons/fa";
 import { SiBuymeacoffee } from "react-icons/si";
 
 import { ExternalLink } from "./ExternalLink";
-import { type ReactNode } from "react";
 
 type NavLinkProps = {
   href?: string;

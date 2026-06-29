@@ -1,7 +1,7 @@
 import { type Regions } from "prisma/generated/prisma/enums";
+import type { ReactNode } from "react";
 
 import { type Season } from "../seasons";
-import { ReactNode } from "react";
 
 export type TempBannerProps = {
   season: Season;

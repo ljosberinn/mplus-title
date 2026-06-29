@@ -12,11 +12,11 @@
  * config via `app/chart/assemble.ts`.
  */
 import { Redis } from "@upstash/redis";
-import { type SeriesLineOptions, type SeriesScatterOptions } from "highcharts";
 import { type Regions } from "prisma/generated/prisma/enums";
 
 import { env } from "~/env/server";
 
+import { type RecordSeries, type ScatterPoint } from "./chart/types";
 import {
   encodeSeries,
   type ExtrapolationHistoryTuple,
@@ -134,21 +134,15 @@ export async function assembleSeasonData({
         series: encodeSeries(data),
         extrapolation,
         extrapolation100,
-        extrapolationHistory: (Array.isArray(extrapolationHistory)
-          ? extrapolationHistory
-          : []
-        )
+        extrapolationHistory: extrapolationHistory
           .filter(isNotNull)
-          .map((point): ExtrapolationHistoryTuple => {
-            // loadExtrapolationHistoryForSeason yields { x, y, estimatedAt };
-            // Highcharts' broad point type loses that, so narrow it here.
-            const { x, y, estimatedAt } = point as {
-              x: number;
-              y: number;
-              estimatedAt: number;
-            };
-            return [x, y, estimatedAt];
-          }),
+          .map(
+            ({ x, y, estimatedAt }): ExtrapolationHistoryTuple => [
+              x,
+              y,
+              estimatedAt ?? 0,
+            ],
+          ),
       };
     }),
   );
@@ -280,7 +274,7 @@ function setupRedisProviders() {
 export async function loadExtrapolationHistoryForSeason(
   season: Season,
   region: Regions,
-): Promise<SeriesScatterOptions["data"]> {
+): Promise<ScatterPoint[]> {
   if (!season.supportsExtrapolationHistory) {
     return [];
   }
@@ -331,7 +325,7 @@ export async function loadExtrapolationHistoryForSeason(
 
 export async function loadRecordsForSeason(
   season: Season,
-): Promise<SeriesLineOptions[]> {
+): Promise<RecordSeries[]> {
   if (
     typeof season.dungeons === "number" ||
     season.dungeons.length === 0 ||
@@ -364,7 +358,7 @@ export async function loadRecordsForSeason(
   });
 
   return Object.values(
-    data.reduce<Record<string, SeriesLineOptions>>((acc, dataset) => {
+    data.reduce<Record<string, RecordSeries>>((acc, dataset) => {
       if (!(dataset.slug in acc)) {
         const dungeonMetaInformation =
           dataset.slug in dungeonSlugMetaMap
@@ -377,21 +371,15 @@ export async function loadRecordsForSeason(
         );
 
         acc[dataset.slug] = {
-          type: "line",
           data: [],
           name,
-          // @ts-expect-error iconUrl is not in SeriesLineOptions but Highcharts uses it
           iconUrl: dungeonMetaInformation
             ? `https://wow.zamimg.com/images/wow/icons/medium/${dungeonMetaInformation.icon}.jpg`
             : null,
         };
       }
 
-      const arr = acc[dataset.slug].data;
-
-      if (Array.isArray(arr)) {
-        arr.push([dataset.timestamp * 1000, dataset.keyLevel]);
-      }
+      acc[dataset.slug].data.push([dataset.timestamp * 1000, dataset.keyLevel]);
 
       return acc;
     }, {}),

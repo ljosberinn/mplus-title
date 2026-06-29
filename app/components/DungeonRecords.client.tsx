@@ -1,16 +1,7 @@
 import clsx from "clsx";
-import {
-  type Options,
-  type XAxisPlotBandsOptions,
-  type XAxisPlotLinesOptions,
-} from "highcharts";
 import { lazy, type ReactNode, Suspense } from "react";
-import { useSearchParams } from "react-router";
-import { ClientOnly } from "remix-utils/client-only";
 
 import { type EnhancedSeason } from "~/seasons";
-
-import { Highcharts, HighchartsReact } from "./Highcharts.client";
 
 const UplotDungeonRecords = lazy(
   () => import("../chart/UplotDungeonRecords.client"),
@@ -23,95 +14,6 @@ type DungeonRecordsProps = {
 export default function DungeonRecords({
   season,
 }: DungeonRecordsProps): ReactNode {
-  const [searchParams] = useSearchParams();
-  const useUplot = searchParams.get("renderer") === "uplot";
-
-  let xAxisPlotBands: XAxisPlotBandsOptions[] = [];
-  let xAxisPlotLines: XAxisPlotLinesOptions[] = [];
-
-  for (const [region, allPlotBands] of Object.entries(
-    season.score.xAxisPlotBands,
-  )) {
-    const backgroundColorPlotBand = allPlotBands.filter(
-      (plotBand) => plotBand.id === "background-color",
-    );
-
-    if (!backgroundColorPlotBand || backgroundColorPlotBand.length === 0) {
-      continue;
-    }
-
-    xAxisPlotBands = backgroundColorPlotBand.map((plotBand) => ({
-      ...plotBand,
-      // colour is a hex string here; append the alpha suffix to fade the band.
-      color: `${typeof plotBand.color === "string" ? plotBand.color : ""}50`,
-    }));
-
-    break;
-  }
-
-  for (const [region, allPlotLines] of Object.entries(
-    season.score.xAxisPlotLines,
-  )) {
-    const weekNumberPlotLines = allPlotLines.filter(
-      (plotLine) => plotLine.id === "week-number",
-    );
-
-    if (!weekNumberPlotLines || weekNumberPlotLines.length === 0) {
-      continue;
-    }
-
-    xAxisPlotLines = weekNumberPlotLines;
-
-    break;
-  }
-
-  const softMax = Math.min(
-    Date.now(),
-    ...Object.values(season.endDates).filter((x): x is number => x !== null),
-  );
-
-  const options: Options = {
-    ...season.score.chartBlueprint,
-    time: {
-      timezoneOffset: new Date().getTimezoneOffset(),
-    },
-    series: season.records,
-    legend: {
-      symbolHeight: 0,
-      symbolWidth: 0,
-      symbolRadius: 0,
-      itemMarginTop: 1,
-      itemMarginBottom: 1,
-      useHTML: true,
-      itemStyle: {
-        minWidth: "75px",
-      },
-      labelFormatter() {
-        return `
-                  <span style="color: #fff; display:flex; place-items: center; gap: 5px;">
-                      ${"userOptions" in this && "iconUrl" in this.userOptions && typeof this.userOptions.iconUrl === "string" ? `<img src="${this.userOptions.iconUrl}" width="24" height="24" />` : ""}
-                      ${this.name}
-                  </span>
-              `;
-      },
-    },
-    xAxis: {
-      ...season.score.chartBlueprint.xAxis,
-      plotBands: xAxisPlotBands,
-      plotLines: xAxisPlotLines,
-      softMax,
-    },
-    yAxis: {
-      ...season.score.chartBlueprint.yAxis,
-      title: {
-        ...(Array.isArray(season.score.chartBlueprint.yAxis)
-          ? null
-          : season.score.chartBlueprint.yAxis?.title),
-        text: "Key Level",
-      },
-    },
-  };
-
   return (
     <section
       className={clsx(
@@ -125,17 +27,9 @@ export default function DungeonRecords({
       </h1>
       <div className="rounded-lg bg-gray-700 p-4">
         <div className="h-[39vh] lg:h-[30vh]">
-          {useUplot ? (
-            <Suspense fallback={null}>
-              <UplotDungeonRecords season={season} />
-            </Suspense>
-          ) : (
-            <ClientOnly fallback={null}>
-              {() => (
-                <HighchartsReact highcharts={Highcharts} options={options} />
-              )}
-            </ClientOnly>
-          )}
+          <Suspense fallback={null}>
+            <UplotDungeonRecords season={season} />
+          </Suspense>
         </div>
       </div>
     </section>

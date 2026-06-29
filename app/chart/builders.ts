@@ -1,26 +1,24 @@
 /**
  * Pure, client-safe chart/view builders extracted from `load.server.ts`.
  *
- * Everything here derives Highcharts presentation objects from a season's
- * config + already-loaded `Dataset[]` (+ a precomputed extrapolation). None of
- * it touches the DB, Redis, env or any other server-only dependency, so it can
- * run in the browser. The data-loading and the extrapolation/`logDamped` math
- * stay in `load.server.ts` (the backtest regression guard).
+ * Everything here derives the renderer-agnostic presentation objects in
+ * `types.ts` (series/plot lines/plot bands) from a season's config +
+ * already-loaded `Dataset[]` (+ a precomputed extrapolation). None of it touches
+ * the DB, Redis, env or any other server-only dependency, so it can run in the
+ * browser. The data-loading and the extrapolation/`logDamped` math stay in
+ * `load.server.ts` (the backtest regression guard). The uPlot adapters in
+ * `uplotData.ts` / `dungeonRecordsData.ts` consume what these produce.
  */
-import {
-  type Options,
-  type SeriesArearangeOptions,
-  type SeriesLineOptions,
-  type SeriesScatterOptions,
-  type XAxisPlotBandsOptions,
-  type XAxisPlotLinesOptions,
-  type YAxisPlotLinesOptions,
-} from "highcharts";
 import { type Regions } from "prisma/generated/prisma/enums";
 
-import { getAffixIconUrl } from "../affixes";
 import { type Dataset, type EnhancedSeason, type Season } from "../seasons";
 import { type Overlay } from "../utils";
+import {
+  type ChartSeries,
+  type PlotBand,
+  type PlotLine,
+  type ScatterPoint,
+} from "./types";
 
 const dayInMs = 24 * 60 * 60 * 1000;
 const oneWeekInMs = 7 * dayInMs;
@@ -46,90 +44,6 @@ export const colors = {
 export function toOneDigit(int: number): number {
   return Number.parseFloat(int.toFixed(1));
 }
-
-/** Static Highcharts options shared by every region chart (no per-season data). */
-export const chartBlueprint: Options = {
-  accessibility: {
-    enabled: true,
-  },
-  title: {
-    text: "",
-  },
-  chart: {
-    backgroundColor: "transparent",
-    zooming: {
-      type: "x",
-      resetButton: {
-        position: {
-          verticalAlign: "middle",
-        },
-      },
-    },
-  },
-  credits: {
-    enabled: false,
-  },
-  legend: {
-    itemStyle: {
-      color: "#c2c7d0",
-      fontSize: "15px",
-    },
-    itemHoverStyle: {
-      color: "#fff",
-    },
-  },
-  xAxis: {
-    title: {
-      text: "Date",
-      style: {
-        color: "#fff",
-        lineColor: "#333",
-        tickColor: "#333",
-      },
-    },
-    labels: {
-      style: {
-        color: "#fff",
-        fontWeight: "normal",
-      },
-    },
-    type: "datetime",
-    plotBands: [],
-    plotLines: [],
-  },
-  yAxis: {
-    title: {
-      text: "Score",
-      style: {
-        color: "#fff",
-      },
-    },
-    gridLineColor: `rgba(255, 255, 255, 0.25)`,
-    labels: {
-      style: {
-        color: "#fff",
-        fontWeight: "normal",
-      },
-    },
-    plotLines: [],
-  },
-  tooltip: {
-    shared: true,
-    outside: true,
-  },
-  plotOptions: {
-    line: {
-      dataLabels: {
-        enabled: true,
-        color: "#fff",
-      },
-      marker: {
-        lineColor: "#333",
-        enabled: false,
-      },
-    },
-  },
-};
 
 // Per-day upper margin of the confidence band, as a fraction of the *current*
 // (anchor) score. Calibrated by leave-one-season-out, ONE-SIDED conformal
@@ -182,11 +96,6 @@ export function calculateExtrapolationBand(
   });
 }
 
-type ChartSeries =
-  | SeriesLineOptions
-  | SeriesScatterOptions
-  | SeriesArearangeOptions;
-
 /** Pushes a dashed extrapolation line plus its confidence band onto `options`. */
 function pushExtrapolationSeries(
   options: ChartSeries[],
@@ -203,7 +112,7 @@ function pushExtrapolationSeries(
     return;
   }
 
-  const data: [number, number][] = Array.isArray(extrapolation)
+  const data: number[][] = Array.isArray(extrapolation)
     ? extrapolation
     : [
         [extrapolation.from.ts, extrapolation.from.score],
@@ -218,18 +127,8 @@ function pushExtrapolationSeries(
       type: "arearange",
       id: config.bandId,
       name: config.bandName,
-      accessibility: {
-        description:
-          "Confidence band around the extrapolation; historically ~90% of outcomes landed within it.",
-      },
       color: config.color,
-      fillOpacity: 0.15,
-      lineWidth: 0,
       data: band,
-      marker: {
-        enabled: false,
-      },
-      enableMouseTracking: false,
       visible: true,
     });
   }
@@ -238,18 +137,9 @@ function pushExtrapolationSeries(
     type: "line",
     id: config.lineId,
     name: config.name,
-    accessibility: {
-      description:
-        "A projection of how the cutoff will evolve over time based on various parameters.",
-    },
     color: config.color,
     data,
-    dashStyle: "ShortDash",
-    marker: {
-      enabled: true,
-      radius: 3,
-      symbol: "triangle",
-    },
+    dashed: true,
     visible: true,
   });
 }
@@ -258,7 +148,7 @@ export function calculateSeries(
   season: Season,
   data: Dataset[],
   extrapolation: Extrapolation,
-  extrapolationHistory: SeriesScatterOptions["data"],
+  extrapolationHistory: ScatterPoint[],
   extrapolation100: Extrapolation = null,
 ): ChartSeries[] {
   const options: ChartSeries[] = [];
@@ -318,16 +208,6 @@ export function calculateSeries(
       id: "extrapolation-history",
       name: "Extrapolation History",
       color: colors.extrapolationHistory,
-      accessibility: {
-        description:
-          "Series of data the score was expected to be at for a given point in time. Useful to compare how accurate prediction was.",
-      },
-      dashStyle: "Dot",
-      marker: {
-        enabled: true,
-        radius: 2,
-        symbol: "circle",
-      },
       visible: false,
       data: extrapolationHistory,
     });
@@ -342,7 +222,7 @@ export function calculateSeries(
       data: data
         .filter((dataset) => dataset.score100 !== null)
         .map((dataset) => {
-          return [dataset.ts, dataset.score100];
+          return [dataset.ts, dataset.score100!];
         }),
     });
 
@@ -370,7 +250,7 @@ export function calculateSeries(
 
         return acc;
       }, [])
-      .map((dataset) => [dataset.ts, dataset.rank]);
+      .map((dataset) => [dataset.ts, dataset.rank!]);
 
     if (charactersAboveCutoff.length > 0) {
       options.push({
@@ -395,8 +275,7 @@ export function calculateXAxisPlotBands(
   season: Season,
   region: Regions,
   data: Dataset[],
-  overlays: readonly Overlay[],
-): XAxisPlotBandsOptions[] {
+): PlotBand[] {
   const seasonStart = season.startDates[region];
 
   if (!seasonStart) {
@@ -404,7 +283,7 @@ export function calculateXAxisPlotBands(
   }
 
   const seasonEnd = season.endDates[region];
-  const { affixes, crossFactionSupport, wcl } = season;
+  const { crossFactionSupport } = season;
 
   let weeks: number;
 
@@ -422,49 +301,20 @@ export function calculateXAxisPlotBands(
 
   return Array.from({
     length: weeks,
-  }).flatMap<XAxisPlotBandsOptions>((_, index) => {
-    const options: XAxisPlotBandsOptions[] = [];
+  }).flatMap<PlotBand>((_, index) => {
+    const options: PlotBand[] = [];
 
     const from = seasonStart + index * oneWeekInMs;
     const to = from + oneWeekInMs;
     const color = index % 2 === 0 ? "#4b5563" : "#1f2937";
 
-    const rotation =
-      affixes[index >= affixes.length ? index % affixes.length : index] ?? [];
-
-    const relevantRotationSlice =
-      // for future weeks early into a season without a full rotation, default to -1 // questionmarks
-      from > now && affixes.length < 10
-        ? [-1, -1, -1]
-        : rotation.length === 3
-          ? rotation
-          : rotation.slice(0, 3);
-
+    // the alternating week background. The future-week fade is encoded as a
+    // trailing "50" alpha suffix that the uPlot adapter reads back.
     options.push({
       id: "background-color",
       from,
       to,
       color: from > now ? `${color}50` : color,
-      label: {
-        useHTML: true,
-        style: {
-          display: "flex",
-        },
-        text:
-          (wcl?.zoneId ?? 0) < 39 && overlays.includes("affixes")
-            ? relevantRotationSlice
-                .map((affix) => {
-                  return `<img width="18" height="18" style="transform: rotate(-90deg); opacity: 0.75;" src="${getAffixIconUrl(
-                    affix,
-                  )}"/>`;
-                })
-                .join("")
-            : undefined,
-        rotation: 90,
-        align: "left",
-        x: 5,
-        y: 5,
-      },
     });
 
     const { allianceDiff, hordeDiff, xFactionDiff, score100Diff } =
@@ -505,23 +355,18 @@ export function calculateXAxisPlotBands(
       id: "weekly-difference",
       color: "transparent",
       label: {
-        verticalAlign: "bottom",
         text: text.join("<br>"),
-        useHTML: true,
-        y: text.length * -15,
       },
     });
 
-    return options.filter(
-      (options): options is XAxisPlotBandsOptions => options !== null,
-    );
+    return options;
   });
 }
 
 export function calculateYAxisPlotLines(
   season: Season,
   region: Regions,
-): YAxisPlotLinesOptions[] {
+): PlotLine[] {
   const cutoffs = season.confirmedCutoffs[region];
 
   if ("alliance" in cutoffs && "horde" in cutoffs) {
@@ -529,20 +374,16 @@ export function calculateYAxisPlotLines(
       {
         label: {
           text: `Confirmed cutoff for Alliance at ${cutoffs.alliance}`,
-          rotation: 0,
-          style: { color: colors.alliance },
+          color: colors.alliance,
         },
         value: cutoffs.alliance,
-        dashStyle: "Dash",
       },
       {
         label: {
           text: `Confirmed cutoff for Horde at ${cutoffs.horde}`,
-          rotation: 0,
-          style: { color: colors.horde },
+          color: colors.horde,
         },
         value: cutoffs.horde,
-        dashStyle: "Dash",
       },
     ];
   }
@@ -555,11 +396,9 @@ export function calculateYAxisPlotLines(
     {
       label: {
         text: `Confirmed cutoff at ${cutoffs.score}`,
-        rotation: 0,
-        style: { color: colors.xFaction },
+        color: colors.xFaction,
       },
       value: cutoffs.score,
-      dashStyle: "Dash",
     },
   ];
 }
@@ -570,28 +409,23 @@ export function calculateXAxisPlotLines(
   data: Dataset[],
   extrapolation: Extrapolation,
   overlays: readonly Overlay[],
-): XAxisPlotLinesOptions[] {
+): PlotLine[] {
   const endDate = season.endDates[region];
   const startDate = season.startDates[region];
 
-  const lines: XAxisPlotLinesOptions[] = [];
+  const lines: PlotLine[] = [];
 
   if (overlays.includes("patches")) {
     Object.entries(season.patches).forEach(([description, regionalData]) => {
       const timestamp = regionalData[region];
 
       lines.push({
-        zIndex: 100,
         label: {
           text: description,
-          rotation: 0,
           y: 100,
-          style: {
-            color: "orange",
-          },
+          color: "orange",
         },
         value: timestamp,
-        dashStyle: "Dash",
         color: "orange",
       });
     });
@@ -603,17 +437,12 @@ export function calculateXAxisPlotLines(
         const timestamp = regionalData[region];
 
         lines.push({
-          zIndex: 100,
           label: {
             text: description,
-            rotation: 0,
             y: 75,
-            style: {
-              color: "yellow",
-            },
+            color: "yellow",
           },
           value: timestamp,
-          dashStyle: "Dash",
           color: "yellow",
         });
       },
@@ -622,19 +451,13 @@ export function calculateXAxisPlotLines(
 
   if (endDate) {
     lines.push({
-      zIndex: 100,
       label: {
         text: "Season End",
-        rotation: 0,
-        x: -75,
         y: 225,
-        style: {
-          color: "red",
-        },
+        color: "red",
       },
       value: endDate,
       color: "red",
-      dashStyle: "Dash",
     });
   }
 
@@ -678,17 +501,11 @@ export function calculateXAxisPlotLines(
       const weeksSinceStart = Math.round((i - startDate) / oneWeekInMs) + 1;
 
       lines.push({
-        zIndex: 100,
         id: "week-number",
         label: {
           text: `W${weeksSinceStart}`,
-          align: "center",
-          rotation: 0,
           y: 15,
-          x: 25,
-          style: {
-            color: "lightgreen",
-          },
+          color: "lightgreen",
         },
         color: "transparent",
         value: i,
@@ -702,15 +519,10 @@ export function calculateXAxisPlotLines(
 
       if (match) {
         lines.push({
-          zIndex: 100,
           label: {
             text: `${match.score}`,
-            align: "center",
-            rotation: 0,
             y: 265,
-            style: {
-              color: "lightgreen",
-            },
+            color: "lightgreen",
           },
           color: "transparent",
           value: i,
@@ -874,8 +686,8 @@ function calcTwwS2LevelCompletionLines(
   data: Dataset[],
   startDate: number,
   extrapolation: Extrapolation,
-): XAxisPlotLinesOptions[] {
-  const lines: XAxisPlotLinesOptions[] = [];
+): PlotLine[] {
+  const lines: PlotLine[] = [];
   const base = 125;
   const perLevelPoints = 15;
 
@@ -945,17 +757,12 @@ function calcTwwS2LevelCompletionLines(
 
     if (match) {
       lines.push({
-        zIndex: 100,
         label: {
           text: `All ${level}`,
-          rotation: 0,
           y: 200,
-          style: {
-            color: "white",
-          },
+          color: "white",
         },
         value: match.ts,
-        dashStyle: "Dash",
         color: "white",
       });
     }
@@ -970,8 +777,8 @@ function calcTwwS1LevelCompletionLines(
   data: Dataset[],
   startDate: number,
   extrapolation: Extrapolation,
-): XAxisPlotLinesOptions[] {
-  const lines: XAxisPlotLinesOptions[] = [];
+): PlotLine[] {
+  const lines: PlotLine[] = [];
   const base = 125;
   const perLevelPoints = 15;
 
@@ -1044,17 +851,12 @@ function calcTwwS1LevelCompletionLines(
 
     if (match) {
       lines.push({
-        zIndex: 100,
         label: {
           text: `All ${level}`,
-          rotation: 0,
           y: 200,
-          style: {
-            color: "white",
-          },
+          color: "white",
         },
         value: match.ts,
-        dashStyle: "Dash",
         color: "white",
       });
     }
@@ -1068,8 +870,8 @@ function calcOldLevelCompletionLines(
   data: Dataset[],
   startDate: number,
   extrapolation: Extrapolation,
-): XAxisPlotLinesOptions[] {
-  const lines: XAxisPlotLinesOptions[] = [];
+): PlotLine[] {
+  const lines: PlotLine[] = [];
   const base = 25;
   const affixPoints = 25;
 
@@ -1097,17 +899,12 @@ function calcOldLevelCompletionLines(
 
     if (match) {
       lines.push({
-        zIndex: 100,
         label: {
           text: `All ${level}`,
-          rotation: 0,
           y: 200,
-          style: {
-            color: "white",
-          },
+          color: "white",
         },
         value: match.ts,
-        dashStyle: "Dash",
         color: "white",
       });
     }
@@ -1161,17 +958,12 @@ function calcOldLevelCompletionLines(
 
     if (match) {
       lines.push({
-        zIndex: 100,
         label: {
           text: `All ${level}`,
-          rotation: 0,
           y: 200,
-          style: {
-            color: "white",
-          },
+          color: "white",
         },
         value: match.ts,
-        dashStyle: "Dash",
         color: "white",
       });
     }

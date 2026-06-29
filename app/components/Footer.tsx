@@ -1,4 +1,5 @@
-import { ReactNode, version } from "react";
+import type { ReactNode} from "react";
+import { version } from "react";
 import { FaDiscord } from "react-icons/fa";
 
 import { ExternalLink } from "./ExternalLink";

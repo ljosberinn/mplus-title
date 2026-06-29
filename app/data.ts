@@ -10,10 +10,10 @@
  * static season config are no longer sent — they are rebuilt in the browser
  * from `decode()` + the bundled season config. See `app/chart/assemble.ts`.
  */
-import { type SeriesLineOptions } from "highcharts";
 import { type Regions } from "prisma/generated/prisma/enums";
 
 import { type Extrapolation } from "./chart/builders";
+import { type RecordSeries } from "./chart/types";
 import { type Dataset } from "./seasons";
 
 /** A region's `Dataset[]` transposed into parallel, delta-encoded columns. */
@@ -45,7 +45,7 @@ export type SeasonData = {
   slug: string;
   regionsToDisplay: Regions[];
   regions: Partial<Record<Regions, RegionPayload>>;
-  records: SeriesLineOptions[];
+  records: RecordSeries[];
 };
 
 export type DecodedRegion = {
@@ -59,7 +59,7 @@ export type DecodedSeasonData = {
   slug: string;
   regionsToDisplay: Regions[];
   regions: Partial<Record<Regions, DecodedRegion>>;
-  records: SeriesLineOptions[];
+  records: RecordSeries[];
 };
 
 /** Transposes a region's `Dataset[]` into delta-encoded parallel columns,

@@ -1,13 +1,13 @@
 /**
- * uPlot renderer (Step 3, opt-in via `?renderer=uplot`). Consumes the assembled
- * `EnhancedSeason.score` for a region through `buildUplotConfig` and draws the
- * Highcharts annotations (alternating affix-week backgrounds, patch/hotfix/week
- * plot lines, confirmed-cutoff lines) via canvas hooks, plus a custom React
- * legend and a cursor tooltip. Highcharts stays the default until this is
- * verified at parity.
+ * The score chart renderer (uPlot — the only renderer; Highcharts was dropped).
+ * Consumes the assembled `EnhancedSeason.score` for a region through
+ * `buildUplotConfig` and draws the annotations (alternating affix-week
+ * backgrounds, patch/hotfix/week plot lines, confirmed-cutoff lines) via canvas
+ * hooks, plus a custom React legend and a cursor tooltip.
  *
- * Known parity gaps still to close: affix icons in the week backgrounds, and
- * double-click zoom reset syncing back to the shared `extremes`.
+ * Known gaps: affix icons in the week backgrounds (never ported from the old
+ * Highcharts renderer), and double-click zoom reset syncing back to the shared
+ * `extremes`.
  */
 import { type Regions } from "prisma/generated/prisma/enums";
 import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
@@ -194,12 +194,12 @@ export default function UplotChart({
     const dpr = uPlot.pxRatio;
 
     const drawWeekBands = (u: uPlot) => {
-      const ctx = u.ctx;
+      const { ctx, bbox } = u;
       ctx.save();
       // custom hook drawing isn't clipped to the plot area by uPlot, so confine
       // it to the bbox — bands extend into the future, past the visible x-range.
       ctx.beginPath();
-      ctx.rect(u.bbox.left, u.bbox.top, u.bbox.width, u.bbox.height);
+      ctx.rect(bbox.left, bbox.top, bbox.width, bbox.height);
       ctx.clip();
       for (const band of config.weekBands) {
         const x0 = u.valToPos(band.from, "x", true);
@@ -207,7 +207,7 @@ export default function UplotChart({
         ctx.fillStyle = band.future
           ? withAlpha(band.color, FUTURE_ALPHA)
           : band.color;
-        ctx.fillRect(x0, u.bbox.top, x1 - x0, u.bbox.height);
+        ctx.fillRect(x0, bbox.top, x1 - x0, bbox.height);
       }
       ctx.restore();
     };
@@ -230,7 +230,7 @@ export default function UplotChart({
     };
 
     const drawLines = (u: uPlot) => {
-      const ctx = u.ctx;
+      const { ctx, bbox } = u;
       ctx.save();
       ctx.lineWidth = dpr;
       ctx.font = `${10 * dpr}px sans-serif`;
@@ -238,7 +238,7 @@ export default function UplotChart({
 
       for (const line of config.verticalLines) {
         const x = u.valToPos(line.value, "x", true);
-        if (x < u.bbox.left || x > u.bbox.left + u.bbox.width) {
+        if (x < bbox.left || x > bbox.left + bbox.width) {
           continue;
         }
         // week markers use a transparent line + a coloured label only.
@@ -247,13 +247,13 @@ export default function UplotChart({
           ctx.lineWidth = dpr;
           ctx.setLineDash([4 * dpr, 4 * dpr]);
           ctx.beginPath();
-          ctx.moveTo(x, u.bbox.top);
-          ctx.lineTo(x, u.bbox.top + u.bbox.height);
+          ctx.moveTo(x, bbox.top);
+          ctx.lineTo(x, bbox.top + bbox.height);
           ctx.stroke();
         }
         if (line.label) {
           const labelY =
-            u.bbox.top + Math.min(line.labelY, u.bbox.height - 14) * dpr;
+            bbox.top + Math.min(line.labelY, bbox.height - 14) * dpr;
           if (line.color === "transparent") {
             // week markers (W{n} + weekly starting score): centre on the line,
             // i.e. the boundary where the background bands swap.
@@ -261,7 +261,7 @@ export default function UplotChart({
             haloText(ctx, line.label, x, labelY, line.labelColor);
           } else if (
             x + 3 * dpr + ctx.measureText(line.label).width >
-            u.bbox.left + u.bbox.width
+            bbox.left + bbox.width
           ) {
             // near the right edge (e.g. "Season End"): flip the label left so
             // it stays on-screen instead of spilling past the axis.
@@ -278,21 +278,21 @@ export default function UplotChart({
       ctx.textAlign = "start";
       for (const line of config.horizontalLines) {
         const y = u.valToPos(line.value, "y", true);
-        if (y < u.bbox.top || y > u.bbox.top + u.bbox.height) {
+        if (y < bbox.top || y > bbox.top + bbox.height) {
           continue;
         }
         ctx.strokeStyle = line.color;
         ctx.lineWidth = dpr;
         ctx.setLineDash([6 * dpr, 4 * dpr]);
         ctx.beginPath();
-        ctx.moveTo(u.bbox.left, y);
-        ctx.lineTo(u.bbox.left + u.bbox.width, y);
+        ctx.moveTo(bbox.left, y);
+        ctx.lineTo(bbox.left + bbox.width, y);
         ctx.stroke();
         if (line.label) {
           haloText(
             ctx,
             line.label,
-            u.bbox.left + 4 * dpr,
+            bbox.left + 4 * dpr,
             y - 12 * dpr,
             line.color,
           );
@@ -302,12 +302,12 @@ export default function UplotChart({
     };
 
     const drawConfidenceBands = (u: uPlot) => {
-      const ctx = u.ctx;
+      const { ctx, bbox, series } = u;
       ctx.save();
       // clip to the plot area: the band runs into the future and its upper edge
       // can exceed the y-range, so an unclipped fill spills over axes/margins.
       ctx.beginPath();
-      ctx.rect(u.bbox.left, u.bbox.top, u.bbox.width, u.bbox.height);
+      ctx.rect(bbox.left, bbox.top, bbox.width, bbox.height);
       ctx.clip();
       ctx.globalAlpha = 0.18;
       for (const band of config.confidenceBands) {
@@ -318,7 +318,7 @@ export default function UplotChart({
         // is toggled off via the legend.
         if (
           band.linkedSeriesIdx !== null &&
-          !u.series[band.linkedSeriesIdx]?.show
+          !series[band.linkedSeriesIdx]?.show
         ) {
           continue;
         }
@@ -344,7 +344,7 @@ export default function UplotChart({
     };
 
     const drawValueLabels = (u: uPlot) => {
-      const ctx = u.ctx;
+      const { ctx, data, bbox } = u;
       ctx.save();
       ctx.font = `${11 * dpr}px sans-serif`;
       ctx.textAlign = "start";
@@ -354,7 +354,7 @@ export default function UplotChart({
         if (!series.show) {
           continue;
         }
-        const ys = u.data[idx];
+        const ys = data[idx];
         let value: number | null = null;
         let li = -1;
         for (let i = ys.length - 1; i >= 0; i -= 1) {
@@ -368,13 +368,13 @@ export default function UplotChart({
         if (value === null || li < 0) {
           continue;
         }
-        const x = u.valToPos(u.data[0][li], "x", true);
+        const x = u.valToPos(data[0][li], "x", true);
         const y = u.valToPos(value, "y", true);
         if (
-          x < u.bbox.left ||
-          x > u.bbox.left + u.bbox.width ||
-          y < u.bbox.top ||
-          y > u.bbox.top + u.bbox.height
+          x < bbox.left ||
+          x > bbox.left + bbox.width ||
+          y < bbox.top ||
+          y > bbox.top + bbox.height
         ) {
           continue;
         }
@@ -390,7 +390,7 @@ export default function UplotChart({
         // it a bit more so it clears the endpoint/line it now sits beside.
         if (
           x + 4 * dpr + ctx.measureText(text).width >
-          u.bbox.left + u.bbox.width
+          bbox.left + bbox.width
         ) {
           ctx.textAlign = "right";
           ctx.fillText(text, x - 4 * dpr, labelY - 8 * dpr);
@@ -403,7 +403,7 @@ export default function UplotChart({
     };
 
     const drawBandLabels = (u: uPlot) => {
-      const ctx = u.ctx;
+      const { ctx, series, bbox } = u;
       ctx.save();
       ctx.font = `${10 * dpr}px sans-serif`;
       ctx.fillStyle = "#9ca3af";
@@ -414,18 +414,18 @@ export default function UplotChart({
         }
         if (
           band.linkedSeriesIdx !== null &&
-          !u.series[band.linkedSeriesIdx]?.show
+          !series[band.linkedSeriesIdx]?.show
         ) {
           continue;
         }
         const [ts, low, high] = band.points[band.points.length - 1];
         const x = u.valToPos(ts, "x", true);
-        if (x < u.bbox.left || x > u.bbox.left + u.bbox.width) {
+        if (x < bbox.left || x > bbox.left + bbox.width) {
           continue;
         }
         for (const value of [high, low]) {
           const y = u.valToPos(value, "y", true);
-          if (y >= u.bbox.top && y <= u.bbox.top + u.bbox.height) {
+          if (y >= bbox.top && y <= bbox.top + bbox.height) {
             ctx.fillText(numberFormatter.format(value), x + 4 * dpr, y);
           }
         }
@@ -434,7 +434,7 @@ export default function UplotChart({
     };
 
     const drawWeeklyDiffs = (u: uPlot) => {
-      const ctx = u.ctx;
+      const { ctx, bbox } = u;
       ctx.save();
       ctx.font = `${10 * dpr}px sans-serif`;
       // pin alignment: uPlot leaves textAlign as "center"/"right" after drawing
@@ -443,10 +443,10 @@ export default function UplotChart({
       ctx.textBaseline = "alphabetic";
       const lineHeight = 12 * dpr;
       // lift the block clear of the x-axis instead of sitting right on it.
-      const bottom = u.bbox.top + u.bbox.height - 16 * dpr;
+      const bottom = bbox.top + bbox.height - 16 * dpr;
       for (const diff of config.weeklyDiffs) {
         const cx = u.valToPos((diff.from + diff.to) / 2, "x", true);
-        if (cx < u.bbox.left || cx > u.bbox.left + u.bbox.width) {
+        if (cx < bbox.left || cx > bbox.left + bbox.width) {
           continue;
         }
         diff.lines.forEach((segments, lineIdx) => {
@@ -471,8 +471,8 @@ export default function UplotChart({
       if (!tt) {
         return;
       }
-      const idx = u.cursor.idx;
-      const left = u.cursor.left;
+      const { idx } = u.cursor;
+      const { left } = u.cursor;
       if (
         idx === null ||
         idx === undefined ||
@@ -573,10 +573,7 @@ export default function UplotChart({
     ) => {
       // only react to cursor focus (opts === {focus:true}), not legend
       // show/hide (also a setSeries event).
-      if (
-        (opts as { focus?: boolean }).focus !== true ||
-        seriesIdx === lastFocus
-      ) {
+      if (!(opts as { focus?: boolean }).focus || seriesIdx === lastFocus) {
         return;
       }
       lastFocus = seriesIdx;

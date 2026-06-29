@@ -16,7 +16,6 @@ import {
   calculateXAxisPlotLines,
   calculateYAxisPlotLines,
   calculateZoom,
-  chartBlueprint,
 } from "./builders";
 
 function emptyByRegion<T>(make: () => T): Record<Regions, T> {
@@ -46,7 +45,6 @@ export function buildEnhancedSeason(
     yAxisPlotLines: emptyByRegion(() => []),
     xAxisPlotBands: emptyByRegion(() => []),
     series: emptyByRegion(() => []),
-    chartBlueprint,
   };
 
   for (const region of decoded.regionsToDisplay) {
@@ -77,7 +75,6 @@ export function buildEnhancedSeason(
       season,
       region,
       data,
-      overlays,
     );
     score.series[region] = calculateSeries(
       season,

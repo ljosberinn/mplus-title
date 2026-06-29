@@ -95,11 +95,8 @@ export function buildDungeonRecordsConfig(
 
   records.forEach((record, recordIdx) => {
     const color = PALETTE[recordIdx % PALETTE.length];
-    const label = record.name ?? `Dungeon ${recordIdx + 1}`;
-    const iconUrl =
-      "iconUrl" in record && typeof record.iconUrl === "string"
-        ? record.iconUrl
-        : null;
+    const label = record.name || `Dungeon ${recordIdx + 1}`;
+    const { iconUrl } = record;
 
     const column: (number | null)[] = Array.from(
       { length: xs.length },
@@ -142,8 +139,8 @@ export function buildDungeonRecordsConfig(
     const backgrounds = bands.filter((band) => band.id === "background-color");
     if (backgrounds.length > 0) {
       weekBands = backgrounds.map((band) => ({
-        from: Math.round(Number(band.from) / 1000),
-        to: Math.round(Number(band.to) / 1000),
+        from: Math.round(band.from / 1000),
+        to: Math.round(band.to / 1000),
       }));
       break;
     }
@@ -157,9 +154,9 @@ export function buildDungeonRecordsConfig(
       weekLines = weekNumbers
         .filter((line) => typeof line.value === "number")
         .map((line) => ({
-          value: Math.round(Number(line.value) / 1000),
+          value: Math.round(line.value / 1000),
           label: line.label?.text ?? "",
-          labelColor: (line.label?.style?.color as string) ?? "lightgreen",
+          labelColor: line.label?.color ?? "lightgreen",
         }));
       break;
     }

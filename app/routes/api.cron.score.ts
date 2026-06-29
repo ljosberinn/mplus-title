@@ -343,6 +343,6 @@ async function parseRegionData(
     timestamp: now,
     region,
     rank100: top1,
-    score100: score100,
+    score100,
   };
 }

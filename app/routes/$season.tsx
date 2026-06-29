@@ -1,10 +1,4 @@
 import clsx from "clsx";
-import {
-  type DataLabelsFormatterCallbackFunction,
-  type Options,
-  type XAxisPlotBandsOptions,
-} from "highcharts";
-import { type HighchartsReactRefObject } from "highcharts-react-official";
 import { type Regions } from "prisma/generated/prisma/enums";
 import {
   Fragment,
@@ -30,7 +24,6 @@ import { getAffixIconUrl, getAffixName } from "../affixes";
 import { buildEnhancedSeason } from "../chart/assemble";
 import { Footer } from "../components/Footer";
 import { Header } from "../components/Header";
-import { Highcharts, HighchartsReact } from "../components/Highcharts.client";
 import { decode, type SeasonData } from "../data";
 import { assembleSeasonData } from "../data.server";
 import { time, type Timings } from "../load.server";
@@ -267,7 +260,7 @@ export async function clientLoader({
 
   // the streamed `recordsStream` promise resolves once; for ended (immutable)
   // seasons caching the resolved value is safe and makes re-visits instant.
-  const seasonData = (await serverLoader()) as SeasonLoaderData;
+  const seasonData = await serverLoader();
 
   if (cacheable) {
     seasonDataCache.set(key, seasonData);
@@ -287,15 +280,15 @@ export default function Season(
 ): React.ReactNode | null {
   const [searchParams] = useSearchParams();
 
-  // RR's `SerializeFrom` widens the Highcharts types inside `records`, so the
-  // inferred loaderData type isn't structurally identical to `SeasonData`
-  // despite being so at runtime; narrow it back at this boundary. `records` is
-  // empty here (streamed via `recordsStream`); the charts don't need it.
+  // RR's `SerializeFrom` widens the loaderData type so it isn't structurally
+  // identical to `SeasonData` despite being so at runtime; narrow it back at
+  // this boundary. `records` is empty here (streamed via `recordsStream`); the
+  // charts don't need it.
   const decoded = useMemo(
     () => decode(props.loaderData as SeasonData),
     [props.loaderData],
   );
-  const recordsStream = props.loaderData.recordsStream;
+  const { recordsStream } = props.loaderData;
   const seasonConfig = useMemo(
     () => findSeasonByName(decoded.slug, null),
     [decoded.slug],
@@ -357,7 +350,7 @@ export default function Season(
                     <DungeonRecords
                       season={{
                         ...season,
-                        records: records as EnhancedSeason["records"],
+                        records,
                       }}
                     />
                   )}
@@ -418,8 +411,6 @@ type CardProps = {
   onZoom: (extremes: ZoomExtremes) => void;
 };
 
-const numberFormatParts = new Intl.NumberFormat().formatToParts(1234.5);
-
 const TempBanner = lazy(() => import("../components/TempBanner.client"));
 const UplotChart = lazy(() => import("../chart/UplotChart.client"));
 
@@ -429,84 +420,8 @@ function Region({
   extremes,
   onZoom,
 }: CardProps): React.ReactNode {
-  const ref = useRef<HighchartsReactRefObject | null>(null);
-  const containerRef = useRef<HTMLDivElement | null>(null);
-
-  const [searchParams] = useSearchParams();
-  const useUplot = searchParams.get("renderer") === "uplot";
-
   const confirmedCutoffUrl = season.confirmedCutoffs[region].source;
   const navigation = useNavigation();
-
-  useEffect(() => {
-    setTimeout(() => {
-      if (!ref.current) {
-        return;
-      }
-
-      const resetWeeklyDifferencePlotBands = () => {
-        const weeklyDifferencePlotBands =
-          chart.xAxis[0].userOptions.plotBands!.filter(
-            (band) => band.id === "weekly-difference",
-          );
-        chart.xAxis[0].removePlotBand("weekly-difference");
-
-        weeklyDifferencePlotBands.forEach((band) =>
-          chart.xAxis[0].addPlotBand(band),
-        );
-      };
-
-      // useHTML: true labels aren't repositioned by setExtremes in production
-      // (React strict mode's double-effect masks this locally). Re-adding forces
-      // Highcharts to recalculate their pixel positions for the current zoom.
-      const resetBackgroundColorPlotBands = () => {
-        const backgroundColorBands =
-          chart.xAxis[0].userOptions.plotBands!.filter(
-            (band) => band.id === "background-color",
-          );
-        chart.xAxis[0].removePlotBand("background-color");
-
-        backgroundColorBands.forEach((band) =>
-          chart.xAxis[0].addPlotBand(band),
-        );
-      };
-
-      const { chart } = ref.current;
-
-      if (extremes) {
-        chart.xAxis[0].setExtremes(extremes.min, extremes.max);
-        resetWeeklyDifferencePlotBands();
-        resetBackgroundColorPlotBands();
-        chart.showResetZoom();
-        return;
-      }
-
-      const zoom = season.score.initialZoom[region];
-
-      if (containerRef.current) {
-        containerRef.current.className = "";
-      }
-
-      if (!zoom) {
-        chart.xAxis[0].setExtremes();
-        resetWeeklyDifferencePlotBands();
-        resetBackgroundColorPlotBands();
-        return;
-      }
-
-      const [start, end] = zoom;
-
-      if (!start || !end) {
-        return;
-      }
-
-      chart.xAxis[0].setExtremes(start, end);
-      chart.showResetZoom();
-
-      resetWeeklyDifferencePlotBands();
-      resetBackgroundColorPlotBands();
-    });
-  }, [region, season.score.initialZoom, extremes]);
 
   const now = Date.now();
 
@@ -551,163 +466,6 @@ function Region({
       </div>
     );
   }
-
-  const options: Options = {
-    ...season.score.chartBlueprint,
-    time: {
-      timezoneOffset: new Date().getTimezoneOffset(),
-    },
-    lang: {
-      thousandsSep:
-        numberFormatParts.find((i) => i.type === "group")?.value ?? ",",
-      decimalPoint:
-        numberFormatParts.find((i) => i.type === "decimal")?.value ?? ".",
-    },
-    xAxis: {
-      ...season.score.chartBlueprint.xAxis,
-      events: {
-        afterSetExtremes(event) {
-          if (event.trigger !== "zoom") {
-            return;
-          }
-
-          onZoom({
-            min: Math.round(event.min),
-            max: Math.round(event.max),
-          });
-        },
-      },
-      plotBands: addMythicStatsLinksToBands(
-        season.score.xAxisPlotBands[region],
-        season.startingPeriod,
-        season.affixes.length,
-        now,
-      ),
-      plotLines: season.score.xAxisPlotLines[region],
-    },
-    yAxis: {
-      ...season.score.chartBlueprint.yAxis,
-      plotLines: season.score.yAxisPlotLines[region],
-    },
-    series: season.score.series[region].map((series) => {
-      // faint low/high numbers at the right edge of the confidence band
-      if (series.type === "arearange") {
-        const faintLabel = {
-          color: "#9ca3af",
-          fontSize: "10px",
-          fontWeight: "normal",
-          textOutline: "none",
-        };
-
-        // in Highcharts v12 the formatter's `this` is the Point itself, and an
-        // arearange point exposes `low`/`high` directly
-        type BandPoint = {
-          x?: number;
-          high: number;
-          series: { data: { x: number }[] };
-        };
-
-        const atLastPoint = (self: BandPoint, value: number): number | null => {
-          const max = self.series.data.reduce(
-            (acc, point) => (acc > point.x ? acc : point.x),
-            0,
-          );
-          return self.x === max ? Math.round(value) : null;
-        };
-
-        return {
-          ...series,
-          // only the upper bound; the lower bound is clamped to the current
-          // score, so labelling it would just repeat today's value
-          dataLabels: {
-            enabled: true,
-            crop: false,
-            overflow: "allow" as const,
-            style: faintLabel,
-            formatter(this: BandPoint) {
-              return atLastPoint(this, this.high);
-            },
-          },
-        };
-      }
-
-      if (series.type === "scatter") {
-        return {
-          ...series,
-          tooltip: {
-            pointFormatter() {
-              const { x, y } = this;
-
-              if (!x || !y) {
-                return "";
-              }
-
-              const formatter = new Intl.DateTimeFormat("en-US", {
-                weekday: "long",
-                month: "short",
-                day: "numeric",
-                hour: "2-digit",
-                minute: "2-digit",
-                second: "2-digit",
-                hour12: true,
-              });
-              const timestamp = formatter.format(x);
-
-              const relativeFormatter = new Intl.RelativeTimeFormat("en-US", {
-                numeric: "auto",
-              });
-
-              const diffBetweenEstimationAndNow = relativeFormatter.format(
-                // @ts-expect-error sent from the backend
-                // eslint-disable-next-line unicorn/consistent-destructuring
-                -(Date.now() - this.estimatedAt) / 1000 / 60 / 60 / 24,
-                "days",
-              );
-
-              const lines = [
-                `<small>${timestamp}</small>`,
-                `Estimated: ${diffBetweenEstimationAndNow}`,
-                "Score predicted to reach cutoff at the time shown above.",
-                `Expected Score: <b>${y}</b>`,
-              ];
-
-              if (x < Date.now()) {
-                const firstMatchPastThisExtrapolation =
-                  season.score.dataByRegion[region].find(
-                    (dataset) => dataset.ts > x,
-                  );
-
-                if (firstMatchPastThisExtrapolation) {
-                  const prefix =
-                    firstMatchPastThisExtrapolation.score === y
-                      ? "±"
-                      : firstMatchPastThisExtrapolation.score < y
-                        ? "+"
-                        : "-";
-                  const diff =
-                    firstMatchPastThisExtrapolation.score === y
-                      ? 0
-                      : firstMatchPastThisExtrapolation.score < y
-                        ? y - firstMatchPastThisExtrapolation.score
-                        : firstMatchPastThisExtrapolation.score - y;
-                  lines.push(`Difference: <b>${prefix}${diff.toFixed(1)}</b>`);
-                }
-              }
-
-              return lines.join("<br/>");
-            },
-          },
-        };
-      }
-
-      return {
-        ...series,
-        dataLabels: {
-          formatter,
-        },
-      };
-    }),
-  };
 
   const indexOfCurrentWeek = findIndexOfCurrentWeek(season, region);
   const seasonStartForRegion = season.startDates[region];
@@ -936,26 +694,18 @@ function Region({
         })}
       </div>
 
-      <div className="h-[39vh] lg:h-[30vh]" ref={containerRef}>
+      <div className="h-[39vh] lg:h-[30vh]">
         <ClientOnly fallback={null}>
-          {() =>
-            useUplot ? (
-              <Suspense fallback={null}>
-                <UplotChart
-                  season={season}
-                  region={region}
-                  extremes={extremes}
-                  onZoom={onZoom}
-                />
-              </Suspense>
-            ) : (
-              <HighchartsReact
-                highcharts={Highcharts}
-                options={options}
-                ref={ref}
+          {() => (
+            <Suspense fallback={null}>
+              <UplotChart
+                season={season}
+                region={region}
+                extremes={extremes}
+                onZoom={onZoom}
               />
-            )
-          }
+            </Suspense>
+          )}
         </ClientOnly>
       </div>
     </section>
@@ -985,57 +735,6 @@ function MythicStatsLink({ season, weekOffset }: MythicStatsLinkProps) {
     </a>
   );
 }
-
-function addMythicStatsLinksToBands(
-  bands: XAxisPlotBandsOptions[],
-  startingPeriod: number | null,
-  affixesLength: number,
-  now: number,
-): XAxisPlotBandsOptions[] {
-  if (affixesLength > 0 || !startingPeriod) {
-    return bands;
-  }
-
-  let weekIndex = 0;
-
-  return bands.map((band) => {
-    if (band.id !== "background-color") {
-      return band;
-    }
-
-    const index = weekIndex++;
-
-    if ((Number(band.from) ?? Infinity) > now) {
-      return band;
-    }
-
-    const dimensions = 30;
-
-    return {
-      ...band,
-      label: {
-        ...band.label,
-        useHTML: true,
-        align: "center",
-        verticalAlign: "top",
-        x: 0,
-        y: dimensions / 2,
-        style: {},
-        rotation: 0,
-        text: `<a href="https://mythicstats.com/period/${startingPeriod + index}" target="_blank" rel="noopener noreferrer" title="MythicStats for week ${index + 1}"><img src="/mythic-stats.png" loading="lazy" width="${dimensions}" height="${dimensions}" alt="" /></a>`,
-      },
-    };
-  });
-}
-
-const formatter: DataLabelsFormatterCallbackFunction = function (this) {
-  const max = this.series.data.reduce(
-    (acc, dataset) => (acc > dataset.x ? acc : dataset.x),
-    0,
-  );
-
-  return this.x === max ? this.y : null;
-};
 
 type LocaleTimeProps = {
   date: Date;
