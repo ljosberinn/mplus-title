@@ -436,6 +436,120 @@ export async function loadDataForRegion(
     return cached;
   }
 
+  const datasets = await time(
+    () => loadDatasets(region, season, gte, lte, timings),
+    { type: `normalizeDatasets-${region}`, timings },
+  );
+
+  await time(
+    () =>
+      persist(
+        datasets,
+        key,
+        determineExpirationTimestamp(season, region, datasets),
+      ),
+    { type: `persist-${region}`, timings },
+  );
+
+  return datasets;
+}
+
+/** A deduped CrossFactionHistory row from the SQL downsample. */
+type CompleteRow = {
+  timestamp: number;
+  score: number;
+  rank: number;
+  score100: number;
+  rank100: number;
+};
+
+function completeRowToDataset(row: CompleteRow): Dataset {
+  const score100 = Number(row.score100);
+  const rank100 = Number(row.rank100);
+  return {
+    ts: Number(row.timestamp) * 1000,
+    score: Number(row.score),
+    rank: Number(row.rank),
+    score100: score100 > 0 ? score100 : null,
+    rank100: rank100 > 0 ? rank100 : null,
+  };
+}
+
+/**
+ * Complete-faction seasons dedupe in SQL via a `LAG()` window function — keep the
+ * first/last row + every score change, ordered by timestamp — instead of
+ * fetching every row and reducing in JS. Byte-identical to `dropUnchangedScores`
+ * over the JS pipeline (`score > 0` filter moved into the WHERE so it happens
+ * before the window, matching the old map→filter→sort→reduce order).
+ */
+async function loadCompleteDatasets(
+  region: Regions,
+  gte: number | null,
+  lte: number | undefined,
+): Promise<Dataset[]> {
+  if (!gte) {
+    return [];
+  }
+
+  const gteSec = Math.ceil(gte / 1000);
+  // unbounded end (live season) → an upper bound past any real timestamp.
+  const lteSec = lte === undefined ? 2_147_483_647 : Math.ceil(lte / 1000);
+
+  const rows = await prisma.$queryRaw<CompleteRow[]>`
+    WITH ordered AS (
+      SELECT timestamp, score, \`rank\`, score100, rank100,
+             LAG(score)  OVER w AS prev_score,
+             LEAD(score) OVER w AS next_score
+      FROM CrossFactionHistory
+      WHERE region = ${region}
+        AND timestamp BETWEEN ${gteSec} AND ${lteSec}
+        AND score > 0
+      WINDOW w AS (ORDER BY timestamp)
+    )
+    SELECT timestamp, score, \`rank\`, score100, rank100
+    FROM ordered
+    WHERE prev_score IS NULL OR next_score IS NULL OR score <> prev_score
+    ORDER BY timestamp
+  `;
+
+  return rows.map(completeRowToDataset);
+}
+
+/**
+ * Per-region datasets, deduped. Complete seasons take the SQL `LAG` downsample;
+ * faction (none/partial) seasons take the JS merge+dedupe (rare, old, and the
+ * cross-table faction interleave makes the SQL fragile). The JS path is also the
+ * fallback if the raw query ever throws (e.g. an unsupported DB).
+ */
+async function loadDatasets(
+  region: Regions,
+  season: Season,
+  gte: number | null,
+  lte: number | undefined,
+  timings: Timings,
+): Promise<Dataset[]> {
+  if (season.crossFactionSupport === "complete") {
+    try {
+      return await loadCompleteDatasets(region, gte, lte);
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error(
+        `SQL downsample failed for ${season.slug}/${region}; falling back to JS dedupe`,
+        error,
+      );
+    }
+  }
+
+  return loadDatasetsViaMerge(region, season, gte, lte, timings);
+}
+
+async function loadDatasetsViaMerge(
+  region: Regions,
+  season: Season,
+  gte: number | null,
+  lte: number | undefined,
+  timings: Timings,
+): Promise<Dataset[]> {
   const [rawHistory, rawCrossFactionHistory] = await Promise.all([
     time(
       () =>
@@ -453,49 +567,32 @@ export async function loadDataForRegion(
     ),
   ]);
 
-  const datasets = await time(
-    () =>
-      dropUnchangedScores(
-        [...rawHistory, ...rawCrossFactionHistory]
-          .map((dataset) => {
-            const next: Dataset = {
-              ts: Number(dataset.timestamp) * 1000,
-              score:
-                "customScore" in dataset ? dataset.customScore : dataset.score,
-              rank: "rank" in dataset ? dataset.rank : null,
-              score100:
-                "score100" in dataset && dataset.score100 > 0
-                  ? dataset.score100
-                  : null,
-              rank100:
-                "rank100" in dataset && dataset.rank100 > 0
-                  ? dataset.rank100
-                  : null,
-            };
+  return dropUnchangedScores(
+    [...rawHistory, ...rawCrossFactionHistory]
+      .map((dataset) => {
+        const next: Dataset = {
+          ts: Number(dataset.timestamp) * 1000,
+          score: "customScore" in dataset ? dataset.customScore : dataset.score,
+          rank: "rank" in dataset ? dataset.rank : null,
+          score100:
+            "score100" in dataset && dataset.score100 > 0
+              ? dataset.score100
+              : null,
+          rank100:
+            "rank100" in dataset && dataset.rank100 > 0
+              ? dataset.rank100
+              : null,
+        };
 
-            if ("faction" in dataset) {
-              next.faction = dataset.faction;
-            }
+        if ("faction" in dataset) {
+          next.faction = dataset.faction;
+        }
 
-            return next;
-          })
-          .filter((dataset) => dataset.score > 0)
-          .sort((a, b) => a.ts - b.ts),
-      ),
-    { type: `normalizeDatasets-${region}`, timings },
+        return next;
+      })
+      .filter((dataset) => dataset.score > 0)
+      .sort((a, b) => a.ts - b.ts),
   );
-
-  await time(
-    () =>
-      persist(
-        datasets,
-        key,
-        determineExpirationTimestamp(season, region, datasets),
-      ),
-    { type: `persist-${region}`, timings },
-  );
-
-  return datasets;
 }
 
 export function determineExpirationTimestamp(
