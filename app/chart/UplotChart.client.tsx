@@ -9,8 +9,6 @@
  * Known parity gaps still to close: affix icons in the week backgrounds, and
  * double-click zoom reset syncing back to the shared `extremes`.
  */
-import "uplot/dist/uPlot.min.css";
-
 import { type Regions } from "prisma/generated/prisma/enums";
 import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import uPlot from "uplot";

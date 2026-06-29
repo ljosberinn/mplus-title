@@ -4,8 +4,6 @@
  * over the same faded week backgrounds + lightgreen week-number markers the
  * Highcharts version showed, with a custom icon legend and a cursor tooltip.
  */
-import "uplot/dist/uPlot.min.css";
-
 import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import uPlot from "uplot";
 
