@@ -58,8 +58,8 @@ export default function App(): ReactNode {
       className="bg-gray-900 text-gray-200 antialiased"
     >
       <head>
+        <meta charSet="utf-8" />
         <title>{title}</title>
-        <meta name="charset" content="utf-8" />
         <meta name="viewport" content="width=device-width,initial-scale=1" />
         <meta name="og:url" content="https://mplus-title.vercel.app/" />
         <meta name="twitter:url" content="https://mplus-title.vercel.app/" />
