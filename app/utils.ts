@@ -158,6 +158,29 @@ export function regionsToPathSegment(regions: readonly Regions[]): string {
 }
 
 /**
+ * Persists the current region selection to a client cookie so the bare landing
+ * path ("/") can redirect back to it. Stores the canonical path segment; an
+ * "all regions" selection clears the cookie (the bare path already means "all").
+ *
+ * Deliberately written client-side instead of via a `Set-Cookie` on the season
+ * loader: that response is CDN-cached, and a `Set-Cookie` would defeat caching.
+ * Scoped to `Path=/` so it is sent on the root request (the default path would
+ * otherwise be the current `/{season}` directory and never reach "/").
+ */
+export function persistRegionsCookie(regions: readonly Regions[]): void {
+  if (typeof document === "undefined") {
+    return;
+  }
+
+  const segment = regionsToPathSegment(regions);
+  const oneYearInSeconds = 365 * 24 * 60 * 60;
+
+  document.cookie = segment
+    ? `regions=${segment}; Max-Age=${oneYearInSeconds}; Path=/; SameSite=Lax`
+    : `regions=; Max-Age=0; Path=/; SameSite=Lax`;
+}
+
+/**
  * Client-safe mirror of `determineOverlaysToDisplayFromSearchParams` — reads the
  * `overlays` query param without pulling in the server-only `load.server` module.
  */

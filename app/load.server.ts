@@ -4,7 +4,11 @@ import { env } from "~/env/server";
 
 import { calculateFactionDiffForWeek, toOneDigit } from "./chart/builders";
 import { type Dataset, type Season } from "./seasons";
-import { type Overlay, searchParamSeparator } from "./utils";
+import {
+  type Overlay,
+  parseRegionsFromPath,
+  searchParamSeparator,
+} from "./utils";
 import { overlays } from "./utils";
 
 const dayInMs = 24 * 60 * 60 * 1000;
@@ -28,6 +32,29 @@ export function determineRegionsToDisplayFromSearchParams(
   }
 
   return maybeRegions;
+}
+
+/**
+ * Reads the region selection persisted by `persistRegionsCookie` (client-side).
+ * Used by the landing route ("/") to redirect back to the last viewed region
+ * filter. Returns `null` (⇒ all regions) when the cookie is absent or empty.
+ */
+export function determineRegionsToDisplayFromCookies(
+  request: Request,
+): Regions[] | null {
+  const cookie = request.headers.get("Cookie") ?? request.headers.get("cookie");
+
+  if (!cookie) {
+    return null;
+  }
+
+  const raw = cookie.split("; ").find((row) => row.startsWith("regions="));
+
+  if (!raw) {
+    return null;
+  }
+
+  return parseRegionsFromPath(raw.slice("regions=".length));
 }
 
 export function determineExtrapolationEnd(request: Request): number | null {

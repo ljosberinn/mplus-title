@@ -46,6 +46,7 @@ import {
   type Overlay,
   parseOverlaysFromSearchParams,
   parseRegionsFromPath,
+  persistRegionsCookie,
   regionsToPathSegment,
   resolveOverlaysToDisplay,
   searchParamSeparator,
@@ -366,21 +367,33 @@ export default function Season(
   // `regionsStream` (see the loader). Render the primary from `season` (which
   // only has the primary's data) and the rest inside the <Await> below.
   const [primaryRegion, ...pendingRegions] = season.score.regionsToDisplay;
+  const {
+    slug,
+    score: { regionsToDisplay, extrapolation },
+  } = season;
+  // Persist the last viewed region selection so the landing path ("/") can
+  // redirect back to it. Covers every way of arriving at a filtered view
+  // (toggle, shared link, back/forward), and writes a client cookie so the
+  // cacheable loader response stays free of a `Set-Cookie`.
 
-  const prevSeason = useRef(season.slug);
-  const prevExtrapolation = useRef(season.score.extrapolation);
+  const prevSeason = useRef(slug);
+  const prevExtrapolation = useRef(extrapolation);
   const [extremes, setExtremes] = useState<ZoomExtremes>(null);
 
   useEffect(() => {
+    persistRegionsCookie(regionsToDisplay);
+  }, [regionsToDisplay]);
+
+  useEffect(() => {
     if (
-      prevSeason.current === season.slug &&
-      prevExtrapolation.current === season.score.extrapolation
+      prevSeason.current === slug &&
+      prevExtrapolation.current === extrapolation
     ) {
       return;
     }
 
     setExtremes(null);
-  }, [season]);
+  }, [season, extrapolation, slug]);
 
   return (
     <>
