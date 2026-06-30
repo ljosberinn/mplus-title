@@ -1,21 +1,44 @@
+import { type ReactNode } from "react";
 import { type IconType } from "react-icons";
 import { FaPatreon, FaTwitter } from "react-icons/fa";
 import { SiBuymeacoffee } from "react-icons/si";
 
 import { ExternalLink } from "./ExternalLink";
-import { type ReactNode } from "react";
+
+type NavLinkVariant = "header" | "footer";
 
 type NavLinkProps = {
   href?: string;
   children: string;
   icon: IconType;
+  variant?: NavLinkVariant;
 };
 
 export function NavLink({
   href,
   children,
   icon: Icon,
+  variant = "footer",
 }: NavLinkProps): ReactNode {
+  // header: clean text-only nav items (à la tailwindcss.com's Docs / Blog /
+  // Showcase), muted with a subtle hover. footer: the original icon + label.
+  if (variant === "header") {
+    return (
+      <li className="text-sm font-medium">
+        {href ? (
+          <ExternalLink
+            className="text-gray-300 transition-colors duration-150 ease-in-out hover:text-white"
+            href={href}
+          >
+            {children}
+          </ExternalLink>
+        ) : (
+          children
+        )}
+      </li>
+    );
+  }
+
   const body = (
     <span className="md:flex md:items-center md:justify-end">
       <Icon className="mr-2 inline h-6 w-6" />
@@ -39,33 +62,53 @@ export function NavLink({
   );
 }
 
-export function BuyMeACoffee(): ReactNode {
+type SocialLinkProps = {
+  variant?: NavLinkVariant;
+};
+
+export function BuyMeACoffee({ variant }: SocialLinkProps = {}): ReactNode {
   return (
-    <NavLink href="https://www.buymeacoffee.com/rOSn8DF" icon={SiBuymeacoffee}>
+    <NavLink
+      href="https://www.buymeacoffee.com/rOSn8DF"
+      icon={SiBuymeacoffee}
+      variant={variant}
+    >
       Buy Me A Coffee
     </NavLink>
   );
 }
 
-export function RaiderPatreon(): ReactNode {
+export function RaiderPatreon({ variant }: SocialLinkProps = {}): ReactNode {
   return (
-    <NavLink href="https://www.patreon.com/RaiderIO" icon={FaPatreon}>
+    <NavLink
+      href="https://www.patreon.com/RaiderIO"
+      icon={FaPatreon}
+      variant={variant}
+    >
       Raider.IO Patreon
     </NavLink>
   );
 }
 
-export function WCLPatreon(): ReactNode {
+export function WCLPatreon({ variant }: SocialLinkProps = {}): ReactNode {
   return (
-    <NavLink href="https://www.patreon.com/warcraftlogs" icon={FaPatreon}>
+    <NavLink
+      href="https://www.patreon.com/warcraftlogs"
+      icon={FaPatreon}
+      variant={variant}
+    >
       WCL Patreon
     </NavLink>
   );
 }
 
-export function Twitter(): ReactNode {
+export function Twitter({ variant }: SocialLinkProps = {}): ReactNode {
   return (
-    <NavLink href="https://twitter.com/xepher1s" icon={FaTwitter}>
+    <NavLink
+      href="https://twitter.com/xepher1s"
+      icon={FaTwitter}
+      variant={variant}
+    >
       Twitter
     </NavLink>
   );

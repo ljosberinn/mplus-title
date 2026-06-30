@@ -1,3 +1,6 @@
+import "./app.css";
+
+import { type ReactNode } from "react";
 import {
   isRouteErrorResponse,
   Links,
@@ -6,9 +9,8 @@ import {
   Scripts,
   ScrollRestoration,
 } from "react-router";
-import type { Route } from "./+types/root";
 
-import "./app.css";
+import type { Route } from "./+types/root";
 
 export const links: Route.LinksFunction = () => {
   return [
@@ -43,7 +45,7 @@ export const links: Route.LinksFunction = () => {
   ] satisfies ReturnType<LinksFunction>;
 };
 
-export default function App() {
+export default function App(): ReactNode {
   const title = "Title Cutoff History & Estimation";
   const url = "https://mplus-title.vercel.app/";
   const description =
@@ -109,7 +111,7 @@ export default function App() {
   );
 }
 
-export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
+export function ErrorBoundary({ error }: Route.ErrorBoundaryProps): ReactNode {
   let message = "Oops!";
   let details = "An unexpected error occurred.";
   let stack: string | undefined;

@@ -4,6 +4,7 @@ import { useLocation, useNavigate, useNavigation } from "react-router";
 
 import { type EnhancedSeason } from "~/seasons";
 
+import { GutterDivider } from "./GutterDivider";
 import { linkClassName } from "./tokens";
 
 type CustomExtrapolationFormProps = {
@@ -68,26 +69,24 @@ export default function CustomExtrapolationForm({
     navigationState !== "idle";
 
   function createExtrapolationFormButtonClassName(disabled: boolean) {
-    const base = linkClassName.replace("flex", "");
+    if (disabled) {
+      return linkClassName
+        .replace("flex", "")
+        .replace("bg-gray-700", "bg-gray-800")
+        .replace(
+          "hover:bg-gray-500",
+          `${
+            navigationState === "loading" ? "cursor-wait" : "cursor-not-allowed"
+          } grayscale`,
+        );
+    }
 
-    return disabled
-      ? linkClassName
-          .replace("flex", "")
-          .replace("bg-gray-700", "bg-gray-800")
-          .replace(
-            "hover:bg-gray-500",
-            `${
-              navigationState === "loading"
-                ? "cursor-wait"
-                : "cursor-not-allowed"
-            } grayscale`,
-          )
-      : base;
+    return linkClassName.replace("flex", "cursor-pointer");
   }
 
   return (
     <>
-      <div className="px-4 pt-4">
+      <div>
         <form
           className="flex flex-col space-y-2 md:inline md:space-x-2 md:space-y-0"
           onSubmit={(event) => {
@@ -101,7 +100,7 @@ export default function CustomExtrapolationForm({
                 ref.current.value,
               );
 
-              navigate(window.location.pathname + url.search);
+              void navigate(window.location.pathname + url.search);
             }
           }}
         >
@@ -130,7 +129,7 @@ export default function CustomExtrapolationForm({
               id="date"
               ref={ref}
               className={clsx(
-                "rounded-md border-0 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 sm:text-sm sm:leading-6",
+                "border border-gray-400 bg-white text-gray-900 placeholder:text-gray-400 sm:text-sm sm:leading-6",
                 seasonHasEndingDate && "hidden md:inline-block",
               )}
               type="date"
@@ -156,7 +155,7 @@ export default function CustomExtrapolationForm({
             )}
             type="reset"
             onClick={() => {
-              navigate(window.location.pathname);
+              void navigate(window.location.pathname);
             }}
           >
             Reset
@@ -164,8 +163,8 @@ export default function CustomExtrapolationForm({
         </form>
       </div>
       {!disabled && customExtrapolationEndDate ? (
-        <div className="px-4 pt-4 text-white">
-          <div className="flex flex-col rounded-lg bg-red-500 p-2 md:flex-row dark:bg-red-500/40">
+        <div className="gap-4 flex w-full flex-col">
+          <div className="rounded-md flex flex-col border border-red-700 bg-red-500 p-2 md:flex-row dark:bg-red-500/40 w-full">
             <div className="flex justify-center" />
             <div className="p-2">
               <b>Warning</b>: you are using a custom extrapolation date. Use at
@@ -173,6 +172,7 @@ export default function CustomExtrapolationForm({
               the further the date lies in the future.
             </div>
           </div>
+          <GutterDivider />
         </div>
       ) : null}
     </>

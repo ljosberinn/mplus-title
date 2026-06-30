@@ -3,11 +3,8 @@ import { Regions } from "prisma/generated/prisma/enums";
 import { type CrossFactionHistoryCreateInput } from "prisma/generated/prisma/models";
 import { type ActionFunction, type LoaderFunction } from "react-router";
 
-import {
-  calculateExtrapolation,
-  loadDataForRegion,
-  protectCronRoute,
-} from "~/load.server";
+import { loadDataForRegion } from "~/data.server";
+import { calculateExtrapolation, protectCronRoute } from "~/load.server";
 
 import { prisma } from "../prisma.server";
 import { findSeasonByName, type Season, seasons } from "../seasons";
@@ -53,23 +50,24 @@ export const action: ActionFunction = async ({ request }) => {
       return new Response(JSON.stringify([]));
     }
 
-    const latestPerRegion = (
-      await prisma.crossFactionHistory.findMany({
-        where: {
-          region: {
-            in: regions,
-          },
+    const latestPerRegionRows = await prisma.crossFactionHistory.findMany({
+      where: {
+        region: {
+          in: regions,
         },
-        orderBy: {
-          timestamp: "desc",
-        },
-        select: {
-          timestamp: true,
-          region: true,
-        },
-        distinct: ["region"],
-      })
-    ).sort((a, b) => a.timestamp - b.timestamp);
+      },
+      orderBy: {
+        timestamp: "desc",
+      },
+      select: {
+        timestamp: true,
+        region: true,
+      },
+      distinct: ["region"],
+    });
+    const latestPerRegion = latestPerRegionRows.sort(
+      (a, b) => a.timestamp - b.timestamp,
+    );
 
     const now = Date.now();
 
@@ -345,6 +343,6 @@ async function parseRegionData(
     timestamp: now,
     region,
     rank100: top1,
-    score100: score100,
+    score100,
   };
 }

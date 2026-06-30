@@ -1,1 +1,4 @@
 @import "tailwindcss";
+/* uPlot styles — imported globally (CSS pipeline) rather than via a JS import
+   in the .client components, which the SSR build can't resolve from node_modules. */
+@import "uplot/dist/uPlot.min.css";

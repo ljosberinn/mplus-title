@@ -1,9 +1,10 @@
-import { type ReactNode, type FormEventHandler } from "react";
+import { type Regions } from "prisma/generated/prisma/enums";
+import { type FormEventHandler, type ReactNode } from "react";
 import { useRef } from "react";
-import { useNavigation, useSubmit } from "react-router";
+import { useNavigate, useNavigation, useSearchParams } from "react-router";
 
 import { type EnhancedSeason } from "~/seasons";
-import { isNotNull, orderedRegionsBySize } from "~/utils";
+import { isNotNull, orderedRegionsBySize, regionsToPathSegment } from "~/utils";
 
 import { linkClassName } from "./tokens";
 
@@ -12,43 +13,51 @@ type RegionToggleProps = {
 };
 
 export function RegionToggle({ season }: RegionToggleProps): ReactNode {
-  const submit = useSubmit();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { state: navigationState } = useNavigation();
 
   const ref = useRef<(HTMLInputElement | null)[]>([]);
 
   const handleChange: FormEventHandler<HTMLInputElement> = () => {
-    // By default, "disabled" checkboxes won't have their values sent along when submitting a form. We're getting
-    // around that by using refs to get the values. :BearWicked:
-    const formData = ref.current
+    // "disabled" checkboxes don't carry their value, so read the live checked
+    // state off the refs. :BearWicked:
+    const activeRegions = ref.current
       .filter(isNotNull)
-      .filter((ref) => ref.checked)
-      .reduce((acc, ref) => {
-        acc.set(ref.name, "on");
-        return acc;
-      }, new FormData());
+      .filter((node) => node.checked)
+      .map((node) => node.name as Regions);
 
-    void submit(formData, {
-      action: "/regions",
-      method: "post",
-      replace: true,
-    });
+    // never navigate to an empty region set (mirrors the last-region guard).
+    if (activeRegions.length === 0) {
+      return;
+    }
+
+    // regions now live in the path; "all selected" collapses to the bare path.
+    // The query string (overlays, extrapolationEndDate) is preserved.
+    const segment = regionsToPathSegment(activeRegions);
+    const query = searchParams.toString();
+
+    void navigate(
+      `/${season.slug}${segment ? `/${segment}` : ""}${query ? `?${query}` : ""}`,
+      { replace: true },
+    );
   };
 
   return (
     <fieldset disabled={navigationState !== "idle"}>
-      <ul className="flex flex-col space-y-2 px-4 pt-4 md:flex-row md:space-x-2 md:space-y-0 md:px-0 md:pt-0">
+      <ul className="flex flex-col space-y-2 md:flex-row md:space-x-2 md:space-y-0">
         {orderedRegionsBySize.map((region, index) => {
           const checked = season.score.regionsToDisplay.includes(region);
           const disabled =
             season.score.regionsToDisplay.length === 1 && checked;
+          const base = linkClassName.replace("py-1", "").replace("px-2", "");
 
           return (
             <li
               key={region}
-              className={`${
+              className={`rounded-md ${
                 disabled || navigationState !== "idle"
-                  ? linkClassName
+                  ? base
                       .replace("bg-gray-700", "bg-gray-800")
                       .replace(
                         "hover:bg-gray-500",
@@ -56,29 +65,27 @@ export function RegionToggle({ season }: RegionToggleProps): ReactNode {
                           disabled ? "cursor-not-allowed" : "cursor-wait"
                         } grayscale`,
                       )
-                  : linkClassName
+                  : base
               }`}
             >
               <label
-                className={disabled ? "cursor-not-allowed" : "cursor-pointer"}
-                htmlFor={`toggle-${region}`}
+                className={`${disabled ? "cursor-not-allowed" : "cursor-pointer"} flex items-center gap-2 px-2 py-1`}
               >
                 {region.toUpperCase()}
-              </label>
 
-              <input
-                disabled={disabled}
-                type="checkbox"
-                className={disabled ? "cursor-not-allowed" : "cursor-pointer"}
-                id={`toggle-${region}`}
-                defaultChecked={checked}
-                aria-labelledby={`toggle-${region}`}
-                name={region}
-                ref={(node) => {
-                  ref.current[index] = node;
-                }}
-                onChange={handleChange}
-              />
+                <input
+                  disabled={disabled}
+                  type="checkbox"
+                  className={disabled ? "cursor-not-allowed" : "cursor-pointer"}
+                  defaultChecked={checked}
+                  aria-labelledby={`toggle-${region}`}
+                  name={region}
+                  ref={(node) => {
+                    ref.current[index] = node;
+                  }}
+                  onChange={handleChange}
+                />
+              </label>
             </li>
           );
         })}

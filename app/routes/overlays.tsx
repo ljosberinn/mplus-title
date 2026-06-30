@@ -1,7 +1,12 @@
 import { type ActionFunction, redirect } from "react-router";
 
 import { setCookie } from "~/load.server";
-import { type Overlay, overlays, searchParamSeparator } from "~/utils";
+import {
+  isDefaultOverlaySelection,
+  type Overlay,
+  overlays,
+  searchParamSeparator,
+} from "~/utils";
 
 const addOverlaysToReferrerOrBaseUrl = (
   request: Request,
@@ -13,7 +18,7 @@ const addOverlaysToReferrerOrBaseUrl = (
   if (referer) {
     const refererAsUrl = new URL(referer);
 
-    if (plotlines.length === overlays.length) {
+    if (isDefaultOverlaySelection(plotlines)) {
       refererAsUrl.searchParams.delete("overlays");
     } else {
       refererAsUrl.searchParams.set(
@@ -37,7 +42,7 @@ const addOverlaysToReferrerOrBaseUrl = (
   }
 
   const searchParams = new URLSearchParams(
-    plotlines.length === overlays.length
+    isDefaultOverlaySelection(plotlines)
       ? undefined
       : {
           overlays: plotlines.join(searchParamSeparator),
