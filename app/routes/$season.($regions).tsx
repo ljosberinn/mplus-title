@@ -377,7 +377,7 @@ export default function Season(
       <Header />
       <div className="grid flex-1 grid-cols-1 grid-rows-[1fr] md:grid-cols-[1fr_min(96rem,100%)_1fr]">
         <div aria-hidden className={clsx(gutterPattern, "col-start-1")} />
-        <main className="col-start-1 row-start-1 mt-4 flex flex-col space-y-4 px-6 md:col-start-2">
+        <main className="col-start-1 row-start-1 flex flex-col space-y-6 p-6 md:col-start-2">
           <SeasonControls season={season} />
           {primaryRegion ? (
             <Region
@@ -645,27 +645,30 @@ function Region({
     <section
       className={clsx(
         navigation.state === "loading" && "grayscale",
-        "max-w-screen-2xl border border-gray-600 bg-gray-700 transition-all duration-500 ease-linear motion-reduce:transition-none",
+        "max-w-screen-2xl border border-gray-600 bg-gray-700 p-4 transition-all duration-500 ease-linear motion-reduce:transition-none",
       )}
       aria-labelledby={`title-${region}`}
       id={region}
     >
-      <h1 id={`title-${region}`} className="text-center text-lg font-bold">
-        {region.toUpperCase()}
-      </h1>
+      <div className="mb-2">
+        <h1 id={`title-${region}`} className="text-lg font-bold">
+          {region.toUpperCase()}
+        </h1>
+        <p className="text-xs italic text-gray-400">
+          Drag across the chart to zoom in; double-click to reset.
+        </p>
 
-      {region && confirmedCutoffUrl ? (
-        <div className="flex justify-center">
+        {region && confirmedCutoffUrl ? (
           <a
             href={confirmedCutoffUrl}
             target="_blank"
             rel="noreferrer noopener"
-            className="underline"
+            className="mt-1 inline-flex items-center gap-1 font-semibold text-blue-400 underline hover:text-blue-300"
           >
             daily updated bluepost
           </a>
-        </div>
-      ) : null}
+        ) : null}
+      </div>
 
       {needsTempBanner ? (
         <Suspense fallback={null}>

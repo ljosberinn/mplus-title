@@ -87,7 +87,7 @@ export default function CustomExtrapolationForm({
 
   return (
     <>
-      <div className="px-4 pt-4">
+      <div>
         <form
           className="flex flex-col space-y-2 md:inline md:space-x-2 md:space-y-0"
           onSubmit={(event) => {
@@ -164,7 +164,7 @@ export default function CustomExtrapolationForm({
         </form>
       </div>
       {!disabled && customExtrapolationEndDate ? (
-        <div className="px-4 pt-4 text-white">
+        <div className="text-white">
           <div className="flex flex-col border border-red-700 bg-red-500 p-2 md:flex-row dark:bg-red-500/40">
             <div className="flex justify-center" />
             <div className="p-2">

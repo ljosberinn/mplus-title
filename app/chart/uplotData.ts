@@ -132,6 +132,10 @@ export type UplotConfig = {
   scatterSeriesIdx: number[];
   /** scatter point metadata keyed by series index, for the tooltip. */
   estimatedAtBySeries: Record<number, (number | null)[]>;
+  /** original stroke colour per series index. uPlot stores `series.stroke`
+   * internally as a function, so the tooltip/labels read colours from here
+   * instead of off the live series. */
+  colorBySeriesIdx: Record<number, string>;
   initialZoom: [number, number] | null;
 };
 
@@ -282,6 +286,7 @@ export function buildUplotConfig(
   const lineSeriesIdx: number[] = [];
   const scatterSeriesIdx: number[] = [];
   const estimatedAtBySeries: Record<number, (number | null)[]> = {};
+  const colorBySeriesIdx: Record<number, string> = {};
   const dailyGainsBySeries: Record<number, DailyGain[]> = {};
 
   // bands reference their parent line by id; the line is created after the band
@@ -334,6 +339,7 @@ export function buildUplotConfig(
 
     data.push(align(points));
     const seriesIdx = series.length;
+    colorBySeriesIdx[seriesIdx] = color;
     if (isScatter) {
       scatterSeriesIdx.push(seriesIdx);
     } else {
@@ -504,6 +510,7 @@ export function buildUplotConfig(
     dailyGainsBySeries,
     scatterSeriesIdx,
     estimatedAtBySeries,
+    colorBySeriesIdx,
     initialZoom: zoom
       ? [Math.round(zoom[0] / 1000), Math.round(zoom[1] / 1000)]
       : null,

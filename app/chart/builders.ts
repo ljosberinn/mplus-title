@@ -77,8 +77,15 @@ const CONFORMAL_BAND_RATE_PER_DAY = 0.0118 / 21;
 
 /**
  * Derives an arearange [x, low, high] band around an extrapolation trajectory.
- * Width is ~0 at the anchor (now) and widens with the lead time; the lower bound
- * never drops below the current score, since the cutoff cannot decrease.
+ * Width is ~0 at the anchor (now) and widens with the lead time.
+ *
+ * The band is centred on the projection with a symmetric per-day margin:
+ * `high = projection + margin`, `low = projection - margin`. Because the
+ * projection itself trends upward, the lower bound expresses a minimal *positive*
+ * expectation most of the time — but it is deliberately *not* floored at the
+ * current score: the cutoff can (rarely) decrease, so early on, when the margin
+ * outweighs the projected gain, the lower bound may dip slightly below today's
+ * score. A flat/declining season is possible, just historically near-unheard-of.
  */
 export function calculateExtrapolationBand(
   extrapolation: Extrapolation,
@@ -105,13 +112,14 @@ export function calculateExtrapolationBand(
     const daysAhead = (ts - anchorTs) / dayInMs;
     // margin is a fraction of the anchor (current) score, not the projected
     // score, so it doesn't compound with the projection's own rise (option B).
-    const upperMargin = anchorScore * CONFORMAL_BAND_RATE_PER_DAY * daysAhead;
+    const margin = anchorScore * CONFORMAL_BAND_RATE_PER_DAY * daysAhead;
 
-    // The lower bound is pinned to the current score: the cutoff cannot drop
-    // below where it stands today, so the band is the uncertainty fan between
-    // "no further gain" (current score) and the optimistic projection plus a
-    // one-sided 90% upper margin.
-    return [ts, toOneDigit(anchorScore), toOneDigit(score + upperMargin)];
+    const high = score + margin;
+    // symmetric lower margin — not floored at the current score, since the
+    // cutoff can decrease.
+    const low = score - margin;
+
+    return [ts, toOneDigit(low), toOneDigit(high)];
   });
 }
 

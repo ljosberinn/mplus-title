@@ -318,6 +318,8 @@ export default function UplotDungeonRecords({
       u.redraw();
     };
 
+    const yZoom = config.initialYZoom;
+
     const opts: uPlot.Options = {
       // floor to whole pixels: uPlot's root is `width: min-content`, so a
       // fractional width rounds up and spills ~1px past the container.
@@ -333,7 +335,10 @@ export default function UplotDungeonRecords({
       },
       scales: {
         x: { time: true },
-        y: {},
+        // when the completed-level span is wide, hard-pin the y view to the top
+        // key levels (a static range function, so it survives redraws instead of
+        // being re-auto-ranged like a post-init setScale was).
+        y: yZoom ? { range: (): [number, number] => [yZoom[0], yZoom[1]] } : {},
       },
       axes: [
         {
@@ -376,14 +381,6 @@ export default function UplotDungeonRecords({
     if (config.softMax !== null && config.data[0].length > 0) {
       const xs = config.data[0];
       plot.setScale("x", { min: xs[0], max: config.softMax });
-    }
-
-    // default-zoom the y-axis to the top key levels when the span is wide.
-    if (config.initialYZoom) {
-      plot.setScale("y", {
-        min: config.initialYZoom[0],
-        max: config.initialYZoom[1],
-      });
     }
 
     return () => {

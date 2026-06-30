@@ -6,12 +6,12 @@
  * hooks, plus a custom React legend and a cursor tooltip.
  *
  * Zoom: mouse box-select (uPlot `cursor.drag`) + touch pan/pinch (bound manually
- * in the `init` hook, since uPlot's cursor is mouse-only). Both route through the
- * shared `onZoom` so all regions zoom together and "Reset zoom" clears them.
+ * in the `init` hook, since uPlot's cursor is mouse-only) + double-click to reset.
+ * All route through the shared `onZoom` so every region zooms/resets together,
+ * matching the "Reset zoom" button.
  *
  * Known gaps: affix icons in the week backgrounds (never ported from the old
- * Highcharts renderer), and double-click zoom reset syncing back to the shared
- * `extremes`.
+ * Highcharts renderer).
  */
 import { type Regions } from "prisma/generated/prisma/enums";
 import { type ReactNode, useEffect, useMemo, useRef } from "react";
@@ -378,8 +378,7 @@ export default function UplotChart({
         const labelY = config.primaryLineSeriesIdx.includes(idx)
           ? y - 9 * dpr
           : y;
-        ctx.fillStyle =
-          typeof series.stroke === "string" ? series.stroke : "#fff";
+        ctx.fillStyle = config.colorBySeriesIdx[idx] ?? "#fff";
         const text = numberFormatter.format(value);
         // flip the label left when the final point sits at the right edge
         // (e.g. an ended season, where the line ends at "Season End"), and lift
@@ -423,8 +422,7 @@ export default function UplotChart({
         if (!series.show || !gains) {
           continue;
         }
-        ctx.fillStyle =
-          typeof series.stroke === "string" ? series.stroke : "#fff";
+        ctx.fillStyle = config.colorBySeriesIdx[idx] ?? "#fff";
         for (const point of gains) {
           if (point.ts < min || point.ts > max) {
             continue;
@@ -548,8 +546,9 @@ export default function UplotChart({
         if (value === null) {
           continue;
         }
-        const stroke =
-          typeof series.stroke === "string" ? series.stroke : "#fff";
+        // uPlot wraps `series.stroke` into a function internally, so read the
+        // colour from the config map instead.
+        const stroke = config.colorBySeriesIdx[i] ?? "#fff";
         // the extrapolation-history scatter carries the timestamp the
         // prediction was made (`estimatedAt`, already in ms — unlike the
         // seconds-based unified x), so format it directly.
@@ -858,6 +857,14 @@ export default function UplotChart({
             over.addEventListener("touchmove", onTouchMove, { passive: false });
             over.addEventListener("touchend", onTouchEnd);
             over.addEventListener("touchcancel", onTouchEnd);
+
+            // double-click resets the zoom for *all* regions by clearing the
+            // shared extremes (the `[extremes]` effect then re-applies each
+            // region's initial zoom), matching the "Reset zoom" button. uPlot's
+            // built-in dblclick would otherwise only reset this chart locally.
+            over.addEventListener("dblclick", () => {
+              onZoomRef.current(null);
+            });
           },
         ],
         drawClear: [drawWeekBands, drawConfidenceBands],
