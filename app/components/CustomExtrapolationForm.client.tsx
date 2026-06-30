@@ -4,6 +4,7 @@ import { useLocation, useNavigate, useNavigation } from "react-router";
 
 import { type EnhancedSeason } from "~/seasons";
 
+import { GutterDivider } from "./GutterDivider";
 import { linkClassName } from "./tokens";
 
 type CustomExtrapolationFormProps = {
@@ -68,21 +69,19 @@ export default function CustomExtrapolationForm({
     navigationState !== "idle";
 
   function createExtrapolationFormButtonClassName(disabled: boolean) {
-    const base = linkClassName.replace("flex", "");
+    if (disabled) {
+      return linkClassName
+        .replace("flex", "")
+        .replace("bg-gray-700", "bg-gray-800")
+        .replace(
+          "hover:bg-gray-500",
+          `${
+            navigationState === "loading" ? "cursor-wait" : "cursor-not-allowed"
+          } grayscale`,
+        );
+    }
 
-    return disabled
-      ? linkClassName
-          .replace("flex", "")
-          .replace("bg-gray-700", "bg-gray-800")
-          .replace(
-            "hover:bg-gray-500",
-            `${
-              navigationState === "loading"
-                ? "cursor-wait"
-                : "cursor-not-allowed"
-            } grayscale`,
-          )
-      : base;
+    return linkClassName.replace("flex", "cursor-pointer");
   }
 
   return (
@@ -164,8 +163,8 @@ export default function CustomExtrapolationForm({
         </form>
       </div>
       {!disabled && customExtrapolationEndDate ? (
-        <div className="text-white">
-          <div className="flex flex-col border border-red-700 bg-red-500 p-2 md:flex-row dark:bg-red-500/40">
+        <div className="gap-4 flex w-full flex-col">
+          <div className="flex flex-col border border-red-700 bg-red-500 p-2 md:flex-row dark:bg-red-500/40 w-full">
             <div className="flex justify-center" />
             <div className="p-2">
               <b>Warning</b>: you are using a custom extrapolation date. Use at
@@ -173,6 +172,7 @@ export default function CustomExtrapolationForm({
               the further the date lies in the future.
             </div>
           </div>
+          <GutterDivider />
         </div>
       ) : null}
     </>

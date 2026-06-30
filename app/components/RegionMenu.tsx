@@ -50,13 +50,14 @@ export function RegionToggle({ season }: RegionToggleProps): ReactNode {
           const checked = season.score.regionsToDisplay.includes(region);
           const disabled =
             season.score.regionsToDisplay.length === 1 && checked;
+          const base = linkClassName.replace("py-1", "").replace("px-2", "");
 
           return (
             <li
               key={region}
               className={`${
                 disabled || navigationState !== "idle"
-                  ? linkClassName
+                  ? base
                       .replace("bg-gray-700", "bg-gray-800")
                       .replace(
                         "hover:bg-gray-500",
@@ -64,29 +65,27 @@ export function RegionToggle({ season }: RegionToggleProps): ReactNode {
                           disabled ? "cursor-not-allowed" : "cursor-wait"
                         } grayscale`,
                       )
-                  : linkClassName
+                  : base
               }`}
             >
               <label
-                className={disabled ? "cursor-not-allowed" : "cursor-pointer"}
-                htmlFor={`toggle-${region}`}
+                className={`${disabled ? "cursor-not-allowed" : "cursor-pointer"} flex items-center gap-2 px-2 py-1`}
               >
                 {region.toUpperCase()}
-              </label>
 
-              <input
-                disabled={disabled}
-                type="checkbox"
-                className={disabled ? "cursor-not-allowed" : "cursor-pointer"}
-                id={`toggle-${region}`}
-                defaultChecked={checked}
-                aria-labelledby={`toggle-${region}`}
-                name={region}
-                ref={(node) => {
-                  ref.current[index] = node;
-                }}
-                onChange={handleChange}
-              />
+                <input
+                  disabled={disabled}
+                  type="checkbox"
+                  className={disabled ? "cursor-not-allowed" : "cursor-pointer"}
+                  defaultChecked={checked}
+                  aria-labelledby={`toggle-${region}`}
+                  name={region}
+                  ref={(node) => {
+                    ref.current[index] = node;
+                  }}
+                  onChange={handleChange}
+                />
+              </label>
             </li>
           );
         })}

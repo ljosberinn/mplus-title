@@ -28,8 +28,8 @@ export type Extrapolation =
   | null
   | [number, number][]
   | {
-      from: Omit<Dataset, "rank" | "rank100" | "score100">;
-      to: Omit<Dataset, "rank" | "rank100" | "score100">;
+      from: Omit<Dataset, "score100">;
+      to: Omit<Dataset, "score100">;
     };
 
 export const colors = {
@@ -284,34 +284,6 @@ export function calculateSeries(
       },
       showScore100,
     );
-  }
-
-  {
-    const charactersAboveCutoff = data
-      .reduce<Dataset[]>((acc, dataset) => {
-        if (dataset.rank === null) {
-          return acc;
-        }
-
-        const prev = acc[acc.length - 1];
-
-        if (prev?.rank !== dataset.rank) {
-          acc.push(dataset);
-        }
-
-        return acc;
-      }, [])
-      .map((dataset) => [dataset.ts, dataset.rank!]);
-
-    if (charactersAboveCutoff.length > 0) {
-      options.push({
-        type: "line",
-        name: "# Characters Above Cutoff",
-        data: charactersAboveCutoff,
-        color: "white",
-        visible: false,
-      });
-    }
   }
 
   return options;
@@ -775,8 +747,9 @@ function calcTwwS2LevelCompletionLines(
     const total =
       (base + perLevelPoints * level + affixPoints) * numberOfDungeons;
 
-    let match: Omit<Dataset, "rank" | "rank100" | "score100"> | undefined =
-      data.find((dataset) => dataset.score >= total);
+    let match: Omit<Dataset, "score100"> | undefined = data.find(
+      (dataset) => dataset.score >= total,
+    );
 
     if (!match && Array.isArray(extrapolation)) {
       const extrapolationMatchIndex = extrapolation.findIndex(
@@ -870,14 +843,13 @@ function calcTwwS1LevelCompletionLines(
     const total =
       (base + perLevelPoints * level + affixPoints) * numberOfDungeons;
 
-    let match: Omit<Dataset, "rank" | "rank100" | "score100"> | undefined =
-      data.find((dataset) => {
-        if (dataset.ts - startDate < oneWeekInMs) {
-          return dataset.score >= total;
-        }
+    let match: Omit<Dataset, "score100"> | undefined = data.find((dataset) => {
+      if (dataset.ts - startDate < oneWeekInMs) {
+        return dataset.score >= total;
+      }
 
-        return false;
-      });
+      return false;
+    });
 
     if (!match && Array.isArray(extrapolation)) {
       const extrapolationMatchIndex = extrapolation.findIndex(
@@ -946,7 +918,7 @@ function calcOldLevelCompletionLines(
     // week 1 naturally has only 1 affix set
     const firstWeek = total * 1.5 * numberOfDungeons;
 
-    const match: Omit<Dataset, "rank"> | undefined = data.find((dataset) => {
+    const match: Dataset | undefined = data.find((dataset) => {
       if (dataset.ts - startDate < oneWeekInMs) {
         return dataset.score >= firstWeek;
       }
@@ -979,10 +951,9 @@ function calcOldLevelCompletionLines(
     const bothWeeks = set1 + set2;
     const allDungeonsBothWeeks = bothWeeks * numberOfDungeons;
 
-    let match: Omit<Dataset, "rank" | "rank100" | "score100"> | undefined =
-      data.find((dataset) => {
-        return dataset.score >= allDungeonsBothWeeks;
-      });
+    let match: Omit<Dataset, "score100"> | undefined = data.find((dataset) => {
+      return dataset.score >= allDungeonsBothWeeks;
+    });
 
     // if we have an extrapolation, check whether a key level threshold is
     // reached during the extrapolation window

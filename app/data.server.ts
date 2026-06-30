@@ -231,7 +231,7 @@ export async function assembleSeasonData({
 }
 
 // ---------------------------------------------------------------------------
-// Read layer (moved here from load.server.ts in W5): DB queries, era-merge,
+// Read layer (moved here from load.server.ts): DB queries, era-merge,
 // dedupe and the per-region Redis cache.
 // ---------------------------------------------------------------------------
 
@@ -255,9 +255,7 @@ function getCrossFactionHistory(
     select: {
       timestamp: true,
       score: true,
-      rank: true,
       score100: true,
-      rank100: true,
     },
     orderBy: {
       timestamp: "desc",
@@ -494,20 +492,16 @@ export async function loadDataForRegion(
 type CompleteRow = {
   timestamp: number;
   score: number;
-  rank: number;
   score100: number;
-  rank100: number;
 };
 
 function completeRowToDataset(row: CompleteRow): Dataset {
   const score100 = Number(row.score100);
-  const rank100 = Number(row.rank100);
+
   return {
     ts: Number(row.timestamp) * 1000,
     score: Number(row.score),
-    rank: Number(row.rank),
     score100: score100 > 0 ? score100 : null,
-    rank100: rank100 > 0 ? rank100 : null,
   };
 }
 
@@ -533,7 +527,7 @@ async function loadCompleteDatasets(
 
   const rows = await prisma.$queryRaw<CompleteRow[]>`
     WITH ordered AS (
-      SELECT timestamp, score, \`rank\`, score100, rank100,
+      SELECT timestamp, score, score100,
              LAG(score)  OVER w AS prev_score,
              LEAD(score) OVER w AS next_score
       FROM CrossFactionHistory
@@ -542,7 +536,7 @@ async function loadCompleteDatasets(
         AND score > 0
       WINDOW w AS (ORDER BY timestamp)
     )
-    SELECT timestamp, score, \`rank\`, score100, rank100
+    SELECT timestamp, score, score100
     FROM ordered
     WHERE prev_score IS NULL OR next_score IS NULL OR score <> prev_score
     ORDER BY timestamp
@@ -609,14 +603,9 @@ async function loadDatasetsViaMerge(
         const next: Dataset = {
           ts: Number(dataset.timestamp) * 1000,
           score: "customScore" in dataset ? dataset.customScore : dataset.score,
-          rank: "rank" in dataset ? dataset.rank : null,
           score100:
             "score100" in dataset && dataset.score100 > 0
               ? dataset.score100
-              : null,
-          rank100:
-            "rank100" in dataset && dataset.rank100 > 0
-              ? dataset.rank100
               : null,
         };
 

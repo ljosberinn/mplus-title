@@ -14,6 +14,7 @@ import {
   useParams,
   useSearchParams,
 } from "react-router";
+import { ClientOnly } from "remix-utils/client-only";
 
 import { type Expansion, type Season, seasons } from "~/seasons";
 
@@ -73,7 +74,7 @@ export function SeasonMenu(): ReactNode {
         onClick={() => {
           setOpen((prev) => !prev);
         }}
-        className="flex space-x-2 border border-gray-600 bg-gray-700 px-4 py-2 font-medium text-white outline-none ring-gray-500 transition-all duration-200 ease-in-out hover:bg-gray-500 focus:outline-none focus:ring-2"
+        className="cursor-pointer flex space-x-2 border border-gray-600 bg-gray-700 px-4 py-2 font-medium text-white outline-none ring-gray-500 transition-all duration-200 ease-in-out hover:bg-gray-500 focus:outline-none focus:ring-2"
       >
         {selectedSeason ? (
           <SeasonNavItemBody season={selectedSeason} />
@@ -84,7 +85,7 @@ export function SeasonMenu(): ReactNode {
           aria-hidden="true"
           className={clsx("pl-1 transition-all", open && "rotate-180")}
         >
-          ▼
+          <ClientOnly fallback={<>v</>}>{() => <>▼</>}</ClientOnly>
         </span>
       </button>
 

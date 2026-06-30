@@ -72,8 +72,8 @@ export type EnhancedSeason = Season & {
       | null
       | [number, number][]
       | {
-          from: Omit<Dataset, "rank" | "rank100" | "score100">;
-          to: Omit<Dataset, "rank" | "rank100" | "score100">;
+          from: Omit<Dataset, "rank100" | "score100">;
+          to: Omit<Dataset, "rank100" | "score100">;
         }
     >;
     initialZoom: Record<Regions, null | [number, number]>;
@@ -91,9 +91,7 @@ export type Dataset = {
   ts: number;
   score: number;
   faction?: Factions;
-  rank: number | null;
   score100: number | null;
-  rank100: number | null;
 };
 
 export function hasSeasonEndedForAllRegions(slug: string): boolean {

@@ -3,6 +3,35 @@ import { type Season } from "../runtime";
 
 export const mnSeasons: Season[] = [
   defineSeason({
+    name: "MN S2",
+    slug: "mn-season-2",
+    expansion: "mn",
+    rioKey: "season-mn-2",
+    crossFactionSupport: "complete",
+    startDates: NO_DATES,
+    endDates: NO_DATES,
+    affixes: [],
+    dungeons: [
+      { slug: "altar-of-fangs", name: "Altar of Fangs" },
+      { slug: "den-of-nalorakk", name: "Den of Nalorakk" },
+      { slug: "kings-rest", name: "Kings' Rest" },
+      { slug: "murder-row", name: "Murder Row" },
+      { slug: "ruby-life-pools", name: "Ruby Life Pools" },
+      { slug: "temple-of-sethraliss", name: "Temple of Sethraliss" },
+      { slug: "the-blinding-vale", name: "The Blinding Vale" },
+      { slug: "voidscar-arena", name: "Voidscar Arena" },
+    ],
+    seasonIcon:
+      "https://assets.rpglogs.com/img/warcraft/abilities/inv_misc_questionmark.jpg",
+    startingPeriod: 0,
+    wcl: {
+      zoneId: 55,
+      weekIndexToAffixSetId: [],
+    },
+    supportsExtrapolationHistory: true,
+    annotations: [],
+  }),
+  defineSeason({
     name: "MN S1",
     slug: "mn-season-1",
     expansion: "mn",

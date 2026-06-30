@@ -1,6 +1,14 @@
 import clsx from "clsx";
 import { type Regions } from "prisma/generated/prisma/enums";
-import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
+import {
+  Fragment,
+  lazy,
+  Suspense,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   Await,
   data,
@@ -11,6 +19,8 @@ import {
   useSearchParams,
 } from "react-router";
 import { ClientOnly } from "remix-utils/client-only";
+
+import { GutterDivider } from "~/components/GutterDivider";
 
 import { getAffixIconUrl, getAffixName } from "../affixes";
 import { buildEnhancedSeason } from "../chart/assemble";
@@ -55,7 +65,7 @@ const serverTiming = "Server-Timing";
 // visible once the viewport is wider than the content's max width (the gutters
 // have width then).
 const gutterPattern =
-  "row-span-full row-start-1 hidden border-x border-x-(--pattern-fg) bg-[image:repeating-linear-gradient(315deg,_var(--pattern-fg)_0,_var(--pattern-fg)_1px,_transparent_0,_transparent_50%)] bg-[size:10px_10px] bg-fixed [--pattern-fg:var(--color-white)]/10 md:block";
+  "row-span-full row-start-1 hidden border-x border-x-(--pattern-fg) bg-[image:repeating-linear-gradient(315deg,_var(--pattern-fg)_0,_var(--pattern-fg)_1px,_transparent_0,_transparent_50%)] bg-[size:10px_10px] bg-fixed [--pattern-fg:var(--color-white)]/10 2xl:block";
 
 export const headers: HeadersFunction = ({ loaderHeaders }) => {
   const loaderCache = loaderHeaders.get(cacheControl);
@@ -377,15 +387,18 @@ export default function Season(
       <Header />
       <div className="grid flex-1 grid-cols-1 grid-rows-[1fr] md:grid-cols-[1fr_min(96rem,100%)_1fr]">
         <div aria-hidden className={clsx(gutterPattern, "col-start-1")} />
-        <main className="col-start-1 row-start-1 flex flex-col space-y-6 p-6 md:col-start-2">
+        <main className="col-start-1 row-start-1 flex flex-col space-y-4 p-6 md:col-start-2">
           <SeasonControls season={season} />
           {primaryRegion ? (
-            <Region
-              season={season}
-              region={primaryRegion}
-              onZoom={setExtremes}
-              extremes={extremes}
-            />
+            <>
+              <Region
+                season={season}
+                region={primaryRegion}
+                onZoom={setExtremes}
+                extremes={extremes}
+              />
+              {pendingRegions.length > 0 ? <GutterDivider /> : null}
+            </>
           ) : null}
 
           {/* secondary regions stream in so slow regions (CN/TW) don't block the
@@ -486,15 +499,20 @@ function StreamedRegions({
 
   return (
     <>
-      {regions.map((region) => (
-        <Region
-          key={region}
-          season={season}
-          region={region}
-          extremes={extremes}
-          onZoom={onZoom}
-        />
-      ))}
+      {regions.map((region, index) => {
+        return (
+          <Fragment key={region}>
+            <Region
+              key={region}
+              season={season}
+              region={region}
+              extremes={extremes}
+              onZoom={onZoom}
+            />
+            {index === regions.length - 1 ? null : <GutterDivider />}
+          </Fragment>
+        );
+      })}
     </>
   );
 }

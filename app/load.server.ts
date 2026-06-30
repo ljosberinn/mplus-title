@@ -61,8 +61,8 @@ export function calculateExtrapolation(
   | null
   | [number, number][]
   | {
-      from: Omit<Dataset, "rank" | "rank100" | "score100">;
-      to: Omit<Dataset, "rank" | "rank100" | "score100">;
+      from: Omit<Dataset, "score100">;
+      to: Omit<Dataset, "score100">;
     } {
   let seasonEnding = season.endDates[region];
 
