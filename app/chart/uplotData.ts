@@ -373,13 +373,17 @@ export function buildUplotConfig(
       show: visible,
     });
 
-    legend.push({
-      seriesIdx,
-      label,
-      color,
-      toggleable: true,
-      defaultVisible: visible,
-    });
+    // the score chart's legend is now a display-only colour key (visibility
+    // lives in the Features menu), so only list series that are actually shown.
+    if (visible) {
+      legend.push({
+        seriesIdx,
+        label,
+        color,
+        toggleable: false,
+        defaultVisible: true,
+      });
+    }
 
     if (isScatter && Array.isArray(s.data)) {
       const estimatedAt: (number | null)[] = Array.from(
@@ -464,7 +468,9 @@ export function buildUplotConfig(
   // eslint-disable-next-line prefer-destructuring
   const startingPeriod = season.startingPeriod;
   const mythicLinks: MythicLink[] =
-    season.affixes.length === 0 && startingPeriod
+    season.affixes.length === 0 &&
+    startingPeriod &&
+    season.score.overlaysToDisplay.includes("mythicStats")
       ? (season.score.xAxisPlotBands[region] ?? [])
           .filter((band) => band.id === "background-color")
           .map((band, index) => ({ band, index }))

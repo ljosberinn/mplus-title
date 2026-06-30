@@ -115,7 +115,8 @@ export function calculateExtrapolationBand(
   });
 }
 
-/** Pushes a dashed extrapolation line plus its confidence band onto `options`. */
+/** Pushes a dashed extrapolation line plus its confidence band onto `options`.
+ * `visible` is slaved to the parent score line's feature toggle. */
 function pushExtrapolationSeries(
   options: ChartSeries[],
   extrapolation: Extrapolation,
@@ -126,6 +127,7 @@ function pushExtrapolationSeries(
     bandName: string;
     color: string;
   },
+  visible: boolean,
 ): void {
   if (extrapolation === null) {
     return;
@@ -148,7 +150,7 @@ function pushExtrapolationSeries(
       name: config.bandName,
       color: config.color,
       data: band,
-      visible: true,
+      visible,
     });
   }
 
@@ -159,7 +161,7 @@ function pushExtrapolationSeries(
     color: config.color,
     data,
     dashed: true,
-    visible: true,
+    visible,
   });
 }
 
@@ -172,6 +174,11 @@ export function calculateSeries(
   extrapolation100: Extrapolation = null,
 ): ChartSeries[] {
   const options: ChartSeries[] = [];
+
+  // the score cutoff lines (+ their forward extrapolation) are now toggled
+  // globally via the Features menu instead of the per-chart legend.
+  const showScore = overlays.includes("score");
+  const showScore100 = overlays.includes("score100");
 
   if (season.crossFactionSupport !== "complete") {
     options.push(
@@ -206,6 +213,7 @@ export function calculateSeries(
       name: "Score 0.1%",
       id: "score",
       color: colors.xFaction,
+      visible: showScore,
       data: data
         .filter((dataset) => !("faction" in dataset))
         .map((dataset) => {
@@ -214,13 +222,18 @@ export function calculateSeries(
     });
   }
 
-  pushExtrapolationSeries(options, extrapolation, {
-    lineId: "extrapolation",
-    bandId: "extrapolation-confidence",
-    name: "Score Extrapolated",
-    bandName: "Extrapolation Confidence",
-    color: colors.extrapolation,
-  });
+  pushExtrapolationSeries(
+    options,
+    extrapolation,
+    {
+      lineId: "extrapolation",
+      bandId: "extrapolation-confidence",
+      name: "Score Extrapolated",
+      bandName: "Extrapolation Confidence",
+      color: colors.extrapolation,
+    },
+    showScore,
+  );
 
   if (
     overlays.includes("extrapolation") &&
@@ -232,7 +245,7 @@ export function calculateSeries(
       id: "extrapolation-history",
       name: "Extrapolation History",
       color: colors.extrapolationHistory,
-      visible: false,
+      visible: true,
       data: extrapolationHistory,
     });
   }
@@ -243,6 +256,7 @@ export function calculateSeries(
       name: "Score 1%",
       id: "score100",
       color: colors.top1,
+      visible: showScore100,
       data: data
         .filter((dataset) => dataset.score100 !== null)
         .map((dataset) => {
@@ -250,13 +264,18 @@ export function calculateSeries(
         }),
     });
 
-    pushExtrapolationSeries(options, extrapolation100, {
-      lineId: "extrapolation-score100",
-      bandId: "extrapolation-score100-confidence",
-      name: "Score 1% Extrapolated",
-      bandName: "Score 1% Confidence",
-      color: colors.top1,
-    });
+    pushExtrapolationSeries(
+      options,
+      extrapolation100,
+      {
+        lineId: "extrapolation-score100",
+        bandId: "extrapolation-score100-confidence",
+        name: "Score 1% Extrapolated",
+        bandName: "Score 1% Confidence",
+        color: colors.top1,
+      },
+      showScore100,
+    );
   }
 
   {

@@ -16,6 +16,7 @@ import { getAffixIconUrl, getAffixName } from "../affixes";
 import { buildEnhancedSeason } from "../chart/assemble";
 import { Footer } from "../components/Footer";
 import { Header } from "../components/Header";
+import { SeasonControls } from "../components/SeasonControls";
 import { decode, type RegionPayload, type SeasonData } from "../data";
 import { assembleSeasonData } from "../data.server";
 import { time, type Timings } from "../load.server";
@@ -47,6 +48,14 @@ const eTag = "ETag";
 const setCookie = "Set-Cookie";
 const expires = "Expires";
 const serverTiming = "Server-Timing";
+
+// tailwind.com-style hatched side gutters framing the main content. Adapted to
+// this always-dark theme: a white diagonal pattern at 10% on the gutter columns
+// plus `border-x` boundary lines. Hidden on mobile; the hatch only becomes
+// visible once the viewport is wider than the content's max width (the gutters
+// have width then).
+const gutterPattern =
+  "row-span-full row-start-1 hidden border-x border-x-(--pattern-fg) bg-[image:repeating-linear-gradient(315deg,_var(--pattern-fg)_0,_var(--pattern-fg)_1px,_transparent_0,_transparent_50%)] bg-[size:10px_10px] bg-fixed [--pattern-fg:var(--color-white)]/10 md:block";
 
 export const headers: HeadersFunction = ({ loaderHeaders }) => {
   const loaderCache = loaderHeaders.get(cacheControl);
@@ -365,63 +374,68 @@ export default function Season(
 
   return (
     <>
-      <Header season={season} />
-      <main className="container mt-4 flex max-w-screen-2xl flex-1 flex-col space-y-4 px-4 md:mx-auto 2xl:px-0">
-        {primaryRegion ? (
-          <Region
-            season={season}
-            region={primaryRegion}
-            onZoom={setExtremes}
-            extremes={extremes}
-          />
-        ) : null}
+      <Header />
+      <div className="grid flex-1 grid-cols-1 grid-rows-[1fr] md:grid-cols-[1fr_min(96rem,100%)_1fr]">
+        <div aria-hidden className={clsx(gutterPattern, "col-start-1")} />
+        <main className="col-start-1 row-start-1 mt-4 flex flex-col space-y-4 px-6 md:col-start-2">
+          <SeasonControls season={season} />
+          {primaryRegion ? (
+            <Region
+              season={season}
+              region={primaryRegion}
+              onZoom={setExtremes}
+              extremes={extremes}
+            />
+          ) : null}
 
-        {/* secondary regions stream in so slow regions (CN/TW) don't block the
+          {/* secondary regions stream in so slow regions (CN/TW) don't block the
             primary region's chart. */}
-        {pendingRegions.length > 0 ? (
-          <Suspense
-            fallback={pendingRegions.map((region) => (
-              <RegionSkeleton key={region} region={region} />
-            ))}
-          >
-            <Await resolve={regionsStream} errorElement={null}>
-              {(streamedRegions) => (
-                <StreamedRegions
-                  baseData={props.loaderData}
-                  streamedRegions={streamedRegions}
-                  seasonConfig={seasonConfig!}
-                  overlays={overlays}
-                  regions={pendingRegions}
-                  extremes={extremes}
-                  onZoom={setExtremes}
-                />
-              )}
+          {pendingRegions.length > 0 ? (
+            <Suspense
+              fallback={pendingRegions.map((region) => (
+                <RegionSkeleton key={region} region={region} />
+              ))}
+            >
+              <Await resolve={regionsStream} errorElement={null}>
+                {(streamedRegions) => (
+                  <StreamedRegions
+                    baseData={props.loaderData}
+                    streamedRegions={streamedRegions}
+                    seasonConfig={seasonConfig!}
+                    overlays={overlays}
+                    regions={pendingRegions}
+                    extremes={extremes}
+                    onZoom={setExtremes}
+                  />
+                )}
+              </Await>
+            </Suspense>
+          ) : null}
+
+          {/* dungeon records stream in so they don't block the charts. */}
+          <Suspense fallback={null}>
+            <Await resolve={recordsStream} errorElement={null}>
+              {(records) =>
+                overlays.includes("records") &&
+                Array.isArray(records) &&
+                records.length > 0 ? (
+                  <ClientOnly fallback={null}>
+                    {() => (
+                      <DungeonRecords
+                        season={{
+                          ...season,
+                          records,
+                        }}
+                      />
+                    )}
+                  </ClientOnly>
+                ) : null
+              }
             </Await>
           </Suspense>
-        ) : null}
-
-        {/* dungeon records stream in so they don't block the charts. */}
-        <Suspense fallback={null}>
-          <Await resolve={recordsStream} errorElement={null}>
-            {(records) =>
-              overlays.includes("records") &&
-              Array.isArray(records) &&
-              records.length > 0 ? (
-                <ClientOnly fallback={null}>
-                  {() => (
-                    <DungeonRecords
-                      season={{
-                        ...season,
-                        records,
-                      }}
-                    />
-                  )}
-                </ClientOnly>
-              ) : null
-            }
-          </Await>
-        </Suspense>
-      </main>
+        </main>
+        <div aria-hidden className={clsx(gutterPattern, "col-start-3")} />
+      </div>
       <Footer />
     </>
   );
@@ -790,7 +804,10 @@ function Region({
                       />
                     </a>
                   ) : null}
-                  {cycles === 0 && isFutureWeek ? null : (
+                  {(cycles === 0 && isFutureWeek) ||
+                  !season.score.overlaysToDisplay.includes(
+                    "mythicStats",
+                  ) ? null : (
                     <MythicStatsLink season={season} weekOffset={weekOffset} />
                   )}
                 </span>

@@ -14,7 +14,7 @@
  * `extremes`.
  */
 import { type Regions } from "prisma/generated/prisma/enums";
-import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useRef } from "react";
 import uPlot from "uplot";
 
 import { type EnhancedSeason } from "../seasons";
@@ -180,24 +180,12 @@ export default function UplotChart({
     [season, region],
   );
 
-  const [visibility, setVisibility] = useState<Record<number, boolean>>(() =>
-    Object.fromEntries(
-      config.legend.map((item) => [item.seriesIdx, item.defaultVisible]),
-    ),
-  );
-
   // (re)create the plot whenever the underlying config changes.
   useEffect(() => {
     const container = containerRef.current;
     if (!container) {
       return;
     }
-
-    setVisibility(
-      Object.fromEntries(
-        config.legend.map((item) => [item.seriesIdx, item.defaultVisible]),
-      ),
-    );
 
     const dpr = uPlot.pxRatio;
 
@@ -951,16 +939,6 @@ export default function UplotChart({
     }
   }, [extremes, config]);
 
-  const toggle = (seriesIdx: number) => {
-    const plot = plotRef.current;
-    if (!plot) {
-      return;
-    }
-    const next = !(visibility[seriesIdx] ?? true);
-    plot.setSeries(seriesIdx, { show: next });
-    setVisibility((prev) => ({ ...prev, [seriesIdx]: next }));
-  };
-
   const resetZoom = () => {
     const plot = plotRef.current;
     if (plot) {
@@ -992,7 +970,7 @@ export default function UplotChart({
           Reset zoom
         </button>
       </div>
-      <Legend items={config.legend} visibility={visibility} onToggle={toggle} />
+      <Legend items={config.legend} />
     </div>
   );
 }

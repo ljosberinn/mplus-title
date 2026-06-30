@@ -7,7 +7,7 @@
  * hovering a season warms its loader.
  */
 import clsx from "clsx";
-import { type ReactNode, useEffect, useRef, useState } from "react";
+import { type ReactNode, useRef, useState } from "react";
 import {
   NavLink,
   useNavigation,
@@ -16,6 +16,8 @@ import {
 } from "react-router";
 
 import { type Expansion, type Season, seasons } from "~/seasons";
+
+import { useDismiss } from "./useDismiss";
 
 /** Heading shown per group; matches the previous uppercased slug-prefix. */
 const expansionLabel = (expansion: Expansion): string =>
@@ -55,31 +57,10 @@ export function SeasonMenu(): ReactNode {
     (season) => season.slug === selectedSeasonSlug,
   );
 
-  // close on outside click / Escape while open.
-  useEffect(() => {
-    if (!open) {
-      return;
-    }
-
-    const onPointerDown = (event: PointerEvent) => {
-      if (!containerRef.current?.contains(event.target as Node)) {
-        setOpen(false);
-      }
-    };
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        setOpen(false);
-      }
-    };
-
-    document.addEventListener("pointerdown", onPointerDown);
-    document.addEventListener("keydown", onKeyDown);
-
-    return () => {
-      document.removeEventListener("pointerdown", onPointerDown);
-      document.removeEventListener("keydown", onKeyDown);
-    };
-  }, [open]);
+  // close on outside click / Escape while open (shared with the Features modal).
+  useDismiss(open, containerRef, () => {
+    setOpen(false);
+  });
 
   const groups = groupByExpansion(seasons);
 
@@ -139,7 +120,6 @@ export function SeasonMenu(): ReactNode {
                             )}
                           >
                             <SeasonNavItemBody season={season} />
-                            {isSelected && <span aria-hidden="true">✅</span>}
                           </span>
                         ) : (
                           <NavLink

@@ -48,6 +48,10 @@ export type DungeonRecordsConfig = {
   lineSeriesIdx: number[];
   /** seconds; right edge of the x-axis (now, capped to season end). */
   softMax: number | null;
+  /** Default y-axis (key level) view: when the completed-level span is wide
+   * (> 5), focus on roughly the top 4 levels with a little margin, instead of
+   * squashing them against a tall axis. `null` ⇒ auto-range over all levels. */
+  initialYZoom: [number, number] | null;
 };
 
 type Pt = { ts: number; value: number };
@@ -171,5 +175,37 @@ export function buildDungeonRecordsConfig(
     ? Math.round(softMaxMs / 1000)
     : null;
 
-  return { data, series, legend, weekBands, weekLines, lineSeriesIdx, softMax };
+  // 5) default y-zoom: if the completed key levels span more than 5, focus on
+  // the top 4 levels (maxLevel-3 … maxLevel) plus one level of margin below and
+  // a touch of headroom above, so the meaningful recent records aren't squashed.
+  let minLevel = Number.POSITIVE_INFINITY;
+  let maxLevel = Number.NEGATIVE_INFINITY;
+  for (const points of perRecord) {
+    for (const { value } of points) {
+      if (value < minLevel) {
+        minLevel = value;
+      }
+      if (value > maxLevel) {
+        maxLevel = value;
+      }
+    }
+  }
+
+  const initialYZoom: [number, number] | null =
+    Number.isFinite(minLevel) &&
+    Number.isFinite(maxLevel) &&
+    maxLevel - minLevel > 5
+      ? [maxLevel - 4, maxLevel + 0.5]
+      : null;
+
+  return {
+    data,
+    series,
+    legend,
+    weekBands,
+    weekLines,
+    lineSeriesIdx,
+    softMax,
+    initialYZoom,
+  };
 }

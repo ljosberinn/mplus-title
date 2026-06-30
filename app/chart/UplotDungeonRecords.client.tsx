@@ -378,6 +378,14 @@ export default function UplotDungeonRecords({
       plot.setScale("x", { min: xs[0], max: config.softMax });
     }
 
+    // default-zoom the y-axis to the top key levels when the span is wide.
+    if (config.initialYZoom) {
+      plot.setScale("y", {
+        min: config.initialYZoom[0],
+        max: config.initialYZoom[1],
+      });
+    }
+
     return () => {
       plot.destroy();
       plotRef.current = null;

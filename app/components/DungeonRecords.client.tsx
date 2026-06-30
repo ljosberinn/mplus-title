@@ -25,12 +25,10 @@ export default function DungeonRecords({
       <h1 id="title-dungeon-records" className="text-center text-lg font-bold">
         Dungeon Records
       </h1>
-      <div className="border border-gray-600 bg-gray-700 p-4">
-        <div className="h-[39vh] lg:h-[30vh]">
-          <Suspense fallback={null}>
-            <UplotDungeonRecords season={season} />
-          </Suspense>
-        </div>
+      <div className="h-[39vh] lg:h-[30vh]">
+        <Suspense fallback={null}>
+          <UplotDungeonRecords season={season} />
+        </Suspense>
       </div>
     </section>
   );

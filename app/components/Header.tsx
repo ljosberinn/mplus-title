@@ -1,69 +1,26 @@
-import type { ReactNode} from "react";
-import { lazy, Suspense } from "react";
-import { ClientOnly } from "remix-utils/client-only";
-
-import { type EnhancedSeason } from "~/seasons";
+import type { ReactNode } from "react";
 
 import { Logo } from "./Logo";
 import { BuyMeACoffee, RaiderPatreon, Twitter, WCLPatreon } from "./NavLink";
-import { OverlaysToggle } from "./OverlaysToggle";
-import { RegionToggle } from "./RegionMenu";
 import { SeasonMenu } from "./SeasonMenu";
 
-type HeaderProps = {
-  season: EnhancedSeason;
-};
-
-const CustomExtrapolationForm = lazy(
-  () => import("./CustomExtrapolationForm.client"),
-);
-
-export function Header({ season }: HeaderProps): ReactNode {
-  const seasonHasStarted = Object.values(season.startDates).some(
-    (maybeDate) => maybeDate !== null && maybeDate <= Date.now(),
-  );
-
-  const seasonHasEndedInEveryRegion = Object.values(season.endDates).every(
-    (maybeDate) => maybeDate !== null && maybeDate <= Date.now(),
-  );
-
+export function Header(): ReactNode {
   return (
-    <>
-      <header className="relative z-50 flex h-20 items-center justify-between border-b border-gray-700 p-6 text-stone-100 drop-shadow-sm print:hidden">
-        <nav className="mx-auto flex w-full max-w-screen-2xl items-center justify-between">
-          <ul>
-            <li>
-              <Logo />
-            </li>
-          </ul>
-          <ul className="hidden space-x-2 lg:flex">
-            <BuyMeACoffee />
-            <RaiderPatreon />
-            <WCLPatreon />
-            <Twitter />
-          </ul>
-          <SeasonMenu />
-        </nav>
-      </header>
-      <div className="mx-auto flex w-full max-w-screen-2xl items-center justify-between">
-        <div className="flex w-full flex-col flex-wrap justify-between gap-3 pt-4 md:flex-row md:px-4">
-          <RegionToggle season={season} />
-          <OverlaysToggle season={season} />
-        </div>
-      </div>
-      {seasonHasStarted && !seasonHasEndedInEveryRegion ? (
-        <ClientOnly>
-          {() => (
-            <Suspense fallback={null}>
-              <div className="mx-auto flex w-full max-w-screen-2xl items-center justify-between">
-                <div className="flex w-full flex-col flex-wrap justify-between gap-3 md:flex-row">
-                  <CustomExtrapolationForm season={season} />
-                </div>
-              </div>
-            </Suspense>
-          )}
-        </ClientOnly>
-      ) : null}
-    </>
+    <header className="sticky top-0 z-50 border-b border-gray-800 bg-gray-900/80 text-stone-100 backdrop-blur print:hidden">
+      <nav className="mx-auto flex h-14 w-full max-w-screen-2xl items-center justify-between px-6">
+        <ul>
+          <li>
+            <Logo />
+          </li>
+        </ul>
+        <ul className="hidden items-center gap-x-6 lg:flex">
+          <BuyMeACoffee variant="header" />
+          <RaiderPatreon variant="header" />
+          <WCLPatreon variant="header" />
+          <Twitter variant="header" />
+        </ul>
+        <SeasonMenu />
+      </nav>
+    </header>
   );
 }

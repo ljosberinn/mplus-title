@@ -1,4 +1,4 @@
-import type { ReactNode} from "react";
+import type { ReactNode } from "react";
 import { version } from "react";
 import { FaDiscord } from "react-icons/fa";
 
@@ -14,7 +14,7 @@ import {
 
 export function Footer(): ReactNode {
   return (
-    <div className="px-6 text-stone-200 print:hidden">
+    <div className="border-t border-gray-800 px-6 text-stone-200 print:hidden">
       <footer className="mx-auto w-full max-w-screen-2xl">
         <nav className="flex w-full flex-col items-center justify-between space-y-16 py-16 md:flex-row md:items-start md:space-y-0">
           <div className="flex h-full w-72 flex-col items-center space-y-6 md:items-start">
