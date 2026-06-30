@@ -14,93 +14,99 @@ import {
 
 export function Footer(): ReactNode {
   return (
-    <div className="border-t border-gray-800 px-6 text-stone-200 print:hidden">
-      <footer className="mx-auto w-full max-w-screen-2xl">
-        <nav className="flex w-full flex-col items-center justify-between space-y-16 py-16 md:flex-row md:items-start md:space-y-0">
-          <div className="flex h-full w-72 flex-col items-center space-y-6 md:items-start">
-            <Logo />
+    <div className="border-t border-gray-800 px-6 text-stone-300 print:hidden">
+      <footer className="mx-auto w-full max-w-screen-2xl py-10">
+        {/* brand + community links */}
+        <div className="flex flex-col items-center gap-8 md:flex-row md:items-start md:justify-between">
+          <Logo />
+
+          <ul className="flex flex-col items-center gap-y-0.5 md:items-end">
+            <BuyMeACoffee />
+            <RaiderPatreon />
+            <WCLPatreon />
+            <Twitter />
+            <NavLink icon={FaDiscord}>xepher1s</NavLink>
+          </ul>
+        </div>
+
+        <div className="my-8 border-t border-gray-800" />
+
+        {/* attributions + tech stack */}
+        <div className="flex flex-col gap-6 text-xs text-stone-400 lg:flex-row lg:items-center lg:justify-between">
+          <div className="space-y-1 text-center lg:text-left">
+            <small className="block">
+              All data is retrieved from{" "}
+              <ExternalLink
+                className="underline transition-colors hover:text-stone-100"
+                href="https://raider.io"
+              >
+                Raider.IO
+              </ExternalLink>
+              . Logo from{" "}
+              <ExternalLink
+                className="underline transition-colors hover:text-stone-100"
+                href="https://yilinzc.carrd.co/"
+              >
+                yilinzc
+              </ExternalLink>
+              .
+            </small>
+            <small className="block">
+              World of Warcraft and related artwork is copyright of Blizzard
+              Entertainment, Inc. This is a fan site and we are not affiliated.
+            </small>
           </div>
 
-          <div className="grid w-full grid-cols-1 items-center text-center md:w-auto md:grid-cols-2 md:items-start md:gap-10 md:text-left">
-            <ul />
-            <ul className="md:text-right">
-              <BuyMeACoffee />
-              <RaiderPatreon />
-              <WCLPatreon />
-              <Twitter />
-
-              <NavLink icon={FaDiscord}>xepher1s</NavLink>
-            </ul>
-          </div>
-        </nav>
-
-        <small className="flex w-full flex-col items-center justify-center space-x-0 space-y-1 py-2 text-xs text-stone-300 md:flex-row md:justify-end md:space-x-2 md:space-y-0">
-          <span>
-            All data is retrieved from{" "}
-            <ExternalLink className="underline" href="https://raider.io">
-              Raider.IO
-            </ExternalLink>
-            .
-          </span>
-          <span>
-            Logo from{" "}
+          <div className="flex items-center justify-center gap-4 text-stone-300">
             <ExternalLink
-              className="underline"
-              href="https://yilinzc.carrd.co/"
+              className="transition-opacity hover:opacity-70"
+              href="https://vercel.com/"
+              aria-label="Vercel"
             >
-              yilinzc
+              <Vercel />
             </ExternalLink>
-            .
-          </span>
-        </small>
 
-        <small className="flex w-full flex-col justify-center space-x-0 space-y-1 py-2 text-center text-xs text-stone-300 md:flex-row md:justify-end md:space-x-2 md:space-y-0 md:text-right">
-          <span>
-            World of Warcraft and related artwork is copyright of Blizzard
-            Entertainment, Inc.
-          </span>
-          <span>This is a fan site and we are not affiliated.</span>
-        </small>
+            <ExternalLink
+              className="transition-opacity hover:opacity-70"
+              href="https://reactrouter.com/"
+              aria-label="React Router"
+            >
+              <ReactRouter />
+            </ExternalLink>
 
-        <small className="flex w-full items-center justify-center space-x-2 space-y-1 py-2 text-xs text-stone-300 md:justify-end md:space-x-2 md:space-y-0">
-          <ExternalLink
-            className="flex items-center justify-center space-x-2"
-            href="https://vercel.com/"
-            aria-label="Vercel"
-          >
-            <Vercel />
-          </ExternalLink>
+            <ExternalLink
+              href={`https://www.npmjs.com/package/react/v/${version}`}
+              className="flex items-center gap-1 transition-opacity hover:opacity-70"
+              aria-label={`React ${version.split("-")[0]}`}
+            >
+              <React /> {version.split("-")[0]}
+            </ExternalLink>
 
-          <ExternalLink
-            className="flex items-center justify-center space-x-2"
-            href="https://reactrouter.com/"
-            aria-label="Remix"
-          >
-            <ReactRouter />
-          </ExternalLink>
+            <ExternalLink
+              className="transition-opacity hover:opacity-70"
+              href="https://tailwindcss.com/"
+              aria-label="Tailwind"
+            >
+              <Tailwind />
+            </ExternalLink>
 
-          <ExternalLink
-            href={`https://www.npmjs.com/package/react/v/${version}`}
-            className="flex"
-            aria-label={`React ${version.split("-")[0]}`}
-          >
-            <React /> {version.split("-")[0]}
-          </ExternalLink>
+            <ExternalLink
+              className="transition-opacity hover:opacity-70"
+              href="https://upstash.com/"
+              aria-label="Upstash"
+            >
+              <Upstash />
+            </ExternalLink>
 
-          <ExternalLink href="https://tailwindcss.com/" aria-label="Tailwind">
-            <Tailwind />
-          </ExternalLink>
-
-          <ExternalLink href="https://upstash.com/" aria-label="Upstash">
-            <Upstash />
-          </ExternalLink>
-        </small>
-
-        <small className="flex w-full items-center justify-center space-x-1 space-y-1 pb-6 pt-2 text-xs text-stone-300 md:justify-end md:space-x-2 md:space-y-0">
-          <ExternalLink href="https://github.com/ljosberinn/mplus-title">
-            <GitHub />
-          </ExternalLink>
-        </small>
+            <ExternalLink
+              className="transition-opacity hover:opacity-70"
+              href="https://github.com/ljosberinn/mplus-title"
+              aria-label="GitHub"
+            >
+              <GitHub />
+            </ExternalLink>
+          </div>
+        </div>
       </footer>
     </div>
   );
