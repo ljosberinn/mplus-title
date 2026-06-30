@@ -14,7 +14,6 @@ import {
   useParams,
   useSearchParams,
 } from "react-router";
-import { ClientOnly } from "remix-utils/client-only";
 
 import { type Expansion, type Season, seasons } from "~/seasons";
 
@@ -85,7 +84,7 @@ export function SeasonMenu(): ReactNode {
           aria-hidden="true"
           className={clsx("pl-1 transition-all", open && "rotate-180")}
         >
-          <ClientOnly fallback={<>v</>}>{() => <>▼</>}</ClientOnly>
+          ▼
         </span>
       </button>
 
