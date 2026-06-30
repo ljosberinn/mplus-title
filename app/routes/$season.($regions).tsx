@@ -569,6 +569,61 @@ type CardProps = {
 const TempBanner = lazy(() => import("../components/TempBanner.client"));
 const UplotChart = lazy(() => import("../chart/UplotChart.client"));
 
+const relativeTimeFormatter = new Intl.RelativeTimeFormat(undefined, {
+  numeric: "auto",
+});
+
+/** "3 minutes ago" / "5 seconds ago" / "2 hours ago" for a past ms timestamp. */
+function formatRelativeTime(ts: number): string {
+  const diffSeconds = Math.round((ts - Date.now()) / 1000);
+
+  if (Math.abs(diffSeconds) < 60) {
+    return relativeTimeFormatter.format(diffSeconds, "second");
+  }
+  const diffMinutes = Math.round(diffSeconds / 60);
+  if (Math.abs(diffMinutes) < 60) {
+    return relativeTimeFormatter.format(diffMinutes, "minute");
+  }
+  const diffHours = Math.round(diffSeconds / 3600);
+  if (Math.abs(diffHours) < 24) {
+    return relativeTimeFormatter.format(diffHours, "hour");
+  }
+  return relativeTimeFormatter.format(Math.round(diffSeconds / 86_400), "day");
+}
+
+/**
+ * Client-only "last updated" line for a region: the last dataset's timestamp in
+ * the viewer's locale plus a live relative time. It self-ticks every 10s so the
+ * relative part stays fresh; being its own component, that re-render doesn't
+ * touch the chart. Must be wrapped in <ClientOnly> (locale + relative time are
+ * client-specific and would otherwise mismatch SSR).
+ */
+function LastUpdated({ ts }: { ts: number }): React.ReactNode {
+  const [, tick] = useState(0);
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      tick((value) => value + 1);
+    }, 10_000);
+
+    return () => {
+      clearInterval(id);
+    };
+  }, []);
+
+  const date = new Date(ts);
+
+  return (
+    <p className="text-xs text-gray-400">
+      Last updated{" "}
+      <time dateTime={date.toISOString()} className="text-gray-300">
+        {date.toLocaleString()}
+      </time>{" "}
+      ({formatRelativeTime(ts)})
+    </p>
+  );
+}
+
 function Region({
   season,
   region,
@@ -641,6 +696,9 @@ function Region({
 
   const needsTempBanner = season.slug === "df-season-2" && region === "US";
 
+  const datasetsForRegion = season.score.dataByRegion[region];
+  const lastUpdateTs = datasetsForRegion[datasetsForRegion.length - 1].ts;
+
   return (
     <section
       className={clsx(
@@ -668,6 +726,10 @@ function Region({
             daily updated bluepost
           </a>
         ) : null}
+
+        <ClientOnly fallback={null}>
+          {() => <LastUpdated ts={lastUpdateTs} />}
+        </ClientOnly>
       </div>
 
       {needsTempBanner ? (
