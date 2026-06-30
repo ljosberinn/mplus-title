@@ -85,7 +85,7 @@ export function ConfigureMenu({ season }: ConfigureMenuProps): ReactNode {
         }}
         aria-haspopup="dialog"
         aria-expanded={open}
-        className="flex cursor-pointer space-x-2 border border-gray-600 bg-gray-700 px-4 py-2 font-medium text-white outline-none ring-gray-500 transition-all duration-200 ease-in-out hover:bg-gray-500 focus:outline-none focus:ring-2"
+        className="rounded-md flex cursor-pointer space-x-2 border border-gray-600 bg-gray-700 px-4 py-2 font-medium text-white outline-none ring-gray-500 transition-all duration-200 ease-in-out hover:bg-gray-500 focus:outline-none focus:ring-2"
       >
         Configure
       </button>

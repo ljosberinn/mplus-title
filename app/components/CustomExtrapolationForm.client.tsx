@@ -164,7 +164,7 @@ export default function CustomExtrapolationForm({
       </div>
       {!disabled && customExtrapolationEndDate ? (
         <div className="gap-4 flex w-full flex-col">
-          <div className="flex flex-col border border-red-700 bg-red-500 p-2 md:flex-row dark:bg-red-500/40 w-full">
+          <div className="rounded-md flex flex-col border border-red-700 bg-red-500 p-2 md:flex-row dark:bg-red-500/40 w-full">
             <div className="flex justify-center" />
             <div className="p-2">
               <b>Warning</b>: you are using a custom extrapolation date. Use at

@@ -51,7 +51,7 @@ export function Modal({
         event.preventDefault();
         onClose();
       }}
-      className="fixed left-1/2 top-1/2 max-h-[85vh] w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 overflow-y-auto border border-gray-600 bg-gray-800 p-0 text-stone-100 shadow-xl backdrop:bg-black/60"
+      className="rounded-md fixed left-1/2 top-1/2 max-h-[85vh] w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 overflow-y-auto border border-gray-600 bg-gray-800 p-0 text-stone-100 shadow-xl backdrop:bg-black/60"
     >
       <div ref={panelRef}>
         <div className="flex items-center justify-between border-b border-gray-700 px-4 py-3">
@@ -60,7 +60,7 @@ export function Modal({
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="border border-gray-600 px-2 leading-none text-stone-300 hover:bg-gray-700"
+            className="cursor-pointer rounded-md border border-gray-600 px-2 leading-none text-stone-300 hover:bg-gray-700"
           >
             ✕
           </button>

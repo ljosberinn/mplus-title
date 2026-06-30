@@ -74,7 +74,7 @@ export function SeasonMenu(): ReactNode {
         onClick={() => {
           setOpen((prev) => !prev);
         }}
-        className="cursor-pointer flex space-x-2 border border-gray-600 bg-gray-700 px-4 py-2 font-medium text-white outline-none ring-gray-500 transition-all duration-200 ease-in-out hover:bg-gray-500 focus:outline-none focus:ring-2"
+        className="rounded-md cursor-pointer flex space-x-2 border border-gray-600 bg-gray-700 px-4 py-2 font-medium text-white outline-none ring-gray-500 transition-all duration-200 ease-in-out hover:bg-gray-500 focus:outline-none focus:ring-2"
       >
         {selectedSeason ? (
           <SeasonNavItemBody season={selectedSeason} />
@@ -92,7 +92,7 @@ export function SeasonMenu(): ReactNode {
       {open && (
         <div
           role="menu"
-          className="absolute right-0 z-50 mt-1 w-56 overflow-hidden border border-gray-600 bg-gray-700 shadow-lg"
+          className="rounded-md absolute right-0 z-50 mt-1 w-56 overflow-hidden border border-gray-600 bg-gray-700 shadow-lg"
         >
           {groups.map((group) => {
             return (

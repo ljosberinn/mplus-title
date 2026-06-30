@@ -721,7 +721,7 @@ function Region({
     <section
       className={clsx(
         navigation.state === "loading" && "grayscale",
-        "max-w-screen-2xl border border-gray-600 bg-gray-700 p-4 transition-all duration-500 ease-linear motion-reduce:transition-none",
+        "rounded-md max-w-screen-2xl border border-gray-600 bg-gray-700 p-4 transition-all duration-500 ease-linear motion-reduce:transition-none",
       )}
       aria-labelledby={`title-${region}`}
       id={region}

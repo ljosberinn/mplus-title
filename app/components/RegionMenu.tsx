@@ -55,7 +55,7 @@ export function RegionToggle({ season }: RegionToggleProps): ReactNode {
           return (
             <li
               key={region}
-              className={`${
+              className={`rounded-md ${
                 disabled || navigationState !== "idle"
                   ? base
                       .replace("bg-gray-700", "bg-gray-800")
