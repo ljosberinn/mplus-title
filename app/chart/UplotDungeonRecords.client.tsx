@@ -50,11 +50,15 @@ function lastDefinedIndex(ys: ArrayLike<number | null | undefined>): number {
 /**
  * Short tag for a dungeon name, used in the end-of-line label. Multi-word names
  * become an initialism ("Nexus-Point Xenas" → "NPX"); single-word names use
- * their first three letters ("Skyreach" → "SKY"). Splits on any non-alphanumeric
- * run (spaces, hyphens, punctuation).
+ * their first three letters ("Skyreach" → "SKY"). Apostrophes are stripped first
+ * so a possessive stays one word ("Magister's Terrace" → "MT", not "MST"), then
+ * splits on any non-alphanumeric run (spaces, hyphens, punctuation).
  */
 function abbreviate(name: string): string {
-  const words = name.split(/[^A-Za-z0-9]+/u).filter(Boolean);
+  const words = name
+    .replaceAll(/['’]/gu, "")
+    .split(/[^A-Za-z0-9]+/u)
+    .filter(Boolean);
 
   if (words.length === 0) {
     return name.slice(0, 3).toUpperCase();
@@ -378,9 +382,14 @@ export default function UplotDungeonRecords({
     plotRef.current = plot;
 
     // cap the right edge at `softMax` (now / season end), matching Highcharts.
+    // When zoomed into the top key levels, leave ~5% spare on the right so the
+    // end-of-line "+level" labels have room instead of being jammed at the edge.
     if (config.softMax !== null && config.data[0].length > 0) {
       const xs = config.data[0];
-      plot.setScale("x", { min: xs[0], max: config.softMax });
+      const min = xs[0];
+      const pad =
+        config.initialYZoom === null ? 0 : (config.softMax - min) * 0.05;
+      plot.setScale("x", { min, max: config.softMax + pad });
     }
 
     return () => {
