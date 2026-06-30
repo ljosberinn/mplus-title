@@ -5,6 +5,10 @@
  * backgrounds, patch/hotfix/week plot lines, confirmed-cutoff lines) via canvas
  * hooks, plus a custom React legend and a cursor tooltip.
  *
+ * Zoom: mouse box-select (uPlot `cursor.drag`) + touch pan/pinch (bound manually
+ * in the `init` hook, since uPlot's cursor is mouse-only). Both route through the
+ * shared `onZoom` so all regions zoom together and "Reset zoom" clears them.
+ *
  * Known gaps: affix icons in the week backgrounds (never ported from the old
  * Highcharts renderer), and double-click zoom reset syncing back to the shared
  * `extremes`.
@@ -36,6 +40,10 @@ const dateFormatter = new Intl.DateTimeFormat(undefined, {
 });
 
 const FUTURE_ALPHA = 0.31;
+
+// daily-reset gains only render once the visible x-range is ~2 weeks or less,
+// so they don't clutter the zoomed-out view.
+const DAILY_GAINS_MAX_SPAN_SEC = 21 * 24 * 60 * 60;
 
 const oneDecimal = (v: number): string =>
   numberFormatter.format(Math.round(v * 10) / 10);
@@ -402,6 +410,56 @@ export default function UplotChart({
       ctx.restore();
     };
 
+    // when zoomed in, annotate each line with its per-day
+    // gain (delta vs the previous daily-reset cutoff) at that cutoff point —
+    // fainter than the solid latest-value labels so it reads as secondary.
+    const drawDailyGains = (u: uPlot) => {
+      const { min, max } = u.scales.x;
+      if (
+        min === undefined ||
+        max === undefined ||
+        max - min > DAILY_GAINS_MAX_SPAN_SEC
+      ) {
+        return;
+      }
+      const { ctx, bbox } = u;
+      ctx.save();
+      ctx.font = `${11 * dpr}px sans-serif`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "bottom";
+      // fainter than the latest-value labels (which draw at full opacity).
+      ctx.globalAlpha = 0.55;
+      for (const idx of config.primaryLineSeriesIdx) {
+        const series = u.series[idx];
+        const gains = config.dailyGainsBySeries[idx];
+        if (!series.show || !gains) {
+          continue;
+        }
+        ctx.fillStyle =
+          typeof series.stroke === "string" ? series.stroke : "#fff";
+        for (const point of gains) {
+          if (point.ts < min || point.ts > max) {
+            continue;
+          }
+          const x = u.valToPos(point.ts, "x", true);
+          const y = u.valToPos(point.value, "y", true);
+          if (
+            x < bbox.left ||
+            x > bbox.left + bbox.width ||
+            y < bbox.top ||
+            y > bbox.top + bbox.height
+          ) {
+            continue;
+          }
+          const text = `${point.gain >= 0 ? "+" : ""}${numberFormatter.format(
+            Math.round(point.gain * 10) / 10,
+          )}`;
+          ctx.fillText(text, x, y - 6 * dpr);
+        }
+      }
+      ctx.restore();
+    };
+
     const drawBandLabels = (u: uPlot) => {
       const { ctx, series, bbox } = u;
       ctx.save();
@@ -694,12 +752,131 @@ export default function UplotChart({
               links.push({ el: a, center: link.center });
             }
             mythicLinksRef.current = links;
+
+            // ---- touch pan / pinch zoom ----
+            // uPlot's core cursor + drag-select is mouse-only (browsers don't
+            // synthesise a mousedown→move stream from a touch drag), so there's
+            // no touch zoom by default. Bind it on `u.over` and route the result
+            // through `onZoomRef` — the same shared-zoom channel the mouse
+            // box-select uses — so a gesture on one region syncs the others and
+            // the "Reset zoom" button still clears it. All math is anchored to
+            // the gesture-start scale so it stays stable as the scale updates.
+            const { over, scales } = u;
+
+            const valAtClientX = (clientX: number) =>
+              u.posToVal(clientX - over.getBoundingClientRect().left, "x");
+
+            // `min`/`max` are the x-scale (seconds) at gesture start; `vals` are
+            // the data-x under each finger at start (used to pin them on pinch).
+            let touch: {
+              vals: number[];
+              min: number;
+              max: number;
+              clientX: number;
+              clientY: number;
+              panning: boolean;
+            } | null = null;
+
+            const onTouchStart = (e: TouchEvent) => {
+              const { touches } = e;
+              if (touches.length > 2) {
+                touch = null;
+                return;
+              }
+              const { min, max } = scales.x;
+              const { clientX, clientY } = touches[0];
+              touch = {
+                vals: Array.from(touches, ({ clientX: cx }) =>
+                  valAtClientX(cx),
+                ),
+                min: min ?? 0,
+                max: max ?? 0,
+                clientX,
+                clientY,
+                // two fingers is always a pinch; one finger only pans once the
+                // drag is clearly horizontal, so vertical page scroll between
+                // the stacked region charts still works.
+                panning: touches.length === 2,
+              };
+            };
+
+            const onTouchMove = (e: TouchEvent) => {
+              if (!touch) {
+                return;
+              }
+              const w = over.clientWidth;
+              if (w <= 0) {
+                return;
+              }
+              const { touches } = e;
+              const rect = over.getBoundingClientRect();
+
+              if (touches.length === 2 && touch.vals.length === 2) {
+                // pinch: solve for the scale that keeps the two anchored data-x
+                // pinned under the two (live) finger positions.
+                e.preventDefault();
+                const pA = touches[0].clientX - rect.left;
+                const pB = touches[1].clientX - rect.left;
+                if (pA === pB) {
+                  return;
+                }
+                const span = ((touch.vals[0] - touch.vals[1]) * w) / (pA - pB);
+                if (span <= 0) {
+                  return;
+                }
+                const min = touch.vals[0] - (pA / w) * span;
+                onZoomRef.current({
+                  min: min * 1000,
+                  max: (min + span) * 1000,
+                });
+                return;
+              }
+
+              if (touches.length === 1) {
+                const dxPx = touches[0].clientX - touch.clientX;
+                const dyPx = touches[0].clientY - touch.clientY;
+                // defer to vertical page scroll until the drag is clearly
+                // horizontal (and past a small dead zone).
+                if (!touch.panning) {
+                  if (Math.abs(dxPx) < 10 || Math.abs(dxPx) <= Math.abs(dyPx)) {
+                    return;
+                  }
+                  touch.panning = true;
+                }
+                e.preventDefault();
+                // shift the start scale by the finger's pixel delta, in scale
+                // units — content tracks the finger.
+                const valuePerPx = (touch.max - touch.min) / w;
+                const shift = dxPx * valuePerPx;
+                onZoomRef.current({
+                  min: (touch.min - shift) * 1000,
+                  max: (touch.max - shift) * 1000,
+                });
+              }
+            };
+
+            const onTouchEnd = (e: TouchEvent) => {
+              if (e.touches.length === 0) {
+                touch = null;
+              }
+            };
+
+            // `passive: false` so `preventDefault()` can suppress scroll during
+            // an active gesture. The listeners live on `u.over`, which uPlot
+            // removes on `destroy()`, so they're GC'd with the plot.
+            over.addEventListener("touchstart", onTouchStart, {
+              passive: false,
+            });
+            over.addEventListener("touchmove", onTouchMove, { passive: false });
+            over.addEventListener("touchend", onTouchEnd);
+            over.addEventListener("touchcancel", onTouchEnd);
           },
         ],
         drawClear: [drawWeekBands, drawConfidenceBands],
         draw: [
           drawLines,
           drawValueLabels,
+          drawDailyGains,
           drawBandLabels,
           drawWeeklyDiffs,
           positionMythicLinks,

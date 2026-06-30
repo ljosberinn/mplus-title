@@ -548,8 +548,10 @@ export function calculateXAxisPlotLines(
       if (match) {
         lines.push({
           label: {
+            // sit directly beneath the `W{n}` marker (y: 15) so the week reads
+            // as "W14" / "4085.08" stacked, instead of pinned to the x-axis.
             text: `${match.score}`,
-            y: 265,
+            y: 28,
             color: "lightgreen",
           },
           color: "transparent",

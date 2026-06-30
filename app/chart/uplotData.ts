@@ -125,12 +125,88 @@ export type UplotConfig = {
   lineSeriesIdx: number[];
   /** primary cutoff lines (Score 0.1% / 1%) — their value label is nudged up. */
   primaryLineSeriesIdx: number[];
+  /** daily-reset gains per primary cutoff line, keyed by uPlot series index;
+   * drawn faintly on the line only when zoomed to ~2 weeks. */
+  dailyGainsBySeries: Record<number, DailyGain[]>;
   /** uPlot series indices that are scatters (shown in the tooltip too). */
   scatterSeriesIdx: number[];
   /** scatter point metadata keyed by series index, for the tooltip. */
   estimatedAtBySeries: Record<number, (number | null)[]>;
   initialZoom: [number, number] | null;
 };
+
+/** A daily-reset gain marker: the cutoff point closest to a daily reset and the
+ * score delta since the previous day's cutoff. `ts` is in seconds (matching the
+ * unified x); drawn faintly on the line only when zoomed to ~2 weeks. */
+export type DailyGain = { ts: number; value: number; gain: number };
+
+const dayMs = 24 * 60 * 60 * 1000;
+
+/**
+ * Daily-reset gains for one line. The daily reset shares the season-start
+ * wall-clock time, so reset boundaries are `seasonStart + k·day`; each day's
+ * cutoff is the data point closest to its boundary, and the gain is the score
+ * delta from the previous day's cutoff. Consecutive boundaries that resolve to
+ * the same physical point collapse (flat stretches don't spam +0 labels).
+ */
+function computeDailyResetGains(
+  points: { ts: number; value: number | null }[],
+  seasonStartMs: number | null,
+): DailyGain[] {
+  if (seasonStartMs === null) {
+    return [];
+  }
+
+  const valid = points
+    .filter((p): p is { ts: number; value: number } => p.value !== null)
+    .sort((a, b) => a.ts - b.ts);
+
+  if (valid.length < 2) {
+    return [];
+  }
+
+  const firstTs = valid[0].ts;
+  const lastTs = valid[valid.length - 1].ts;
+
+  // anchor on the reset boundary at/just before the first sample, so the first
+  // full day's gain is captured too.
+  const startK = Math.max(0, Math.floor((firstTs - seasonStartMs) / dayMs));
+
+  const cutoffs: { ts: number; value: number }[] = [];
+  const seen = new Set<number>();
+  // boundaries increase monotonically and `valid` is sorted, so the closest
+  // point only ever moves forward — a single forward scan pointer suffices.
+  let scan = 0;
+  for (
+    let boundary = seasonStartMs + startK * dayMs;
+    boundary <= lastTs + dayMs / 2;
+    boundary += dayMs
+  ) {
+    while (
+      scan + 1 < valid.length &&
+      Math.abs(valid[scan + 1].ts - boundary) <=
+        Math.abs(valid[scan].ts - boundary)
+    ) {
+      scan += 1;
+    }
+    const best = valid[scan];
+    if (!seen.has(best.ts)) {
+      seen.add(best.ts);
+      cutoffs.push(best);
+    }
+  }
+
+  const gains: DailyGain[] = [];
+  for (let i = 1; i < cutoffs.length; i += 1) {
+    gains.push({
+      ts: Math.round(cutoffs[i].ts / 1000),
+      value: cutoffs[i].value,
+      gain: cutoffs[i].value - cutoffs[i - 1].value,
+    });
+  }
+
+  return gains;
+}
 
 type Point2 = [number, number];
 
@@ -165,6 +241,7 @@ export function buildUplotConfig(
   region: Regions,
 ): UplotConfig {
   const rawSeries = season.score.series[region] ?? [];
+  const seasonStartMs = season.startDates[region];
 
   // 1) collect the union of all timestamps (seconds) across every series.
   const tsSet = new Set<number>();
@@ -205,6 +282,7 @@ export function buildUplotConfig(
   const lineSeriesIdx: number[] = [];
   const scatterSeriesIdx: number[] = [];
   const estimatedAtBySeries: Record<number, (number | null)[]> = {};
+  const dailyGainsBySeries: Record<number, DailyGain[]> = {};
 
   // bands reference their parent line by id; the line is created after the band
   // in `calculateSeries`, so collect bands then resolve the link in a 2nd pass.
@@ -263,6 +341,15 @@ export function buildUplotConfig(
     }
     if (typeof s.id === "string") {
       lineIdxById.set(s.id, seriesIdx);
+    }
+
+    // daily-reset gains only make sense on the real recorded cutoff lines
+    // (0.1% / 1%) — not the extrapolation/scatter series.
+    if (s.id === "score" || s.id === "score100") {
+      dailyGainsBySeries[seriesIdx] = computeDailyResetGains(
+        points,
+        seasonStartMs,
+      );
     }
 
     series.push({
@@ -408,6 +495,7 @@ export function buildUplotConfig(
     mythicLinks,
     lineSeriesIdx,
     primaryLineSeriesIdx,
+    dailyGainsBySeries,
     scatterSeriesIdx,
     estimatedAtBySeries,
     initialZoom: zoom
