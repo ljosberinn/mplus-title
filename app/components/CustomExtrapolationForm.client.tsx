@@ -130,7 +130,7 @@ export default function CustomExtrapolationForm({
               id="date"
               ref={ref}
               className={clsx(
-                "rounded-md border-0 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 sm:text-sm sm:leading-6",
+                "border border-gray-400 bg-white text-gray-900 placeholder:text-gray-400 sm:text-sm sm:leading-6",
                 seasonHasEndingDate && "hidden md:inline-block",
               )}
               type="date"
@@ -165,7 +165,7 @@ export default function CustomExtrapolationForm({
       </div>
       {!disabled && customExtrapolationEndDate ? (
         <div className="px-4 pt-4 text-white">
-          <div className="flex flex-col rounded-lg bg-red-500 p-2 md:flex-row dark:bg-red-500/40">
+          <div className="flex flex-col border border-red-700 bg-red-500 p-2 md:flex-row dark:bg-red-500/40">
             <div className="flex justify-center" />
             <div className="p-2">
               <b>Warning</b>: you are using a custom extrapolation date. Use at

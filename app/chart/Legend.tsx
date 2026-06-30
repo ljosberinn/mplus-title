@@ -36,7 +36,7 @@ export function Legend({
             >
               <span
                 aria-hidden
-                className="inline-block h-2.5 w-2.5 rounded-full"
+                className="inline-block h-2.5 w-2.5 border border-gray-500"
                 style={{
                   backgroundColor: item.color,
                   opacity: visible ? 1 : 0.3,

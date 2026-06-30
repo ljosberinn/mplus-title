@@ -490,7 +490,7 @@ function StreamedRegions({
 function RegionSkeleton({ region }: { region: Regions }): React.ReactNode {
   return (
     <section
-      className="max-w-screen-2xl rounded-md bg-gray-700"
+      className="max-w-screen-2xl border border-gray-600 bg-gray-700"
       aria-labelledby={`title-${region}`}
       id={region}
     >
@@ -575,7 +575,7 @@ function Region({
         : 0;
 
     return (
-      <div className="rounded-lg bg-gray-700 p-4">
+      <div className="border border-gray-600 bg-gray-700 p-4">
         <h2>
           {seasonHasNotStartedForRegion ? (
             <>
@@ -631,7 +631,7 @@ function Region({
     <section
       className={clsx(
         navigation.state === "loading" && "grayscale",
-        "max-w-screen-2xl rounded-md bg-gray-700 transition-all duration-500 ease-linear motion-reduce:transition-none",
+        "max-w-screen-2xl border border-gray-600 bg-gray-700 transition-all duration-500 ease-linear motion-reduce:transition-none",
       )}
       aria-labelledby={`title-${region}`}
       id={region}

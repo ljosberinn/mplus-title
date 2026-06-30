@@ -92,7 +92,7 @@ export function SeasonMenu(): ReactNode {
         onClick={() => {
           setOpen((prev) => !prev);
         }}
-        className="flex space-x-2 rounded-lg bg-gray-700 px-4 py-2 font-medium text-white outline-none ring-gray-500 transition-all duration-200 ease-in-out hover:bg-gray-500 focus:outline-none focus:ring-2"
+        className="flex space-x-2 border border-gray-600 bg-gray-700 px-4 py-2 font-medium text-white outline-none ring-gray-500 transition-all duration-200 ease-in-out hover:bg-gray-500 focus:outline-none focus:ring-2"
       >
         {selectedSeason ? (
           <SeasonNavItemBody season={selectedSeason} />
@@ -110,33 +110,22 @@ export function SeasonMenu(): ReactNode {
       {open && (
         <div
           role="menu"
-          className="absolute right-0 z-50 mt-1 w-56 overflow-hidden rounded-md bg-gray-700 shadow-lg"
+          className="absolute right-0 z-50 mt-1 w-56 overflow-hidden border border-gray-600 bg-gray-700 shadow-lg"
         >
-          {groups.map((group, groupIndex) => {
-            const isFirstGroup = groupIndex === 0;
-            const isLastGroup = groupIndex === groups.length - 1;
-
+          {groups.map((group) => {
             return (
               <div key={group.expansion}>
-                <span
-                  className={clsx(
-                    "inline-block w-full bg-gray-600 px-4 py-1 text-lg font-semibold text-white",
-                    isFirstGroup && "rounded-t-lg",
-                  )}
-                >
+                <span className="inline-block w-full bg-gray-600 px-4 py-1 text-lg font-semibold text-white">
                   {expansionLabel(group.expansion)}
                 </span>
                 <ul className="m-0 list-none p-0">
-                  {group.seasons.map((season, index) => {
+                  {group.seasons.map((season) => {
                     const isSelected = selectedSeason?.slug === season.slug;
                     const disabled =
                       isSelected ||
                       season.startDates.US === null ||
                       season.startDates.US > now ||
                       navigation.state !== "idle";
-
-                    const isLast =
-                      isLastGroup && index === group.seasons.length - 1;
 
                     return (
                       <li key={season.slug}>
@@ -147,7 +136,6 @@ export function SeasonMenu(): ReactNode {
                               navigation.state === "idle"
                                 ? "cursor-not-allowed"
                                 : "cursor-wait",
-                              isLast && "rounded-b-lg",
                             )}
                           >
                             <SeasonNavItemBody season={season} />
@@ -161,10 +149,7 @@ export function SeasonMenu(): ReactNode {
                             onClick={() => {
                               setOpen(false);
                             }}
-                            className={clsx(
-                              "flex flex-1 items-center space-x-2 bg-gray-700 px-4 py-2 text-white outline-none transition-all duration-200 ease-in-out hover:bg-gray-500",
-                              isLast && "rounded-b-lg",
-                            )}
+                            className="flex flex-1 items-center space-x-2 bg-gray-700 px-4 py-2 text-white outline-none transition-all duration-200 ease-in-out hover:bg-gray-500"
                           >
                             <SeasonNavItemBody season={season} />
                           </NavLink>

@@ -987,7 +987,7 @@ export default function UplotChart({
         <button
           type="button"
           onClick={resetZoom}
-          className="absolute bottom-12 right-6 z-10 rounded bg-gray-800/80 px-2 py-1 text-xs text-stone-200 hover:bg-gray-700"
+          className="absolute bottom-12 right-6 z-10 border border-gray-600 bg-gray-800/80 px-2 py-1 text-xs text-stone-200 hover:bg-gray-700"
         >
           Reset zoom
         </button>

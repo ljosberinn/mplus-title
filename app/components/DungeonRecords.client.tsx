@@ -17,7 +17,7 @@ export default function DungeonRecords({
   return (
     <section
       className={clsx(
-        "max-w-screen-2xl rounded-md bg-gray-700 transition-all duration-500 ease-linear motion-reduce:transition-none",
+        "max-w-screen-2xl border border-gray-600 bg-gray-700 transition-all duration-500 ease-linear motion-reduce:transition-none",
       )}
       aria-labelledby="title-dungeon-records"
       id="dungeon-records"
@@ -25,7 +25,7 @@ export default function DungeonRecords({
       <h1 id="title-dungeon-records" className="text-center text-lg font-bold">
         Dungeon Records
       </h1>
-      <div className="rounded-lg bg-gray-700 p-4">
+      <div className="border border-gray-600 bg-gray-700 p-4">
         <div className="h-[39vh] lg:h-[30vh]">
           <Suspense fallback={null}>
             <UplotDungeonRecords season={season} />
