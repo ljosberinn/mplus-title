@@ -54,6 +54,11 @@ export function ConfigureMenu({ season }: ConfigureMenuProps): ReactNode {
     if (overlay === "score" || overlay === "score100") {
       return seriesIds.has(overlay);
     }
+    // the 1% level-completion markers only make sense when the season tracks the
+    // top-1% cutoff.
+    if (overlay === "levelCompletion100") {
+      return seriesIds.has("score100");
+    }
     if (overlay === "mythicStats") {
       return season.startingPeriod !== null;
     }
@@ -85,7 +90,7 @@ export function ConfigureMenu({ season }: ConfigureMenuProps): ReactNode {
         }}
         aria-haspopup="dialog"
         aria-expanded={open}
-        className="rounded-md flex cursor-pointer space-x-2 border border-gray-600 bg-gray-700 px-4 py-2 font-medium text-white outline-none ring-gray-500 transition-all duration-200 ease-in-out hover:bg-gray-500 focus:outline-none focus:ring-2"
+        className="rounded-md flex cursor-pointer space-x-2 border border-gray-600 bg-gray-700 px-2 py-1 font-medium text-white outline-none ring-gray-500 transition-all duration-200 ease-in-out hover:bg-gray-500 focus:outline-none focus:ring-2"
       >
         Configure
       </button>
