@@ -69,6 +69,7 @@ export function buildEnhancedSeason(
       data,
       extrapolation,
       overlays,
+      extrapolation100,
     );
     score.yAxisPlotLines[region] = calculateYAxisPlotLines(season, region);
     score.xAxisPlotBands[region] = calculateXAxisPlotBands(

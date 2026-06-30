@@ -60,6 +60,13 @@ const setCookie = "Set-Cookie";
 const expires = "Expires";
 const serverTiming = "Server-Timing";
 
+// How long (seconds) the CDN may serve a stale cached copy while revalidating in
+// the background once it goes stale. Sized to ~one cron cadence (data refreshes
+// every ~5 min); cutoffs only ever creep upward, so a few minutes of staleness is
+// harmless and it spares the request that lands right after expiry a cold origin
+// hit. Not applied to ended (immutable) seasons, where it's meaningless.
+const staleWhileRevalidate = 300;
+
 // tailwind.com-style hatched side gutters framing the main content. Adapted to
 // this always-dark theme: a white diagonal pattern at 10% on the gutter columns
 // plus `border-x` boundary lines. Hidden on mobile; the hatch only becomes
@@ -89,15 +96,22 @@ export const headers: HeadersFunction = ({ loaderHeaders }) => {
       (new Date(expiresDate).getTime() - Date.now()) / 1000 - 10,
     );
 
-    if (diff > 0) {
-      headers[cacheControl] = `public, s-maxage=${diff}`;
-      headers["CDN-Cache-Control"] = headers[cacheControl];
-      headers["Vercel-CDN-Cache-Control"] = headers[cacheControl];
-    }
+    // Serve fresh until the next expected data drop, then keep serving the cached
+    // copy (revalidating in the background) for `staleWhileRevalidate` seconds.
+    // `diff` can be <= 0 when expiry has already passed — clamp to 0 so that case
+    // still gets an SWR window instead of falling through to an uncached response.
+    const sMaxAge = Math.max(diff, 0);
+    const value = `public, s-maxage=${sMaxAge}, stale-while-revalidate=${staleWhileRevalidate}`;
+    headers[cacheControl] = value;
+    headers["CDN-Cache-Control"] = value;
+    headers["Vercel-CDN-Cache-Control"] = value;
   } else {
-    headers[cacheControl] = `public, s-maxage=1`;
-    headers["CDN-Cache-Control"] = `public, s-maxage=60`;
-    headers["Vercel-CDN-Cache-Control"] = `public, s-maxage=300`;
+    headers[cacheControl] =
+      `public, s-maxage=1, stale-while-revalidate=${staleWhileRevalidate}`;
+    headers["CDN-Cache-Control"] =
+      `public, s-maxage=60, stale-while-revalidate=${staleWhileRevalidate}`;
+    headers["Vercel-CDN-Cache-Control"] =
+      `public, s-maxage=300, stale-while-revalidate=${staleWhileRevalidate}`;
   }
 
   const lastModifiedDate = loaderHeaders.get(lastModified);
@@ -280,10 +294,19 @@ export function shouldRevalidate({
  * `HydrateFallback` is needed (`clientLoader` is intentionally not marked
  * `hydrate`, so the SSR payload is used as-is on first paint).
  *
- * Only *ended* seasons are cached — they are immutable. The live season always
- * revalidates so its cutoffs never go stale on a re-visit.
+ * Ended seasons are immutable and cached without expiry. The live season is
+ * cached too but only for a short TTL (`LIVE_SEASON_CACHE_TTL`), so quick
+ * back/forward + region bounces are instant while its cutoffs can never go
+ * meaningfully stale (the TTL is well under the ~5-min data cadence).
  */
-const seasonDataCache = new Map<string, SeasonLoaderData>();
+type CachedSeasonData = { data: SeasonLoaderData; expiresAt: number };
+
+const seasonDataCache = new Map<string, CachedSeasonData>();
+
+/** How long (ms) a live-season payload may be served from the clientLoader cache
+ * before re-fetching. Bounded to seconds — far below the data's update cadence —
+ * so it trades no meaningful freshness for instant repeat navigations. */
+const LIVE_SEASON_CACHE_TTL = 45_000;
 
 const cacheKey = (
   request: Request,
@@ -302,24 +325,26 @@ export async function clientLoader({
   serverLoader,
 }: Route.ClientLoaderArgs): Promise<SeasonLoaderData> {
   const season = params.season ?? "";
-  const cacheable = hasSeasonEndedForAllRegions(season);
+  const ended = hasSeasonEndedForAllRegions(season);
   const key = cacheKey(request, season, params.regions ?? "");
 
-  if (cacheable) {
-    const cached = seasonDataCache.get(key);
+  const cached = seasonDataCache.get(key);
 
-    if (cached) {
-      return cached;
-    }
+  if (cached && Date.now() < cached.expiresAt) {
+    return cached.data;
   }
 
-  // the streamed `recordsStream` promise resolves once; for ended (immutable)
-  // seasons caching the resolved value is safe and makes re-visits instant.
+  // the streamed `recordsStream` promise resolves once; caching the resolved
+  // value makes re-visits instant. Ended seasons are immutable ⇒ no expiry; the
+  // live season gets a short TTL so cutoffs can't go stale on a re-visit.
   const seasonData = await serverLoader();
 
-  if (cacheable) {
-    seasonDataCache.set(key, seasonData);
-  }
+  seasonDataCache.set(key, {
+    data: seasonData,
+    expiresAt: ended
+      ? Number.POSITIVE_INFINITY
+      : Date.now() + LIVE_SEASON_CACHE_TTL,
+  });
 
   return seasonData;
 }

@@ -41,6 +41,16 @@ export const colors = {
   top1: "orange",
 } as const;
 
+/** Which cutoff line a level-completion pass tracks: the 0.1% (title) `score` or
+ * the top-1% `score100`. */
+type ScoreKey = "score" | "score100";
+
+/** Reads the cutoff value for the given key, treating a missing `score100` as
+ * unreachable so threshold comparisons stay false. */
+const scoreValue = (dataset: Dataset, key: ScoreKey): number =>
+  (key === "score" ? dataset.score : dataset.score100) ??
+  Number.NEGATIVE_INFINITY;
+
 export function toOneDigit(int: number): number {
   return Number.parseFloat(int.toFixed(1));
 }
@@ -433,6 +443,7 @@ export function calculateXAxisPlotLines(
   data: Dataset[],
   extrapolation: Extrapolation,
   overlays: readonly Overlay[],
+  extrapolation100: Extrapolation = null,
 ): PlotLine[] {
   const endDate = season.endDates[region];
   const startDate = season.startDates[region];
@@ -487,34 +498,74 @@ export function calculateXAxisPlotLines(
 
   // since the score computation is partially season dependant, dont bother for older seasons
   if (
-    overlays.includes("levelCompletion") &&
+    (overlays.includes("levelCompletion") ||
+      overlays.includes("levelCompletion100")) &&
     season.crossFactionSupport === "complete" &&
     (season.wcl?.zoneId ?? 0) >= 32 &&
     data.length > 0 &&
     startDate
   ) {
-    if ((season.wcl?.zoneId ?? 0) < 37) {
-      lines.push(
-        ...calcOldLevelCompletionLines(season, data, startDate, extrapolation),
-      );
-    } else if ((season.wcl?.zoneId ?? 0) === 39) {
-      lines.push(
-        ...calcTwwS1LevelCompletionLines(
-          season,
-          data,
-          startDate,
-          extrapolation,
-        ),
-      );
-    } else if ((season.wcl?.zoneId ?? 0) >= 43) {
-      lines.push(
-        ...calcTwwS2LevelCompletionLines(
-          season,
-          data,
-          startDate,
-          extrapolation,
-        ),
-      );
+    const zoneId = season.wcl?.zoneId ?? 0;
+
+    // One pass per enabled cutoff: the 0.1% (title) line in white and the top-1%
+    // line in its own colour. Same level thresholds, each matched against its own
+    // cutoff value + forward extrapolation.
+    const passes: {
+      scoreKey: ScoreKey;
+      color: string;
+      extrapolation: Extrapolation;
+    }[] = [];
+
+    if (overlays.includes("levelCompletion")) {
+      passes.push({ scoreKey: "score", color: "white", extrapolation });
+    }
+
+    if (
+      overlays.includes("levelCompletion100") &&
+      data.some((dataset) => dataset.score100 !== null)
+    ) {
+      passes.push({
+        scoreKey: "score100",
+        color: colors.top1,
+        extrapolation: extrapolation100,
+      });
+    }
+
+    for (const { scoreKey, color, extrapolation: ex } of passes) {
+      if (zoneId < 37) {
+        lines.push(
+          ...calcOldLevelCompletionLines(
+            season,
+            data,
+            startDate,
+            ex,
+            scoreKey,
+            color,
+          ),
+        );
+      } else if (zoneId === 39) {
+        lines.push(
+          ...calcTwwS1LevelCompletionLines(
+            season,
+            data,
+            startDate,
+            ex,
+            scoreKey,
+            color,
+          ),
+        );
+      } else if (zoneId >= 43) {
+        lines.push(
+          ...calcTwwS2LevelCompletionLines(
+            season,
+            data,
+            startDate,
+            ex,
+            scoreKey,
+            color,
+          ),
+        );
+      }
     }
   }
 
@@ -715,6 +766,8 @@ function calcTwwS2LevelCompletionLines(
   data: Dataset[],
   startDate: number,
   extrapolation: Extrapolation,
+  scoreKey: ScoreKey = "score",
+  color = "white",
 ): PlotLine[] {
   const lines: PlotLine[] = [];
   const base = 125;
@@ -748,7 +801,7 @@ function calcTwwS2LevelCompletionLines(
       (base + perLevelPoints * level + affixPoints) * numberOfDungeons;
 
     let match: Omit<Dataset, "score100"> | undefined = data.find(
-      (dataset) => dataset.score >= total,
+      (dataset) => scoreValue(dataset, scoreKey) >= total,
     );
 
     if (!match && Array.isArray(extrapolation)) {
@@ -767,13 +820,13 @@ function calcTwwS2LevelCompletionLines(
         } else {
           const last = data[data.length - 1];
           const timeDiff = extrapolationMatch[0] - last.ts;
-          const scoreDiff = extrapolationMatch[1] - last.score;
+          const scoreDiff = extrapolationMatch[1] - scoreValue(last, scoreKey);
 
           const step = scoreDiff / timeDiff;
 
           // expensive, but a lot more precise than just picking next match
           for (let i = 0; i <= timeDiff; i += 60_000) {
-            if (last.score + step * i >= total) {
+            if (scoreValue(last, scoreKey) + step * i >= total) {
               match = {
                 ts: last.ts + i,
                 score: total,
@@ -790,10 +843,10 @@ function calcTwwS2LevelCompletionLines(
         label: {
           text: `All ${level}`,
           y: 200,
-          color: "white",
+          color,
         },
         value: match.ts,
-        color: "white",
+        color,
       });
     }
   }
@@ -807,6 +860,8 @@ function calcTwwS1LevelCompletionLines(
   data: Dataset[],
   startDate: number,
   extrapolation: Extrapolation,
+  scoreKey: ScoreKey = "score",
+  color = "white",
 ): PlotLine[] {
   const lines: PlotLine[] = [];
   const base = 125;
@@ -845,7 +900,7 @@ function calcTwwS1LevelCompletionLines(
 
     let match: Omit<Dataset, "score100"> | undefined = data.find((dataset) => {
       if (dataset.ts - startDate < oneWeekInMs) {
-        return dataset.score >= total;
+        return scoreValue(dataset, scoreKey) >= total;
       }
 
       return false;
@@ -861,13 +916,13 @@ function calcTwwS1LevelCompletionLines(
         const extrapolationMatch = extrapolation[extrapolationMatchIndex];
 
         const timeDiff = extrapolationMatch[0] - last.ts;
-        const scoreDiff = extrapolationMatch[1] - last.score;
+        const scoreDiff = extrapolationMatch[1] - scoreValue(last, scoreKey);
 
         const step = scoreDiff / timeDiff;
 
         // expensive, but a lot more precise than just picking next match
         for (let i = 0; i < timeDiff; i += 60_000) {
-          if (last.score + step * i > total) {
+          if (scoreValue(last, scoreKey) + step * i > total) {
             match = {
               ts: last.ts + i,
               score: total,
@@ -883,10 +938,10 @@ function calcTwwS1LevelCompletionLines(
         label: {
           text: `All ${level}`,
           y: 200,
-          color: "white",
+          color,
         },
         value: match.ts,
-        color: "white",
+        color,
       });
     }
   }
@@ -899,6 +954,8 @@ function calcOldLevelCompletionLines(
   data: Dataset[],
   startDate: number,
   extrapolation: Extrapolation,
+  scoreKey: ScoreKey = "score",
+  color = "white",
 ): PlotLine[] {
   const lines: PlotLine[] = [];
   const base = 25;
@@ -920,7 +977,7 @@ function calcOldLevelCompletionLines(
 
     const match: Dataset | undefined = data.find((dataset) => {
       if (dataset.ts - startDate < oneWeekInMs) {
-        return dataset.score >= firstWeek;
+        return scoreValue(dataset, scoreKey) >= firstWeek;
       }
 
       return false;
@@ -931,10 +988,10 @@ function calcOldLevelCompletionLines(
         label: {
           text: `All ${level}`,
           y: 200,
-          color: "white",
+          color,
         },
         value: match.ts,
-        color: "white",
+        color,
       });
     }
   }
@@ -952,7 +1009,7 @@ function calcOldLevelCompletionLines(
     const allDungeonsBothWeeks = bothWeeks * numberOfDungeons;
 
     let match: Omit<Dataset, "score100"> | undefined = data.find((dataset) => {
-      return dataset.score >= allDungeonsBothWeeks;
+      return scoreValue(dataset, scoreKey) >= allDungeonsBothWeeks;
     });
 
     // if we have an extrapolation, check whether a key level threshold is
@@ -967,13 +1024,13 @@ function calcOldLevelCompletionLines(
         const extrapolationMatch = extrapolation[extrapolationMatchIndex];
 
         const timeDiff = extrapolationMatch[0] - last.ts;
-        const scoreDiff = extrapolationMatch[1] - last.score;
+        const scoreDiff = extrapolationMatch[1] - scoreValue(last, scoreKey);
 
         const step = scoreDiff / timeDiff;
 
         // expensive, but a lot more precise than just picking next match
         for (let i = 0; i < timeDiff; i += 60_000) {
-          if (last.score + step * i > allDungeonsBothWeeks) {
+          if (scoreValue(last, scoreKey) + step * i > allDungeonsBothWeeks) {
             match = {
               ts: last.ts + i,
               score: allDungeonsBothWeeks,
@@ -989,10 +1046,10 @@ function calcOldLevelCompletionLines(
         label: {
           text: `All ${level}`,
           y: 200,
-          color: "white",
+          color,
         },
         value: match.ts,
-        color: "white",
+        color,
       });
     }
   }

@@ -18,6 +18,7 @@ export const overlays = [
   "patches",
   "dungeonHotfixes",
   "levelCompletion",
+  "levelCompletion100",
   "affixes",
   "mythicStats",
   "extrapolation",
@@ -86,10 +87,17 @@ export const featureMeta: Record<
     description: "Vertical markers when a dungeon was tuned/hotfixed.",
   },
   levelCompletion: {
-    name: "Level Completion",
+    name: "Level Completion (0.1%)",
     group: "extras",
     description:
-      "Horizontal markers for the score a full clear at a given key level is worth.",
+      "Markers for when the 0.1% (title) cutoff reached the score a full clear at a given key level is worth.",
+  },
+  levelCompletion100: {
+    name: "Level Completion (1%)",
+    group: "extras",
+    description:
+      "The same level-completion markers tracked against the top-1% cutoff instead, drawn in the 1% line's colour.",
+    note: "This feature is only available starting with Midnight Season 1.",
   },
   affixes: {
     name: "Affixes",
