@@ -51,12 +51,79 @@ type AssembleSeasonDataParams = {
 };
 
 type AssembleSeasonDataResult = {
+  /** The primary region's payload, ready to paint. Secondary regions are absent
+   * from `data.regions` — they stream in via `regionsPromise`. */
   data: SeasonData;
+  /** The secondary regions' payloads, loaded lazily and streamed to the client
+   * via <Await> (the JSON API path awaits it). Keyed by region; a region with no
+   * data is omitted, mirroring the primary path. */
+  regionsPromise: Promise<Partial<Record<Regions, RegionPayload>>>;
   /** Dungeon records, loaded lazily and streamed to the client via <Await>
    * (the JSON API path awaits it). `data.records` stays empty on the wire. */
   recordsPromise: Promise<SeasonData["records"]>;
   headers: Record<string, string>;
 };
+
+/**
+ * Loads one region's `Dataset[]`, runs its extrapolation(s) and columnar-encodes
+ * it into a `RegionPayload`. `payload` is `null` when the region has no data (the
+ * caller omits it from the wire). Shared by the synchronous primary path and the
+ * streamed secondary path in `assembleSeasonData`.
+ */
+async function loadRegionPayload(
+  region: Regions,
+  season: Season,
+  extrapolationEnd: number | null,
+  timings: Timings,
+): Promise<{ data: Dataset[]; payload: RegionPayload | null }> {
+  const [data, extrapolationHistory] = await Promise.all([
+    loadDataForRegion(region, season, timings),
+    time(() => loadExtrapolationHistoryForSeason(season, region), {
+      type: `loadExtrapolationHistoryForSeason-${region}`,
+      timings,
+    }),
+  ]);
+
+  if (data.length === 0) {
+    return { data, payload: null };
+  }
+
+  const extrapolation = await time(
+    () => calculateExtrapolation(season, region, data, extrapolationEnd),
+    { type: `calculateExtrapolation-${region}`, timings },
+  );
+
+  // top 1% extrapolation is calculated for display only - never persisted
+  const extrapolation100 = await time(
+    () => {
+      const data100 = data
+        .filter((dataset) => dataset.score100 !== null && dataset.score100 > 0)
+        .map((dataset) => ({ ...dataset, score: dataset.score100! }));
+
+      return data100.length > 0
+        ? calculateExtrapolation(season, region, data100, extrapolationEnd)
+        : null;
+    },
+    { type: `calculateExtrapolation100-${region}`, timings },
+  );
+
+  const payload: RegionPayload = {
+    series: encodeSeries(data),
+    extrapolation,
+    extrapolation100,
+    extrapolationHistory: extrapolationHistory
+      .filter(isNotNull)
+      .map(
+        ({ x, y, estimatedAt }): ExtrapolationHistoryTuple => [
+          x,
+          y,
+          estimatedAt ?? 0,
+        ],
+      ),
+  };
+
+  return { data, payload };
+}
 
 export async function assembleSeasonData({
   request,
@@ -78,92 +145,73 @@ export async function assembleSeasonData({
   );
 
   const regions = pRegions ?? orderedRegionsBySize;
-
-  const dataByRegion: Record<Regions, Dataset[]> = {
-    EU: [],
-    US: [],
-    KR: [],
-    TW: [],
-    CN: [],
-  };
-  const regionPayloads: Partial<Record<Regions, RegionPayload>> = {};
+  const [primaryRegion, ...secondaryRegions] = regions;
 
   // Dungeon records feed only the secondary DungeonRecords chart, so load them
   // as a promise the loader streams in via <Await> rather than blocking first
   // paint on the dungeonHistory query. The JSON API path awaits it instead.
   const recordsPromise = loadRecordsForSeason(season);
 
-  await Promise.all(
-    regions.map(async (region) => {
-      const [data, extrapolationHistory] = await Promise.all([
-        loadDataForRegion(region, season, timings),
-        time(() => loadExtrapolationHistoryForSeason(season, region), {
-          type: "loadExtrapolationHistoryForSeason",
-          timings,
-        }),
-      ]);
-
-      dataByRegion[region] = data;
-
-      if (data.length === 0) {
-        return;
-      }
-
-      const extrapolation = await time(
-        () => calculateExtrapolation(season, region, data, extrapolationEnd),
-        { type: `calculateExtrapolation-${region}`, timings },
-      );
-
-      // top 1% extrapolation is calculated for display only - never persisted
-      const extrapolation100 = await time(
-        () => {
-          const data100 = data
-            .filter(
-              (dataset) => dataset.score100 !== null && dataset.score100 > 0,
-            )
-            .map((dataset) => ({ ...dataset, score: dataset.score100! }));
-
-          return data100.length > 0
-            ? calculateExtrapolation(season, region, data100, extrapolationEnd)
-            : null;
-        },
-        { type: `calculateExtrapolation100-${region}`, timings },
-      );
-
-      regionPayloads[region] = {
-        series: encodeSeries(data),
-        extrapolation,
-        extrapolation100,
-        extrapolationHistory: extrapolationHistory
-          .filter(isNotNull)
-          .map(
-            ({ x, y, estimatedAt }): ExtrapolationHistoryTuple => [
-              x,
-              y,
-              estimatedAt ?? 0,
-            ],
-          ),
-      };
-    }),
+  // The primary (first selected) region resolves synchronously so the loader can
+  // return and the chart paints; the remaining regions stream in via <Await>.
+  // Biggest win on multi-region views / slow regions (CN/TW). See gains.md #2.
+  const primary = await time(
+    () => loadRegionPayload(primaryRegion, season, extrapolationEnd, timings),
+    { type: `loadRegionPayload-${primaryRegion}`, timings },
   );
 
-  const mostRecentDataset = Object.values(dataByRegion)
-    .flat()
-    .reduce((acc, dataset) => (acc > dataset.ts ? acc : dataset.ts), 0);
+  const regionPayloads: Partial<Record<Regions, RegionPayload>> = {};
+
+  if (primary.payload) {
+    regionPayloads[primaryRegion] = primary.payload;
+  }
+
+  // Secondary regions are loaded off the response's critical path. Their `time()`
+  // entries land after `getServerTimeHeader` snapshots `timings`, so they won't
+  // show in Server-Timing — that's the cost of streaming them.
+  const loadSecondaryRegions = async (): Promise<
+    Partial<Record<Regions, RegionPayload>>
+  > => {
+    const entries = await Promise.all(
+      secondaryRegions.map(async (region) => {
+        const { payload } = await loadRegionPayload(
+          region,
+          season,
+          extrapolationEnd,
+          timings,
+        );
+
+        return [region, payload] as const;
+      }),
+    );
+
+    const out: Partial<Record<Regions, RegionPayload>> = {};
+
+    for (const [region, payload] of entries) {
+      if (payload) {
+        out[region] = payload;
+      }
+    }
+
+    return out;
+  };
+
+  const regionsPromise = loadSecondaryRegions();
+
+  // Cache headers reflect the primary region only — all regions share the same
+  // ~5-min cron cadence, so its freshness window is representative, and awaiting
+  // every region here would defeat the streaming.
+  const mostRecentDataset = primary.data.reduce(
+    (acc, dataset) => (acc > dataset.ts ? acc : dataset.ts),
+    0,
+  );
 
   headers[lastModified] = new Date(mostRecentDataset).toUTCString();
 
-  const shortestExpiry = await time(
-    () =>
-      regions
-        .map((region) =>
-          determineExpirationTimestamp(season, region, dataByRegion[region]),
-        )
-        .reduce(
-          (acc, expiry) => (acc > expiry ? expiry : acc),
-          Number.POSITIVE_INFINITY,
-        ),
-    { type: "shortestExpiry", timings },
+  const shortestExpiry = determineExpirationTimestamp(
+    season,
+    primaryRegion,
+    primary.data,
   );
 
   headers[expires] = new Date(shortestExpiry * 1000 + Date.now()).toUTCString();
@@ -179,7 +227,7 @@ export async function assembleSeasonData({
     records: [],
   };
 
-  return { data, recordsPromise, headers };
+  return { data, regionsPromise, recordsPromise, headers };
 }
 
 // ---------------------------------------------------------------------------

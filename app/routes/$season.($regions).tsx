@@ -1,14 +1,6 @@
 import clsx from "clsx";
 import { type Regions } from "prisma/generated/prisma/enums";
-import {
-  Fragment,
-  lazy,
-  Suspense,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import {
   Await,
   data,
@@ -24,7 +16,7 @@ import { getAffixIconUrl, getAffixName } from "../affixes";
 import { buildEnhancedSeason } from "../chart/assemble";
 import { Footer } from "../components/Footer";
 import { Header } from "../components/Header";
-import { decode, type SeasonData } from "../data";
+import { decode, type RegionPayload, type SeasonData } from "../data";
 import { assembleSeasonData } from "../data.server";
 import { time, type Timings } from "../load.server";
 import {
@@ -37,8 +29,10 @@ import {
   type EnhancedSeason,
   findSeasonByName,
   hasSeasonEndedForAllRegions,
+  type Season as SeasonConfig,
 } from "../seasons";
 import {
+  type Overlay,
   parseOverlaysFromSearchParams,
   parseRegionsFromPath,
   regionsToPathSegment,
@@ -114,12 +108,16 @@ export const headers: HeadersFunction = ({ loaderHeaders }) => {
 };
 
 /**
- * Loader payload: the compact `SeasonData` (charts paint from this immediately)
- * plus the dungeon `records` as a streamed promise — RR Single Fetch
- * streams it and the component renders it via <Await>, so the secondary dungeon
- * records chart doesn't block first paint. `data.records` stays empty.
+ * Loader payload: the compact `SeasonData` for the *primary* region (its chart
+ * paints from this immediately) plus two streamed promises — RR Single Fetch
+ * streams them and the component renders them via <Await>:
+ *  - `regionsStream` — the remaining (secondary) regions' payloads, so slow
+ *    regions (CN/TW) don't block the primary region's first paint.
+ *  - `recordsStream` — the dungeon records for the secondary records chart.
+ * `data.regions` holds only the primary region; `data.records` stays empty.
  */
 type SeasonLoaderData = SeasonData & {
+  regionsStream: Promise<Partial<Record<Regions, RegionPayload>>>;
   recordsStream: Promise<SeasonData["records"]>;
 };
 
@@ -211,6 +209,7 @@ export const loader = async ({
 
   const {
     data: seasonData,
+    regionsPromise,
     recordsPromise,
     headers,
   } = await time(
@@ -220,8 +219,16 @@ export const loader = async ({
 
   headers[serverTiming] = getServerTimeHeader(timings);
 
-  // stream the (secondary) dungeon records so the chart data paints first.
-  return data({ ...seasonData, recordsStream: recordsPromise }, { headers });
+  // stream the secondary regions + dungeon records so the primary chart paints
+  // first and slow regions don't block it.
+  return data(
+    {
+      ...seasonData,
+      regionsStream: regionsPromise,
+      recordsStream: recordsPromise,
+    },
+    { headers },
+  );
 };
 
 /**
@@ -316,7 +323,7 @@ export default function Season(
     () => decode(props.loaderData as SeasonData),
     [props.loaderData],
   );
-  const { recordsStream } = props.loaderData;
+  const { regionsStream, recordsStream } = props.loaderData;
   const seasonConfig = useMemo(
     () => findSeasonByName(decoded.slug, null),
     [decoded.slug],
@@ -336,6 +343,11 @@ export default function Season(
     () => buildEnhancedSeason(decoded, seasonConfig!, overlays),
     [decoded, seasonConfig, overlays],
   );
+  // The primary region paints from the loader payload; the rest stream in via
+  // `regionsStream` (see the loader). Render the primary from `season` (which
+  // only has the primary's data) and the rest inside the <Await> below.
+  const [primaryRegion, ...pendingRegions] = season.score.regionsToDisplay;
+
   const prevSeason = useRef(season.slug);
   const prevExtrapolation = useRef(season.score.extrapolation);
   const [extremes, setExtremes] = useState<ZoomExtremes>(null);
@@ -355,18 +367,38 @@ export default function Season(
     <>
       <Header season={season} />
       <main className="container mt-4 flex max-w-screen-2xl flex-1 flex-col space-y-4 px-4 md:mx-auto 2xl:px-0">
-        {season.score.regionsToDisplay.map((region) => {
-          return (
-            <Fragment key={region}>
-              <Region
-                season={season}
-                region={region}
-                onZoom={setExtremes}
-                extremes={extremes}
-              />
-            </Fragment>
-          );
-        })}
+        {primaryRegion ? (
+          <Region
+            season={season}
+            region={primaryRegion}
+            onZoom={setExtremes}
+            extremes={extremes}
+          />
+        ) : null}
+
+        {/* secondary regions stream in so slow regions (CN/TW) don't block the
+            primary region's chart. */}
+        {pendingRegions.length > 0 ? (
+          <Suspense
+            fallback={pendingRegions.map((region) => (
+              <RegionSkeleton key={region} region={region} />
+            ))}
+          >
+            <Await resolve={regionsStream} errorElement={null}>
+              {(streamedRegions) => (
+                <StreamedRegions
+                  baseData={props.loaderData}
+                  streamedRegions={streamedRegions}
+                  seasonConfig={seasonConfig!}
+                  overlays={overlays}
+                  regions={pendingRegions}
+                  extremes={extremes}
+                  onZoom={setExtremes}
+                />
+              )}
+            </Await>
+          </Suspense>
+        ) : null}
 
         {/* dungeon records stream in so they don't block the charts. */}
         <Suspense fallback={null}>
@@ -392,6 +424,85 @@ export default function Season(
       </main>
       <Footer />
     </>
+  );
+}
+
+type StreamedRegionsProps = {
+  /** The loader payload (primary region only in `regions`). */
+  baseData: SeasonData;
+  /** The secondary regions' payloads, resolved from `regionsStream`. */
+  streamedRegions: Partial<Record<Regions, RegionPayload>>;
+  seasonConfig: SeasonConfig;
+  overlays: readonly Overlay[];
+  /** The secondary regions to render (in display order). */
+  regions: Regions[];
+  extremes: ZoomExtremes;
+  onZoom: (extremes: ZoomExtremes) => void;
+};
+
+/**
+ * Rebuilds the `EnhancedSeason` once the secondary regions have streamed in
+ * (merging them onto the primary payload) and renders their region cards. A
+ * region that streamed in empty has no payload, so it renders the usual "no data
+ * yet" card — same as the non-streamed path.
+ */
+function StreamedRegions({
+  baseData,
+  streamedRegions,
+  seasonConfig,
+  overlays,
+  regions,
+  extremes,
+  onZoom,
+}: StreamedRegionsProps): React.ReactNode {
+  const season = useMemo(
+    () =>
+      buildEnhancedSeason(
+        decode({
+          slug: baseData.slug,
+          regionsToDisplay: baseData.regionsToDisplay,
+          regions: { ...baseData.regions, ...streamedRegions },
+          records: [],
+        }),
+        seasonConfig,
+        overlays,
+      ),
+    [baseData, streamedRegions, seasonConfig, overlays],
+  );
+
+  return (
+    <>
+      {regions.map((region) => (
+        <Region
+          key={region}
+          season={season}
+          region={region}
+          extremes={extremes}
+          onZoom={onZoom}
+        />
+      ))}
+    </>
+  );
+}
+
+/** Placeholder shown for a secondary region while its payload is still
+ * streaming. Mirrors the region card's outer chrome + chart height. */
+function RegionSkeleton({ region }: { region: Regions }): React.ReactNode {
+  return (
+    <section
+      className="max-w-screen-2xl rounded-md bg-gray-700"
+      aria-labelledby={`title-${region}`}
+      id={region}
+    >
+      <h1 id={`title-${region}`} className="text-center text-lg font-bold">
+        {region.toUpperCase()}
+      </h1>
+      <div className="flex h-[39vh] items-center justify-center lg:h-[30vh]">
+        <span className="animate-pulse text-gray-400">
+          Loading {region.toUpperCase()}…
+        </span>
+      </div>
+    </section>
   );
 }
 

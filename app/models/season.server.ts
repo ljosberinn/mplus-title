@@ -32,18 +32,27 @@ export const getEnhancedSeason = async ({
   season,
   timings,
 }: GetEnhancedSeasonParams): Promise<GetEnhancedSeasonResult> => {
-  const { data, recordsPromise, headers } = await assembleSeasonData({
-    request,
-    regions,
-    season,
-    timings,
-  });
+  const { data, regionsPromise, recordsPromise, headers } =
+    await assembleSeasonData({
+      request,
+      regions,
+      season,
+      timings,
+    });
 
-  // JSON API consumers get the full object (no streaming), so await the records
-  // the route streams and re-attach them before assembling.
+  // JSON API consumers get the full object (no streaming), so await the streamed
+  // secondary regions + records and merge them back in before assembling.
+  const [secondaryRegions, records] = await Promise.all([
+    regionsPromise,
+    recordsPromise,
+  ]);
   const overlays = resolveOverlaysToDisplay(season.wcl?.zoneId, pOverlays);
   const enhancedSeason = buildEnhancedSeason(
-    decode({ ...data, records: await recordsPromise }),
+    decode({
+      ...data,
+      regions: { ...data.regions, ...secondaryRegions },
+      records,
+    }),
     season,
     overlays,
   );
