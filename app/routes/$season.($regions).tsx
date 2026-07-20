@@ -1,8 +1,8 @@
 import clsx from "clsx";
 import { type Regions } from "prisma/generated/prisma/enums";
 import {
-  Fragment,
   lazy,
+  type ReactNode,
   Suspense,
   useEffect,
   useMemo,
@@ -13,6 +13,7 @@ import {
   Await,
   data,
   type HeadersFunction,
+  Link,
   redirect,
   type ShouldRevalidateFunctionArgs,
   useNavigation,
@@ -20,14 +21,12 @@ import {
 } from "react-router";
 import { ClientOnly } from "remix-utils/client-only";
 
-import { GutterDivider } from "~/components/GutterDivider";
-
 import { getAffixIconUrl, getAffixName } from "../affixes";
 import { buildEnhancedSeason } from "../chart/assemble";
 import { Footer } from "../components/Footer";
 import { Header } from "../components/Header";
 import { SeasonControls } from "../components/SeasonControls";
-import { decode, type RegionPayload, type SeasonData } from "../data";
+import { decode, type SeasonData } from "../data";
 import { assembleSeasonData } from "../data.server";
 import { time, type Timings } from "../load.server";
 import {
@@ -40,13 +39,11 @@ import {
   type EnhancedSeason,
   findSeasonByName,
   hasSeasonEndedForAllRegions,
-  type Season as SeasonConfig,
 } from "../seasons";
 import {
-  type Overlay,
+  orderedRegionsBySize,
   parseOverlaysFromSearchParams,
   parseRegionsFromPath,
-  persistRegionsCookie,
   regionsToPathSegment,
   resolveOverlaysToDisplay,
   searchParamSeparator,
@@ -142,18 +139,24 @@ export const headers: HeadersFunction = ({ loaderHeaders }) => {
 };
 
 /**
- * Loader payload: the compact `SeasonData` for the *primary* region (its chart
- * paints from this immediately) plus two streamed promises — RR Single Fetch
- * streams them and the component renders them via <Await>:
- *  - `regionsStream` — the remaining (secondary) regions' payloads, so slow
- *    regions (CN/TW) don't block the primary region's first paint.
+ * Region-view loader payload: the compact `SeasonData` for the single requested
+ * region plus one streamed promise — RR Single Fetch streams it and the
+ * component renders it via <Await>:
  *  - `recordsStream` — the dungeon records for the secondary records chart.
- * `data.regions` holds only the primary region; `data.records` stays empty.
+ * `data.records` stays empty on the wire.
  */
-type SeasonLoaderData = SeasonData & {
-  regionsStream: Promise<Partial<Record<Regions, RegionPayload>>>;
+type RegionLoaderData = SeasonData & {
   recordsStream: Promise<SeasonData["records"]>;
 };
+
+/**
+ * Bare `/{season}` picker payload — just the resolved slug so the picker can
+ * label itself and build its region links. No season data is loaded: the picker
+ * is a static render, which is the whole cost win of this route.
+ */
+type PickerLoaderData = { picker: true; slug: string };
+
+type SeasonLoaderData = PickerLoaderData | RegionLoaderData;
 
 export const loader = async ({
   params,
@@ -170,47 +173,58 @@ export const loader = async ({
 
   const season = findSeasonByName(params.season, null);
 
+  // Unknown season (`/foo`, `/foo/bar`) → redirect to the latest season's bare
+  // picker rather than 400.
   if (!season) {
-    throw new Response(undefined, {
-      status: 400,
-      statusText: "Unknown season.",
-    });
+    return redirect(`/${findSeasonByName("latest", null)!.slug}`, 307);
   }
 
   const url = new URL(request.url);
 
-  // Legacy compat: regions used to live in `?regions=`. Promote them into the
-  // path (308, method-preserving, so bookmarks/crawlers update) and strip the
-  // query param, keeping everything else (overlays, extrapolationEndDate). A
-  // path segment, when present, wins over the legacy query.
+  const regions = parseRegionsFromPath(params.regions);
+
+  // Legacy compat: regions used to live in `?regions=`. The app now renders one
+  // region at a time, so promote just the first region into the path (308,
+  // method-preserving, so bookmarks/crawlers update) and strip the query param,
+  // keeping everything else (overlays, extrapolationEndDate). A path segment,
+  // when present, wins over the legacy query.
   if (url.searchParams.has("regions")) {
-    const promoted = params.regions
-      ? regionsToPathSegment(parseRegionsFromPath(params.regions) ?? [])
-      : regionsToPathSegment(
-          determineRegionsToDisplayFromSearchParams(request) ?? [],
-        );
+    const promotedRegions =
+      regions ?? determineRegionsToDisplayFromSearchParams(request);
+    const firstRegion = promotedRegions?.[0];
 
     url.searchParams.delete("regions");
     const query = url.searchParams.toString();
+    const segment = firstRegion ? regionsToPathSegment([firstRegion]) : "";
 
     return redirect(
-      `/${season.slug}${promoted ? `/${promoted}` : ""}${query ? `?${query}` : ""}`,
+      `/${season.slug}${segment ? `/${segment}` : ""}${query ? `?${query}` : ""}`,
       308,
     );
   }
 
-  const regions = parseRegionsFromPath(params.regions);
+  // Bare `/{season}` (no region segment) → the region picker. No season data.
+  if (!params.regions) {
+    return data<SeasonLoaderData>({ picker: true, slug: season.slug });
+  }
 
-  // Canonicalise the region segment: drop invalid/duplicate tokens, normalise
-  // ordering, and collapse an explicit "all regions" list to the bare path.
-  // `regionsToPathSegment(null-list)` is "" ⇒ the bare `/{season}`.
-  const canonicalSegment = regions ? regionsToPathSegment(regions) : "";
+  // A region segment is present but yielded no valid region token → send to the
+  // bare picker.
+  if (!regions) {
+    return redirect(`/${season.slug}`, 307);
+  }
 
-  if ((params.regions ?? "") !== canonicalSegment) {
+  // Single-region canonicalisation: keep only the first region (a legacy
+  // `/{season}/EU~US` collapses to `/{season}/EU`) and drop invalid tokens. If
+  // the incoming segment isn't already the canonical single-region form,
+  // redirect to it.
+  const canonicalSegment = regionsToPathSegment([regions[0]]);
+
+  if (params.regions !== canonicalSegment) {
     const query = url.searchParams.toString();
 
     return redirect(
-      `/${season.slug}${canonicalSegment ? `/${canonicalSegment}` : ""}${query ? `?${query}` : ""}`,
+      `/${season.slug}/${canonicalSegment}${query ? `?${query}` : ""}`,
       308,
     );
   }
@@ -243,7 +257,6 @@ export const loader = async ({
 
   const {
     data: seasonData,
-    regionsPromise,
     recordsPromise,
     headers,
   } = await time(
@@ -253,12 +266,10 @@ export const loader = async ({
 
   headers[serverTiming] = getServerTimeHeader(timings);
 
-  // stream the secondary regions + dungeon records so the primary chart paints
-  // first and slow regions don't block it.
+  // stream the dungeon records so they don't block the region's chart.
   return data(
     {
       ...seasonData,
-      regionsStream: regionsPromise,
       recordsStream: recordsPromise,
     },
     { headers },
@@ -355,20 +366,85 @@ const DungeonRecords = lazy(
   () => import("../components/DungeonRecords.client"),
 );
 
-export default function Season(
-  props: Route.ComponentProps,
-): React.ReactNode | null {
+export default function Season(props: Route.ComponentProps): ReactNode | null {
+  const { loaderData } = props;
+
+  if ("picker" in loaderData) {
+    return <RegionPicker slug={loaderData.slug} />;
+  }
+
+  return <RegionView loaderData={loaderData} />;
+}
+
+function RegionPicker({ slug }: { slug: string }): ReactNode {
+  const season = findSeasonByName(slug, null);
+
+  return (
+    <>
+      <Header />
+      <div className="grid flex-1 grid-cols-1 grid-rows-[1fr] md:grid-cols-[1fr_min(96rem,100%)_1fr]">
+        <div aria-hidden className={clsx(gutterPattern, "col-start-1")} />
+        <main className="col-start-1 row-start-1 flex flex-col space-y-6 p-6 md:col-start-2">
+          <div className="flex items-center gap-3">
+            {season ? (
+              <img
+                src={season.seasonIcon}
+                alt=""
+                width={32}
+                height={32}
+                className="h-8 w-8"
+              />
+            ) : null}
+            <h1 className="text-xl font-bold">{season ? season.name : slug}</h1>
+          </div>
+          <ul className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            {orderedRegionsBySize.map((region) => (
+              <li key={region}>
+                <Link
+                  prefetch="intent"
+                  to={`/${slug}/${regionsToPathSegment([region])}`}
+                  className="rounded-md flex h-28 md:h-56 xl:h-28 flex-col items-center justify-center gap-2 border border-gray-600 bg-gray-700 text-2xl font-bold text-white outline-none transition-all duration-200 ease-in-out hover:bg-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-500"
+                >
+                  {season ? (
+                    <img
+                      src={season.seasonIcon}
+                      alt=""
+                      width={28}
+                      height={28}
+                      loading="lazy"
+                      className="h-7 w-7"
+                    />
+                  ) : null}
+                  {region.toUpperCase()}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </main>
+        <div aria-hidden className={clsx(gutterPattern, "col-start-3")} />
+      </div>
+      <Footer />
+    </>
+  );
+}
+
+type RegionViewProps = {
+  loaderData: RegionLoaderData;
+};
+
+/**
+ * Single-region chart view at `/{season}/{region}`. Paints exactly one region
+ * from the loader payload; the dungeon records still stream in via <Await>.
+ */
+function RegionView({ loaderData }: RegionViewProps): ReactNode {
   const [searchParams] = useSearchParams();
 
   // RR's `SerializeFrom` widens the loaderData type so it isn't structurally
   // identical to `SeasonData` despite being so at runtime; narrow it back at
   // this boundary. `records` is empty here (streamed via `recordsStream`); the
   // charts don't need it.
-  const decoded = useMemo(
-    () => decode(props.loaderData as SeasonData),
-    [props.loaderData],
-  );
-  const { regionsStream, recordsStream } = props.loaderData;
+  const decoded = useMemo(() => decode(loaderData as SeasonData), [loaderData]);
+  const { recordsStream } = loaderData;
   const seasonConfig = useMemo(
     () => findSeasonByName(decoded.slug, null),
     [decoded.slug],
@@ -388,26 +464,16 @@ export default function Season(
     () => buildEnhancedSeason(decoded, seasonConfig!, overlays),
     [decoded, seasonConfig, overlays],
   );
-  // The primary region paints from the loader payload; the rest stream in via
-  // `regionsStream` (see the loader). Render the primary from `season` (which
-  // only has the primary's data) and the rest inside the <Await> below.
-  const [primaryRegion, ...pendingRegions] = season.score.regionsToDisplay;
+  // Only ever one region on this view.
+  const [region] = season.score.regionsToDisplay;
   const {
     slug,
-    score: { regionsToDisplay, extrapolation },
+    score: { extrapolation },
   } = season;
-  // Persist the last viewed region selection so the landing path ("/") can
-  // redirect back to it. Covers every way of arriving at a filtered view
-  // (toggle, shared link, back/forward), and writes a client cookie so the
-  // cacheable loader response stays free of a `Set-Cookie`.
 
   const prevSeason = useRef(slug);
   const prevExtrapolation = useRef(extrapolation);
   const [extremes, setExtremes] = useState<ZoomExtremes>(null);
-
-  useEffect(() => {
-    persistRegionsCookie(regionsToDisplay);
-  }, [regionsToDisplay]);
 
   useEffect(() => {
     if (
@@ -427,43 +493,16 @@ export default function Season(
         <div aria-hidden className={clsx(gutterPattern, "col-start-1")} />
         <main className="col-start-1 row-start-1 flex flex-col space-y-4 p-6 md:col-start-2">
           <SeasonControls season={season} />
-          {primaryRegion ? (
-            <>
-              <Region
-                season={season}
-                region={primaryRegion}
-                onZoom={setExtremes}
-                extremes={extremes}
-              />
-              {pendingRegions.length > 0 ? <GutterDivider /> : null}
-            </>
+          {region ? (
+            <Region
+              season={season}
+              region={region}
+              onZoom={setExtremes}
+              extremes={extremes}
+            />
           ) : null}
 
-          {/* secondary regions stream in so slow regions (CN/TW) don't block the
-            primary region's chart. */}
-          {pendingRegions.length > 0 ? (
-            <Suspense
-              fallback={pendingRegions.map((region) => (
-                <RegionSkeleton key={region} region={region} />
-              ))}
-            >
-              <Await resolve={regionsStream} errorElement={null}>
-                {(streamedRegions) => (
-                  <StreamedRegions
-                    baseData={props.loaderData}
-                    streamedRegions={streamedRegions}
-                    seasonConfig={seasonConfig!}
-                    overlays={overlays}
-                    regions={pendingRegions}
-                    extremes={extremes}
-                    onZoom={setExtremes}
-                  />
-                )}
-              </Await>
-            </Suspense>
-          ) : null}
-
-          {/* dungeon records stream in so they don't block the charts. */}
+          {/* dungeon records stream in so they don't block the chart. */}
           <Suspense fallback={null}>
             <Await resolve={recordsStream} errorElement={null}>
               {(records) =>
@@ -489,90 +528,6 @@ export default function Season(
       </div>
       <Footer />
     </>
-  );
-}
-
-type StreamedRegionsProps = {
-  /** The loader payload (primary region only in `regions`). */
-  baseData: SeasonData;
-  /** The secondary regions' payloads, resolved from `regionsStream`. */
-  streamedRegions: Partial<Record<Regions, RegionPayload>>;
-  seasonConfig: SeasonConfig;
-  overlays: readonly Overlay[];
-  /** The secondary regions to render (in display order). */
-  regions: Regions[];
-  extremes: ZoomExtremes;
-  onZoom: (extremes: ZoomExtremes) => void;
-};
-
-/**
- * Rebuilds the `EnhancedSeason` once the secondary regions have streamed in
- * (merging them onto the primary payload) and renders their region cards. A
- * region that streamed in empty has no payload, so it renders the usual "no data
- * yet" card — same as the non-streamed path.
- */
-function StreamedRegions({
-  baseData,
-  streamedRegions,
-  seasonConfig,
-  overlays,
-  regions,
-  extremes,
-  onZoom,
-}: StreamedRegionsProps): React.ReactNode {
-  const season = useMemo(
-    () =>
-      buildEnhancedSeason(
-        decode({
-          slug: baseData.slug,
-          regionsToDisplay: baseData.regionsToDisplay,
-          regions: { ...baseData.regions, ...streamedRegions },
-          records: [],
-        }),
-        seasonConfig,
-        overlays,
-      ),
-    [baseData, streamedRegions, seasonConfig, overlays],
-  );
-
-  return (
-    <>
-      {regions.map((region, index) => {
-        return (
-          <Fragment key={region}>
-            <Region
-              key={region}
-              season={season}
-              region={region}
-              extremes={extremes}
-              onZoom={onZoom}
-            />
-            {index === regions.length - 1 ? null : <GutterDivider />}
-          </Fragment>
-        );
-      })}
-    </>
-  );
-}
-
-/** Placeholder shown for a secondary region while its payload is still
- * streaming. Mirrors the region card's outer chrome + chart height. */
-function RegionSkeleton({ region }: { region: Regions }): React.ReactNode {
-  return (
-    <section
-      className="max-w-screen-2xl border border-gray-600 bg-gray-700"
-      aria-labelledby={`title-${region}`}
-      id={region}
-    >
-      <h1 id={`title-${region}`} className="text-center text-lg font-bold">
-        {region.toUpperCase()}
-      </h1>
-      <div className="flex h-[39vh] items-center justify-center lg:h-[30vh]">
-        <span className="animate-pulse text-gray-400">
-          Loading {region.toUpperCase()}…
-        </span>
-      </div>
-    </section>
   );
 }
 

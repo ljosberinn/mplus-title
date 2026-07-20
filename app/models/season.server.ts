@@ -19,12 +19,6 @@ type GetEnhancedSeasonResult = {
   season: EnhancedSeason;
 };
 
-/**
- * Server-side `EnhancedSeason` builder for the JSON API routes. Shares the exact
- * assemble path used by the `$season` route's client: compact `SeasonData` ->
- * `decode()` -> `buildEnhancedSeason()`. The main route ships the compact
- * `SeasonData` instead and assembles in the browser.
- */
 export const getEnhancedSeason = async ({
   overlays: pOverlays,
   request,
@@ -32,25 +26,18 @@ export const getEnhancedSeason = async ({
   season,
   timings,
 }: GetEnhancedSeasonParams): Promise<GetEnhancedSeasonResult> => {
-  const { data, regionsPromise, recordsPromise, headers } =
-    await assembleSeasonData({
-      request,
-      regions,
-      season,
-      timings,
-    });
+  const { data, recordsPromise, headers } = await assembleSeasonData({
+    request,
+    regions,
+    season,
+    timings,
+  });
 
-  // JSON API consumers get the full object (no streaming), so await the streamed
-  // secondary regions + records and merge them back in before assembling.
-  const [secondaryRegions, records] = await Promise.all([
-    regionsPromise,
-    recordsPromise,
-  ]);
+  const records = await recordsPromise;
   const overlays = resolveOverlaysToDisplay(season.wcl?.zoneId, pOverlays);
   const enhancedSeason = buildEnhancedSeason(
     decode({
       ...data,
-      regions: { ...data.regions, ...secondaryRegions },
       records,
     }),
     season,

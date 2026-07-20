@@ -362,20 +362,22 @@ export function buildUplotConfig(
       label,
       scale: "y",
       stroke: color,
-      width: isScatter ? 0 : 2,
+      // the extrapolation-history scatter now gets a thin connecting line through
+      // its points (chronological along the shared x); the real cutoff lines stay
+      // at width 2.
+      width: isScatter ? 1 : 2,
       dash: isExtrapolation ? [6, 4] : undefined,
       // every series shares one unified x, so a series is `null` at any
       // timestamp it didn't sample (e.g. the spread-out extrapolation-history
-      // scatter points). Bridge those artificial gaps so lines stay connected,
-      // matching Highcharts. Scatter stays points-only via `paths`.
-      spanGaps: !isScatter,
+      // points). Bridge those artificial gaps so both the cutoff lines and the
+      // scatter's connecting line stay continuous, matching Highcharts.
+      spanGaps: true,
       points: {
         show: isScatter || isExtrapolation,
         size: isScatter ? 5 : 6,
         stroke: color,
         fill: color,
       },
-      paths: isScatter ? () => null : undefined,
       show: visible,
     });
 
