@@ -245,6 +245,8 @@ export default function UplotDungeonRecords({
       ctx.restore();
     };
 
+    let focusedSeries: number | null = null;
+
     const updateTooltip = (u: uPlot) => {
       const tt = tooltipRef.current;
       if (!tt) {
@@ -280,8 +282,18 @@ export default function UplotDungeonRecords({
         }
         const stroke =
           typeof series.stroke === "string" ? series.stroke : "#fff";
+        const isFocused = focusedSeries === i;
+        const dimmed = focusedSeries !== null && !isFocused;
+        const rowStyle = [
+          `color:${stroke}`,
+          "padding:1px 4px;margin:0 -4px;border-radius:3px",
+          dimmed ? "opacity:.4" : "",
+          isFocused ? "font-weight:700;background:rgba(255,255,255,.14)" : "",
+        ]
+          .filter(Boolean)
+          .join(";");
         rows.push(
-          `<div style="color:${stroke}">${series.label}: <b>+${value}</b></div>`,
+          `<div style="${rowStyle}">${series.label}: <b>+${value}</b></div>`,
         );
       }
 
@@ -312,6 +324,7 @@ export default function UplotDungeonRecords({
         return;
       }
       lastFocus = seriesIdx;
+      focusedSeries = seriesIdx;
       u.series.forEach((s, i) => {
         const base = baseWidths[i];
         if (i === 0 || base === 0) {

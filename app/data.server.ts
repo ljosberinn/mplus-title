@@ -51,13 +51,10 @@ type AssembleSeasonDataParams = {
 };
 
 type AssembleSeasonDataResult = {
-  /** The primary region's payload, ready to paint. Secondary regions are absent
-   * from `data.regions` — they stream in via `regionsPromise`. */
+  /** The requested regions' payloads. A region with no data is omitted from
+   * `data.regions`. Since the app only ever renders a single region at a time,
+   * the `$season` route passes exactly one region; the JSON API may pass more. */
   data: SeasonData;
-  /** The secondary regions' payloads, loaded lazily and streamed to the client
-   * via <Await> (the JSON API path awaits it). Keyed by region; a region with no
-   * data is omitted, mirroring the primary path. */
-  regionsPromise: Promise<Partial<Record<Regions, RegionPayload>>>;
   /** Dungeon records, loaded lazily and streamed to the client via <Await>
    * (the JSON API path awaits it). `data.records` stays empty on the wire. */
   recordsPromise: Promise<SeasonData["records"]>;
@@ -67,8 +64,7 @@ type AssembleSeasonDataResult = {
 /**
  * Loads one region's `Dataset[]`, runs its extrapolation(s) and columnar-encodes
  * it into a `RegionPayload`. `payload` is `null` when the region has no data (the
- * caller omits it from the wire). Shared by the synchronous primary path and the
- * streamed secondary path in `assembleSeasonData`.
+ * caller omits it from the wire).
  */
 async function loadRegionPayload(
   region: Regions,
@@ -145,63 +141,40 @@ export async function assembleSeasonData({
   );
 
   const regions = pRegions ?? orderedRegionsBySize;
-  const [primaryRegion, ...secondaryRegions] = regions;
+  const [primaryRegion] = regions;
 
   // Dungeon records feed only the secondary DungeonRecords chart, so load them
   // as a promise the loader streams in via <Await> rather than blocking first
   // paint on the dungeonHistory query. The JSON API path awaits it instead.
   const recordsPromise = loadRecordsForSeason(season);
 
-  // The primary (first selected) region resolves synchronously so the loader can
-  // return and the chart paints; the remaining regions stream in via <Await>.
-  // Biggest win on multi-region views / slow regions (CN/TW). See gains.md #2.
-  const primary = await time(
-    () => loadRegionPayload(primaryRegion, season, extrapolationEnd, timings),
-    { type: `loadRegionPayload-${primaryRegion}`, timings },
+  // Load every requested region up front. The `$season` route only ever asks for
+  // a single region (the app renders one region at a time), so there is nothing
+  // to stream off the critical path anymore; the JSON API may request several.
+  const loaded = await time(
+    () =>
+      Promise.all(
+        regions.map((region) =>
+          loadRegionPayload(region, season, extrapolationEnd, timings),
+        ),
+      ),
+    { type: "loadRegionPayloads", timings },
   );
 
   const regionPayloads: Partial<Record<Regions, RegionPayload>> = {};
 
-  if (primary.payload) {
-    regionPayloads[primaryRegion] = primary.payload;
-  }
+  regions.forEach((region, index) => {
+    const { payload } = loaded[index];
 
-  // Secondary regions are loaded off the response's critical path. Their `time()`
-  // entries land after `getServerTimeHeader` snapshots `timings`, so they won't
-  // show in Server-Timing — that's the cost of streaming them.
-  const loadSecondaryRegions = async (): Promise<
-    Partial<Record<Regions, RegionPayload>>
-  > => {
-    const entries = await Promise.all(
-      secondaryRegions.map(async (region) => {
-        const { payload } = await loadRegionPayload(
-          region,
-          season,
-          extrapolationEnd,
-          timings,
-        );
-
-        return [region, payload] as const;
-      }),
-    );
-
-    const out: Partial<Record<Regions, RegionPayload>> = {};
-
-    for (const [region, payload] of entries) {
-      if (payload) {
-        out[region] = payload;
-      }
+    if (payload) {
+      regionPayloads[region] = payload;
     }
+  });
 
-    return out;
-  };
-
-  const regionsPromise = loadSecondaryRegions();
-
-  // Cache headers reflect the primary region only — all regions share the same
-  // ~5-min cron cadence, so its freshness window is representative, and awaiting
-  // every region here would defeat the streaming.
-  const mostRecentDataset = primary.data.reduce(
+  // Cache headers reflect the first region — all regions share the same ~5-min
+  // cron cadence, so its freshness window is representative.
+  const primaryData = loaded[0]?.data ?? [];
+  const mostRecentDataset = primaryData.reduce(
     (acc, dataset) => (acc > dataset.ts ? acc : dataset.ts),
     0,
   );
@@ -211,7 +184,7 @@ export async function assembleSeasonData({
   const shortestExpiry = determineExpirationTimestamp(
     season,
     primaryRegion,
-    primary.data,
+    primaryData,
   );
 
   headers[expires] = new Date(shortestExpiry * 1000 + Date.now()).toUTCString();
@@ -227,7 +200,7 @@ export async function assembleSeasonData({
     records: [],
   };
 
-  return { data, regionsPromise, recordsPromise, headers };
+  return { data, recordsPromise, headers };
 }
 
 // ---------------------------------------------------------------------------
