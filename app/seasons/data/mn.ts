@@ -1,4 +1,4 @@
-import { defineSeason, NO_DATES, weeklyStart } from "../config";
+import { defineSeason, NO_DATES, weeklyEnd, weeklyStart } from "../config";
 import { type Season } from "../runtime";
 
 export const mnSeasons: Season[] = [
@@ -8,7 +8,7 @@ export const mnSeasons: Season[] = [
     expansion: "mn",
     rioKey: "season-mn-2",
     crossFactionSupport: "complete",
-    startDates: NO_DATES,
+    startDates: weeklyStart("2026-08-18"),
     endDates: NO_DATES,
     affixes: [],
     dungeons: [
@@ -38,7 +38,7 @@ export const mnSeasons: Season[] = [
     rioKey: "season-mn-1",
     crossFactionSupport: "complete",
     startDates: weeklyStart("2026-03-24"),
-    endDates: NO_DATES,
+    endDates: weeklyEnd("2026-08-11"),
     affixes: [],
     annotations: [
       { kind: "hotfix", label: "Academy to 30 min", week: 2 },
