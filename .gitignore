@@ -15,3 +15,6 @@ node_modules
 
 prisma/generated/*
 .react-router/
+
+data/
+scripts/

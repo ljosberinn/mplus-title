@@ -9,6 +9,7 @@
     "build": "prisma generate && react-router build",
     "db:backtest": "tsx scripts/backtest-extrapolation.ts",
     "db:backtest:advanced": "tsx scripts/backtest-advanced.ts",
+    "db:backtest:bands": "tsx scripts/backtest-bands.ts",
     "db:export": "tsx scripts/export-season-data.ts",
     "db:regen-extrapolation": "tsx scripts/regenerate-extrapolation.ts",
     "dev": "react-router dev",
