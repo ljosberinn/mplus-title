@@ -132,6 +132,12 @@ export type UplotConfig = {
   scatterSeriesIdx: number[];
   /** scatter point metadata keyed by series index, for the tooltip. */
   estimatedAtBySeries: Record<number, (number | null)[]>;
+  /** uPlot series index per series id (`score`, `extrapolation`, …), so the
+   * tooltip can pair a prediction with the cutoff it was predicting. */
+  seriesIdxById: Record<string, number>;
+  /** series whose points the chart draws itself (per-point accuracy colouring),
+   * so uPlot's own uniform point rendering is off for them. */
+  customPointSeriesIdx: number[];
   /** original stroke colour per series index. uPlot stores `series.stroke`
    * internally as a function, so the tooltip/labels read colours from here
    * instead of off the live series. */
@@ -145,6 +151,23 @@ export type UplotConfig = {
 export type DailyGain = { ts: number; value: number; gain: number };
 
 const dayMs = 24 * 60 * 60 * 1000;
+
+/**
+ * Which recorded cutoff line each prediction series was predicting. Drives both
+ * the tooltip's delta and the per-point accuracy colouring; a series with no
+ * entry here is not a prediction and is left alone.
+ */
+export const ACTUAL_SERIES_BY_PREDICTION: Record<string, string> = {
+  extrapolation: "score",
+  "extrapolation-history": "score",
+  "extrapolation-score100": "score100",
+};
+
+/** Absolute delta at or below which a prediction counts as on target. */
+export const PREDICTION_DIFF_THRESHOLD = 10;
+
+export const PREDICTION_HIT_COLOR = "#90ee90";
+export const PREDICTION_MISS_COLOR = "#f87171";
 
 /**
  * Daily-reset gains for one line. The daily reset shares the season-start
@@ -285,6 +308,7 @@ export function buildUplotConfig(
   const legend: LegendItem[] = [];
   const lineSeriesIdx: number[] = [];
   const scatterSeriesIdx: number[] = [];
+  const customPointSeriesIdx: number[] = [];
   const estimatedAtBySeries: Record<number, (number | null)[]> = {};
   const colorBySeriesIdx: Record<number, string> = {};
   const dailyGainsBySeries: Record<number, DailyGain[]> = {};
@@ -336,6 +360,12 @@ export function buildUplotConfig(
 
     const isScatter = s.type === "scatter";
     const isExtrapolation = s.dashed && !isScatter;
+    // a prediction scatter gets its points drawn by the chart instead, one
+    // colour per point based on how close it landed to the recorded cutoff.
+    const hasCustomPoints =
+      isScatter &&
+      typeof s.id === "string" &&
+      s.id in ACTUAL_SERIES_BY_PREDICTION;
 
     data.push(align(points));
     const seriesIdx = series.length;
@@ -344,6 +374,9 @@ export function buildUplotConfig(
       scatterSeriesIdx.push(seriesIdx);
     } else {
       lineSeriesIdx.push(seriesIdx);
+    }
+    if (hasCustomPoints) {
+      customPointSeriesIdx.push(seriesIdx);
     }
     if (typeof s.id === "string") {
       lineIdxById.set(s.id, seriesIdx);
@@ -373,7 +406,7 @@ export function buildUplotConfig(
       // scatter's connecting line stay continuous, matching Highcharts.
       spanGaps: true,
       points: {
-        show: isScatter || isExtrapolation,
+        show: !hasCustomPoints && (isScatter || isExtrapolation),
         size: isScatter ? 5 : 6,
         stroke: color,
         fill: color,
@@ -511,7 +544,9 @@ export function buildUplotConfig(
     primaryLineSeriesIdx,
     dailyGainsBySeries,
     scatterSeriesIdx,
+    customPointSeriesIdx,
     estimatedAtBySeries,
+    seriesIdxById: Object.fromEntries(lineIdxById),
     colorBySeriesIdx,
     initialZoom: zoom
       ? [Math.round(zoom[0] / 1000), Math.round(zoom[1] / 1000)]

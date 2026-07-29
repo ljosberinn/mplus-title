@@ -142,6 +142,7 @@ export const action: ActionFunction = async ({ request }) => {
         mostOutdatedRegion,
         data,
         null,
+        "cron",
       );
 
       if (Array.isArray(extrapolation) && extrapolation.length > 0) {

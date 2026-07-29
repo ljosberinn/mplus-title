@@ -52,11 +52,21 @@ export function determineExtrapolationEnd(request: Request): number | null {
   }
 }
 
+/**
+ * How far the trajectory is projected.
+ *
+ * `chart` — to the season end when it is known, otherwise a fixed lead time.
+ * `cron` — always the fixed lead time, clamped to the season end if it would
+ *   overshoot it.
+ */
+export type ExtrapolationHorizon = "chart" | "cron";
+
 export function calculateExtrapolation(
   season: Season,
   region: Regions,
   data: Dataset[],
   endOverride: number | null,
+  horizon: ExtrapolationHorizon = "chart",
 ):
   | null
   | [number, number][]
@@ -136,10 +146,19 @@ export function calculateExtrapolation(
     passedWeeksDiff = passedWeeksDiff.slice(-6);
   }
 
-  const daysUntilSeasonEndingOrThreeWeeks = daysUntilSeasonEnding ?? 21;
+  const fallbackEnd = lastDataset.ts + DEFAULT_EXTRAPOLATION_DAYS * dayInMs;
   const to =
-    seasonEnding ??
-    lastDataset.ts + (daysUntilSeasonEndingOrThreeWeeks / 7) * oneWeekInMs;
+    horizon === "cron"
+      ? // the cron persists a single endpoint per scrape, so it projects a fixed
+        // lead time ahead of the scrape it was computed from and only clamps to
+        // the season end once that lead time would overshoot it. Anchoring on
+        // the season end instead would stamp every row of a season with the same
+        // timestamp, flattening the Extrapolation History scatter — see
+        // `loadExtrapolationHistoryForSeason`.
+        Math.min(fallbackEnd, seasonEnding ?? Number.POSITIVE_INFINITY)
+      : // the chart draws the whole trajectory, so it runs to the season end
+        // whenever that is known and falls back to the fixed lead time otherwise.
+        (seasonEnding ?? fallbackEnd);
   const timeUntilExtrapolationEnd = to - lastDataset.ts;
 
   const predictScoreAt = buildScorePredictor(
@@ -149,19 +168,18 @@ export function calculateExtrapolation(
     lastDataset,
   );
 
-  if (timeUntilExtrapolationEnd > oneWeekInMs / 7) {
-    const interval =
-      timeUntilExtrapolationEnd / daysUntilSeasonEndingOrThreeWeeks;
+  if (timeUntilExtrapolationEnd > dayInMs) {
+    // one interior point per day of the span, so the spacing is a day regardless
+    // of how far out `to` lands.
+    const steps = Math.max(1, Math.round(timeUntilExtrapolationEnd / dayInMs));
+    const interval = timeUntilExtrapolationEnd / steps;
 
     const rawPoints: [number, number][] = [
       [lastDataset.ts, lastDataset.score],
-      ...Array.from<number, [number, number]>(
-        { length: daysUntilSeasonEndingOrThreeWeeks - 1 },
-        (_, i) => {
-          const ts = Math.round(lastDataset.ts + interval * (i + 1));
-          return [ts, predictScoreAt(ts)];
-        },
-      ),
+      ...Array.from<number, [number, number]>({ length: steps - 1 }, (_, i) => {
+        const ts = Math.round(lastDataset.ts + interval * (i + 1));
+        return [ts, predictScoreAt(ts)];
+      }),
       [to, predictScoreAt(to)],
     ];
 
@@ -183,12 +201,29 @@ export function calculateExtrapolation(
   };
 }
 
+/**
+ * The fixed lead time to project ahead of the most recent datapoint: the whole
+ * horizon for the `cron` horizon, and the fallback for `chart` when the season's
+ * end date is unknown. Two weeks, where backtests put the mean absolute error
+ * around 0.63% of the cutoff versus 0.84% at the three weeks this used to use.
+ */
+const DEFAULT_EXTRAPOLATION_DAYS = 14;
+
 const LOG_BLEND_WEIGHT = 0.7;
 const DAMPED_ALPHA = 0.3;
 const DAMPED_BETA = 0.1;
-// damping is close to 1 because the horizon spans ~21 daily steps; smaller
+// damping is close to 1 because the horizon spans ~14 daily steps; smaller
 // values would decay the trend away long before the horizon is reached
 const DAMPED_PHI = 0.97;
+
+// The damped trend runs increasingly low the further out it is read, so the
+// share given to the log side grows with the horizon: even at two weeks,
+// rising to a 0.75 cap. Flat weights are worse at one end or the other — 0.5
+// leaves a -19.6 bias at six weeks, 0.6 costs accuracy inside two.
+const MIX_BASE_WEIGHT = 0.5;
+const MIX_WEIGHT_PER_WEEK = 0.08;
+const MIX_PIVOT_WEEKS = 2;
+const MIX_MAX_WEIGHT = 0.75;
 
 function fitLeastSquares(
   xs: number[],
@@ -240,13 +275,21 @@ function toDailySeries(
  * the three sub-models once and returns a function giving the projected score at
  * any future timestamp.
  *
- * The projection is the mean of:
+ * The projection is a weighted mix of:
  *  - logBlend: a log(time) curve fit (deceleration) blended with the recent,
  *    recency-weighted weekly rate (responsiveness), and
  *  - dampedTrend: Holt linear smoothing with a damped trend.
  *
  * The two have opposite biases (the log side leans high, the damped side low),
- * so averaging them largely cancels the bias.
+ * so mixing them largely cancels the bias. The damped side's bias grows with
+ * the horizon, so the mix leans further onto the log side the further out the
+ * score is read — see the MIX_* constants.
+ *
+ * Backtested across mn-season-1, tww-season-2 and tww-season-3 pooled; this mix
+ * beats the individual sub-models, a power law, a saturating curve and a median
+ * ensemble on both MAE and RMSE from two weeks out. Note that the seasons
+ * disagree about which sub-model is the good one, so any change here needs to
+ * be measured across several of them — see `npm run db:backtest`.
  */
 function buildScorePredictor(
   data: Dataset[],
@@ -332,7 +375,16 @@ function buildScorePredictor(
       }
     }
 
-    return (logBlend + damped) / 2;
+    const mixWeight = Math.min(
+      MIX_MAX_WEIGHT,
+      Math.max(
+        MIX_BASE_WEIGHT,
+        MIX_BASE_WEIGHT +
+          MIX_WEIGHT_PER_WEEK * (horizonWeeks - MIX_PIVOT_WEEKS),
+      ),
+    );
+
+    return mixWeight * logBlend + (1 - mixWeight) * damped;
   };
 }
 

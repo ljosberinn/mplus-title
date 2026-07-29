@@ -74,28 +74,62 @@ function extrapolationEndTs(extrapolation: Extrapolation): number | null {
   return extrapolation.to.ts;
 }
 
-// Per-day upper margin of the confidence band, as a fraction of the *current*
-// (anchor) score. Calibrated by leave-one-season-out, ONE-SIDED conformal
-// prediction in scripts/backtest-advanced.ts: the 0.9-quantile of the signed
-// upside residual (actual - pred) / anchorScore was +1.18% at the 21-day lead
-// (excluding the anomalous df-season-2), giving ~92% one-sided coverage
-// ("≥90% of cutoffs land at or below the upper bound").
-// Replaces the previous ±1.72% which was the 90% band on the |error| magnitude
-// applied one-sided — i.e. the ~95th upper percentile, hence too high.
-// The band starts at zero width "now" and grows linearly with the lead.
-const CONFORMAL_BAND_RATE_PER_DAY = 0.0118 / 21;
+// Confidence band margins, as a fraction of the *current* (anchor) score, for a
+// lead of `days`: `A · (days / 21)^p`. Calibrated leave-one-season-out in
+// scripts/backtest-bands.ts (`npm run db:backtest:bands`) against the signed
+// residual (actual - pred) / anchorScore, excluding the anomalous df-season-2.
+//
+// The previous rate was a single number applied *linearly* in the lead, fitted
+// at 21 days and then stretched to the season end — which the chart draws, and
+// which early in a season is 100+ days out. Measured, the residual quantiles
+// grow markedly sub-linearly (exponents below), so the linear form ballooned far
+// out: 9.44% wide at an 84-day lead, against 4.65% here.
+//
+// The edges are the *q80* and *q20* of the residual, not the q90/q10 they used
+// to be. Both tails are fat and driven by a few surprise seasons — at a 70-day
+// lead the upper q75 is +0.56% but q90 is +3.10%, a 5.5x jump — so the outer
+// quantiles mostly described outcomes that don't happen, and read as a best/worst
+// case rather than a forecast. The two targets have to mirror each other, or the
+// projection sits visibly off-centre inside its own band.
+//
+// This makes the band a 60% central interval: the cutoff lands inside it about 3
+// times in 5, and finishes above it roughly 1 time in 5. Realised LOSO coverage
+// is 56-62% from 5 to 56 days, so it is honest about being that and not more.
+const BAND_REFERENCE_DAYS = 21;
+const BAND_UPPER_AT_REFERENCE = 0.0049;
+const BAND_LOWER_AT_REFERENCE = 0.0087;
+const BAND_UPPER_EXPONENT = 0.734;
+const BAND_LOWER_EXPONENT = 0.682;
+
+/** The band's margin on one side, as a fraction of the anchor score. */
+function bandMarginFraction(
+  daysAhead: number,
+  atReference: number,
+  exponent: number,
+): number {
+  if (daysAhead <= 0) {
+    return 0;
+  }
+
+  return atReference * (daysAhead / BAND_REFERENCE_DAYS) ** exponent;
+}
 
 /**
  * Derives an arearange [x, low, high] band around an extrapolation trajectory.
- * Width is ~0 at the anchor (now) and widens with the lead time.
+ * Width is ~0 at the anchor (now) and widens sub-linearly with the lead time.
  *
- * The band is centred on the projection with a symmetric per-day margin:
- * `high = projection + margin`, `low = projection - margin`. Because the
- * projection itself trends upward, the lower bound expresses a minimal *positive*
- * expectation most of the time — but it is deliberately *not* floored at the
- * current score: the cutoff can (rarely) decrease, so early on, when the margin
- * outweighs the projected gain, the lower bound may dip slightly below today's
- * score. A flat/declining season is possible, just historically near-unheard-of.
+ * The band is drawn around the projection with its own margin per side —
+ * `high = projection + upper`, `low = projection - lower` — since the residual
+ * distribution is not symmetric.
+ *
+ * The lower bound is floored at the anchor (current) score. The cutoff is a
+ * rank threshold over a growing pool of runs, so it essentially cannot fall —
+ * backtesting agrees: it finished below its anchor in ~0.5% of snapshots inside
+ * 4 weeks and in *zero* beyond that (the smallest 42-day gain on record is
+ * +0.36%, the smallest 84-day gain +4.03%). An unfloored lower bound therefore
+ * spent most of its width on an outcome that doesn't happen. The residual
+ * quantile still governs how far above today's score the bound sits; the floor
+ * only stops it dipping below.
  */
 export function calculateExtrapolationBand(
   extrapolation: Extrapolation,
@@ -120,14 +154,27 @@ export function calculateExtrapolationBand(
 
   return points.map(([ts, score]): [number, number, number] => {
     const daysAhead = (ts - anchorTs) / dayInMs;
-    // margin is a fraction of the anchor (current) score, not the projected
-    // score, so it doesn't compound with the projection's own rise (option B).
-    const margin = anchorScore * CONFORMAL_BAND_RATE_PER_DAY * daysAhead;
-
-    const high = score + margin;
-    // symmetric lower margin — not floored at the current score, since the
-    // cutoff can decrease.
-    const low = score - margin;
+    // margins are a fraction of the anchor (current) score, not the projected
+    // score, so they don't compound with the projection's own rise (option B).
+    const high =
+      score +
+      anchorScore *
+        bandMarginFraction(
+          daysAhead,
+          BAND_UPPER_AT_REFERENCE,
+          BAND_UPPER_EXPONENT,
+        );
+    // floored at the anchor: the cutoff effectively never falls.
+    const low = Math.max(
+      anchorScore,
+      score -
+        anchorScore *
+          bandMarginFraction(
+            daysAhead,
+            BAND_LOWER_AT_REFERENCE,
+            BAND_LOWER_EXPONENT,
+          ),
+    );
 
     return [ts, toOneDigit(low), toOneDigit(high)];
   });

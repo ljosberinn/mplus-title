@@ -19,7 +19,13 @@ import uPlot from "uplot";
 
 import { type EnhancedSeason } from "../seasons";
 import { Legend } from "./Legend";
-import { buildUplotConfig } from "./uplotData";
+import {
+  ACTUAL_SERIES_BY_PREDICTION,
+  buildUplotConfig,
+  PREDICTION_DIFF_THRESHOLD,
+  PREDICTION_HIT_COLOR,
+  PREDICTION_MISS_COLOR,
+} from "./uplotData";
 
 type ZoomExtremes = { min: number; max: number } | null;
 
@@ -47,6 +53,9 @@ const DAILY_GAINS_MAX_SPAN_SEC = 21 * 24 * 60 * 60;
 
 const oneDecimal = (v: number): string =>
   numberFormatter.format(Math.round(v * 10) / 10);
+
+/** Opacity of the per-point accuracy colouring on the prediction scatter. */
+const PREDICTION_POINT_ALPHA = 0.35;
 
 /**
  * Linearly interpolates a (sparse) series' value at the cursor index, using the
@@ -510,6 +519,95 @@ export default function UplotChart({
       ctx.restore();
     };
 
+    const idBySeriesIdx = new Map(
+      Object.entries(config.seriesIdxById).map(
+        ([id, seriesIdx]) => [seriesIdx, id] as const,
+      ),
+    );
+
+    /**
+     * `|prediction − actual|` at index `idx` for a prediction series, or null
+     * when there is nothing to compare against: a non-prediction series, or an
+     * x the recorded cutoff line doesn't reach. `interpolateAt` returns null
+     * past its last point, so a prediction that hasn't come due yet gets no
+     * delta rather than one measured against a nonexistent actual.
+     */
+    const predictionDiffAt = (
+      u: uPlot,
+      seriesIdx: number,
+      idx: number,
+      predicted: number,
+    ): number | null => {
+      const id = idBySeriesIdx.get(seriesIdx);
+      const actualId =
+        id === undefined ? undefined : ACTUAL_SERIES_BY_PREDICTION[id];
+      if (actualId === undefined) {
+        return null;
+      }
+
+      const actualIdx = config.seriesIdxById[actualId];
+      if (actualIdx === undefined) {
+        return null;
+      }
+
+      const actual = interpolateAt(u.data[0], u.data[actualIdx], idx);
+      return actual === null ? null : Math.abs(predicted - actual);
+    };
+
+    const diffColor = (diff: number): string =>
+      diff > PREDICTION_DIFF_THRESHOLD
+        ? PREDICTION_MISS_COLOR
+        : PREDICTION_HIT_COLOR;
+
+    /**
+     * Repaints the prediction scatter's points, one colour each by how close it
+     * landed (uPlot's own uniform points are off for these series — it has no
+     * per-point fill). Points with no actual to compare against keep the series
+     * colour, so the series still reads as one thing.
+     */
+    const drawPredictionPoints = (u: uPlot) => {
+      if (config.customPointSeriesIdx.length === 0) {
+        return;
+      }
+      const { ctx, bbox, data, series: allSeries } = u;
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(bbox.left, bbox.top, bbox.width, bbox.height);
+      ctx.clip();
+
+      const xs = data[0];
+      for (const seriesIdx of config.customPointSeriesIdx) {
+        if (!allSeries[seriesIdx].show) {
+          continue;
+        }
+        const ys = data[seriesIdx];
+        const fallback = config.colorBySeriesIdx[seriesIdx] ?? "#fff";
+        const radius = 2.5 * dpr;
+
+        for (let i = 0; i < ys.length; i += 1) {
+          const y = ys[i];
+          if (y === null || y === undefined) {
+            continue;
+          }
+          const diff = predictionDiffAt(u, seriesIdx, i, y);
+          ctx.fillStyle = withAlpha(
+            diff === null ? fallback : diffColor(diff),
+            PREDICTION_POINT_ALPHA,
+          );
+          ctx.beginPath();
+          ctx.arc(
+            u.valToPos(xs[i], "x", true),
+            u.valToPos(y, "y", true),
+            radius,
+            0,
+            Math.PI * 2,
+          );
+          ctx.fill();
+        }
+      }
+      ctx.restore();
+    };
+
     const updateTooltip = (u: uPlot) => {
       const tt = tooltipRef.current;
       if (!tt) {
@@ -559,10 +657,15 @@ export default function UplotChart({
                 est,
               )})</span>`
             : "";
+        const diff = predictionDiffAt(u, i, idx, value);
+        const diffLabel =
+          diff === null
+            ? ""
+            : ` <span style="color:${diffColor(diff)}">Δ${oneDecimal(diff)}</span>`;
         rows.push(
           `<div style="color:${stroke}">${series.label}: <b>${numberFormatter.format(
             Math.round(value * 10) / 10,
-          )}</b>${estLabel}</div>`,
+          )}</b>${diffLabel}${estLabel}</div>`,
         );
       }
 
@@ -869,6 +972,7 @@ export default function UplotChart({
         ],
         drawClear: [drawWeekBands, drawConfidenceBands],
         draw: [
+          drawPredictionPoints,
           drawLines,
           drawValueLabels,
           drawDailyGains,
