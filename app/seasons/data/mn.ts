@@ -61,5 +61,17 @@ export const mnSeasons: Season[] = [
     startingPeriod: 1056,
     wcl: { zoneId: 47, weekIndexToAffixSetId: [] },
     supportsExtrapolationHistory: true,
+    cutoffs: {
+      EU: {
+        score: 0,
+        source:
+          "https://eu.forums.blizzard.com/en/wow/t/m-umbral-champion-and-umbral-hero-scores-updated-4-august/625085/1",
+      },
+      US: {
+        score: 0,
+        source:
+          "https://us.forums.blizzard.com/en/wow/t/m-umbral-champion-and-umbral-hero-scores-updated-august-4/2333001/1",
+      },
+    },
   }),
 ];
