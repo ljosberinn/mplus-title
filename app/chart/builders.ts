@@ -667,21 +667,35 @@ export function calculateZoom(
   data: Dataset[],
   extrapolation: EnhancedSeason["score"]["extrapolation"]["EU"],
 ): [number, number] {
+  const now = Date.now();
   const seasonEnding = season.endDates[region];
+  const seasonEnded = seasonEnding !== null && seasonEnding <= now;
 
   const daysUntilSeasonEnding =
-    seasonEnding && seasonEnding > Date.now()
-      ? (seasonEnding - Date.now()) / 1000 / 60 / 60 / 24
+    seasonEnding !== null && !seasonEnded
+      ? (seasonEnding - now) / 1000 / 60 / 60 / 24
       : null;
 
-  const zoomEnd =
+  const dataEnd =
     (Array.isArray(extrapolation)
       ? extrapolation[extrapolation.length - 1][0]
       : extrapolation?.to.ts) ?? data[data.length - 1].ts;
 
-  if (daysUntilSeasonEnding) {
-    const offset =
-      daysUntilSeasonEnding < 3
+  // for a concluded season the last data point can sit slightly before the
+  // season ending, which would push the "Season End" marker just outside the
+  // viewport - include it, plus a little air so it isn't flush with the axis.
+  const zoomEnd =
+    seasonEnded && seasonEnding !== null
+      ? Math.max(dataEnd, seasonEnding) + oneWeekInMs * 0.03
+      : dataEnd;
+
+  // concluded seasons keep the view they had on their final day instead of
+  // zooming all the way out.
+  const lateSeasonOffsetInWeeks = seasonEnded
+    ? 1.5
+    : daysUntilSeasonEnding === null
+      ? null
+      : daysUntilSeasonEnding < 3
         ? 1.5
         : daysUntilSeasonEnding < 7
           ? 2.5
@@ -689,13 +703,15 @@ export function calculateZoom(
             ? 3.5
             : null;
 
-    if (offset) {
-      const backThen = [...data]
-        .reverse()
-        .find((dataset) => dataset.ts < zoomEnd - offset * oneWeekInMs);
+  if (lateSeasonOffsetInWeeks) {
+    const backThen = [...data]
+      .reverse()
+      .find(
+        (dataset) =>
+          dataset.ts < zoomEnd - lateSeasonOffsetInWeeks * oneWeekInMs,
+      );
 
-      return [backThen ? backThen.ts : 0, zoomEnd];
-    }
+    return [backThen ? backThen.ts : 0, zoomEnd];
   }
 
   // offset by +2 weeks since extrapolation is at least two into the future

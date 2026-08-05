@@ -88,18 +88,18 @@ export function buildEnhancedSeason(
     );
 
     const seasonEnding = season.endDates[region];
+    const seasonEnded = seasonEnding !== null && seasonEnding <= now;
 
-    // season ended, no need for zoomies or extrapolation
-    if (seasonEnding && seasonEnding <= now) {
-      continue;
+    // season ended, no need for extrapolation - but zoom the same way as late into a season
+    if (!seasonEnded) {
+      score.extrapolation[region] = extrapolation;
     }
 
-    score.extrapolation[region] = extrapolation;
     score.initialZoom[region] = calculateZoom(
       season,
       region,
       data,
-      extrapolation,
+      seasonEnded ? null : extrapolation,
     );
   }
 
