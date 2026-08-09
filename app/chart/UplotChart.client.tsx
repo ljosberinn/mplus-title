@@ -51,6 +51,13 @@ const FUTURE_ALPHA = 0.31;
 // so they don't clutter the zoomed-out view.
 const DAILY_GAINS_MAX_SPAN_SEC = 21 * 24 * 60 * 60;
 
+const END_LABEL_BELOW_SERIES_IDS = [
+  "score",
+  "score100",
+  "extrapolation",
+  "extrapolation-score100",
+] as const;
+
 const oneDecimal = (v: number): string =>
   numberFormatter.format(Math.round(v * 10) / 10);
 
@@ -383,21 +390,22 @@ export default function UplotChart({
         ) {
           continue;
         }
-        // nudge the primary cutoff labels (0.1% / 1%) up so they clear the line.
-        const labelY = config.primaryLineSeriesIdx.includes(idx)
-          ? y - 9 * dpr
-          : y;
+        // Place the score cutoff and extrapolation endpoint labels below their
+        // rendered point so the text does not obscure the line.
+        const belowPoint = END_LABEL_BELOW_SERIES_IDS.some(
+          (id) => config.seriesIdxById[id] === idx,
+        );
+        const labelY = belowPoint ? y + 9 * dpr : y;
         ctx.fillStyle = config.colorBySeriesIdx[idx] ?? "#fff";
         const text = numberFormatter.format(value);
         // flip the label left when the final point sits at the right edge
-        // (e.g. an ended season, where the line ends at "Season End"), and lift
-        // it a bit more so it clears the endpoint/line it now sits beside.
+        // (e.g. an ended season, where the line ends at "Season End").
         if (
           x + 4 * dpr + ctx.measureText(text).width >
           bbox.left + bbox.width
         ) {
           ctx.textAlign = "right";
-          ctx.fillText(text, x - 4 * dpr, labelY - 8 * dpr);
+          ctx.fillText(text, x - 4 * dpr, labelY);
           ctx.textAlign = "start";
         } else {
           ctx.fillText(text, x + 4 * dpr, labelY);

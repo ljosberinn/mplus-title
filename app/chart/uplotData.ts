@@ -123,7 +123,7 @@ export type UplotConfig = {
   mythicLinks: MythicLink[];
   /** uPlot series indices that are lines (get a last-point value label). */
   lineSeriesIdx: number[];
-  /** primary cutoff lines (Score 0.1% / 1%) — their value label is nudged up. */
+  /** primary cutoff lines (Score 0.1% / 1%) — used for daily gain labels. */
   primaryLineSeriesIdx: number[];
   /** daily-reset gains per primary cutoff line, keyed by uPlot series index;
    * drawn faintly on the line only when zoomed to ~2 weeks. */
