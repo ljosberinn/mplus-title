@@ -113,21 +113,33 @@ const RESET_CADENCE = {
   asia: { dayShift: 2, timeZone: "Asia/Seoul" },
 } as const;
 
+/**
+ * A per-region wall-clock hour. A bare number is read in that region's own
+ * `RESET_CADENCE` time zone (so it tracks DST); `{ hour, timeZone }` pins it to
+ * an explicit zone instead — used for EU, whose reset is a fixed 04:00 *UTC*
+ * year-round rather than a fixed local hour.
+ */
+type ZoneHour = number | { hour: number; timeZone: string };
+
 function weekly(
   usTuesday: string,
-  hours: { US: number; EU: number; asia: number },
+  hours: { US: ZoneHour; EU: ZoneHour; asia: ZoneHour },
   baseDayShift = 0,
 ): Record<Regions, number> {
   const [y, m, d] = usTuesday.split("-").map(Number);
 
   const at = (zone: keyof typeof RESET_CADENCE): number => {
-    const { dayShift, timeZone } = RESET_CADENCE[zone];
+    const { dayShift } = RESET_CADENCE[zone];
+    const spec = hours[zone];
+    const hour = typeof spec === "number" ? spec : spec.hour;
+    const timeZone =
+      typeof spec === "number" ? RESET_CADENCE[zone].timeZone : spec.timeZone;
     const rolled = new Date(Date.UTC(y, m - 1, d + dayShift + baseDayShift));
     return zonedTimeToUtc(
       rolled.getUTCFullYear(),
       rolled.getUTCMonth() + 1,
       rolled.getUTCDate(),
-      hours[zone],
+      hour,
       timeZone,
     );
   };
@@ -153,15 +165,26 @@ export function weeklyStart(usTuesday: string): Record<Regions, number> {
 }
 
 /**
- * Canonical, DST-aware season-*end* derivation. A season ends at 22:00 local the
- * evening *before* the regional reset that terminates it — e.g. EU resets Wed
- * 05:00 Paris, so the title locks 7h earlier at Tue 22:00 Paris. That's the same
- * 22:00-local wall-clock in every region, but one calendar day earlier than the
- * reset (hence `baseDayShift: -1` vs the start cadence). `usTuesday` is the US
- * Tuesday of the *ending reset* week.
+ * Canonical, DST-aware season-*end* derivation. `usTuesday` is the US Tuesday of
+ * the *ending reset* week; `at` picks which instant of that week ends it:
+ *
+ *  - `"pre-reset"` (default) — 22:00 local the evening *before* the regional
+ *    reset that terminates the season, i.e. the same 22:00-local wall-clock in
+ *    every region but one calendar day earlier than the reset (hence
+ *    `baseDayShift: -1`). This is how every pre-MN season was authored.
+ *  - `"reset"` — the regional weekly reset itself: US Tue 07:00
+ *    America/Los_Angeles, EU Wed 04:00 *UTC* (fixed year-round, not a fixed
+ *    local hour), KR/TW/CN Thu 07:00 Asia/Seoul. Asia mirrors the US local hour,
+ *    matching the existing cadence where every region shares one local
+ *    wall-clock and EU is the stated exception.
  */
-export function weeklyEnd(usTuesday: string): Record<Regions, number> {
-  return weekly(usTuesday, { US: 22, EU: 22, asia: 22 }, -1);
+export function weeklyEnd(
+  usTuesday: string,
+  at: "pre-reset" | "reset" = "pre-reset",
+): Record<Regions, number> {
+  return at === "reset"
+    ? weekly(usTuesday, { US: 7, EU: { hour: 4, timeZone: "UTC" }, asia: 7 })
+    : weekly(usTuesday, { US: 22, EU: 22, asia: 22 }, -1);
 }
 
 function mapRegions<T>(fn: (region: Regions) => T): Record<Regions, T> {

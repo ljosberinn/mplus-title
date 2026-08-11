@@ -38,7 +38,7 @@ export const mnSeasons: Season[] = [
     rioKey: "season-mn-1",
     crossFactionSupport: "complete",
     startDates: weeklyStart("2026-03-24"),
-    endDates: weeklyEnd("2026-08-11"),
+    endDates: weeklyEnd("2026-08-11", "reset"),
     affixes: [],
     annotations: [
       { kind: "hotfix", label: "Academy to 30 min", week: 2 },
