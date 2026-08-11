@@ -395,15 +395,21 @@ export function buildUplotConfig(
       label,
       scale: "y",
       stroke: color,
-      // the extrapolation-history scatter now gets a thin connecting line through
-      // its points (chronological along the shared x); the real cutoff lines stay
-      // at width 2.
-      width: isScatter ? 1 : 2,
+      width: isScatter ? 0 : 2,
       dash: isExtrapolation ? [6, 4] : undefined,
+      // A scatter is points only — no connecting path. Its x is the *predicted*
+      // date, not the date the prediction was made, so neighbouring points can be
+      // weeks apart in `estimatedAt` and a segment between them means nothing. It
+      // read worst at the season end: once the cron's horizon clamps there, every
+      // later scrape lands on that single x (537 US rows, spanning ~19 score
+      // points), while the x just left of it is only reachable by an estimate made
+      // ~14 days earlier — so the bridge between the two rendered a ~17-point
+      // cliff that was really just two estimates of different ages.
+      paths: isScatter ? () => null : undefined,
       // every series shares one unified x, so a series is `null` at any
       // timestamp it didn't sample (e.g. the spread-out extrapolation-history
-      // points). Bridge those artificial gaps so both the cutoff lines and the
-      // scatter's connecting line stay continuous, matching Highcharts.
+      // points). Bridge those artificial gaps so the cutoff lines stay
+      // continuous, matching Highcharts.
       spanGaps: true,
       points: {
         show: !hasCustomPoints && (isScatter || isExtrapolation),
