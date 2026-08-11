@@ -696,7 +696,7 @@ export function calculateZoom(
     : daysUntilSeasonEnding === null
       ? null
       : daysUntilSeasonEnding < 3
-        ? 1.5
+        ? 1.02
         : daysUntilSeasonEnding < 7
           ? 2.5
           : daysUntilSeasonEnding < 14
