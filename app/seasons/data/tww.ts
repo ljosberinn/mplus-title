@@ -17,11 +17,13 @@ export const twwSeasons: Season[] = [
     cutoffs: {
       EU: {
         score: 3945,
+        score100: 0,
         source:
           "https://eu.forums.blizzard.com/en/wow/t/m-unbound-hero-title-updated-14-january/601495",
       },
       US: {
         score: 3912,
+        score100: 0,
         source:
           "https://us.forums.blizzard.com/en/wow/t/m-unbound-hero-title-updated-january-14/2227583",
       },
@@ -66,11 +68,13 @@ export const twwSeasons: Season[] = [
     cutoffs: {
       EU: {
         score: 3821,
+        score100: 0,
         source:
           "https://eu.forums.blizzard.com/en/wow/t/m-enterprising-hero-title-updated-29-july/582042",
       },
       US: {
         score: 3805,
+        score100: 0,
         source:
           "https://us.forums.blizzard.com/en/wow/t/m-enterprising-hero-title-updated-july-29/2139296/1",
       },
@@ -140,11 +144,13 @@ export const twwSeasons: Season[] = [
     cutoffs: {
       EU: {
         score: 3483,
+        score100: 0,
         source:
           "https://eu.forums.blizzard.com/en/wow/t/m-thundering-hero-title-updated-19-february/562387",
       },
       US: {
         score: 3458,
+        score100: 0,
         source:
           "https://us.forums.blizzard.com/en/wow/t/m-thundering-hero-title-updated-february-19/2062504/1",
       },

@@ -62,12 +62,14 @@ export const mnSeasons: Season[] = [
     supportsExtrapolationHistory: true,
     cutoffs: {
       EU: {
-        score: 0,
+        score: 4236,
+        score100: 4008,
         source:
           "https://eu.forums.blizzard.com/en/wow/t/m-umbral-champion-and-umbral-hero-scores-updated-4-august/625085/1",
       },
       US: {
         score: 4211,
+        score100: 3960,
         source:
           "https://us.forums.blizzard.com/en/wow/t/m-umbral-champion-and-umbral-hero-scores-updated-august-4/2333001/1",
       },

@@ -14,7 +14,9 @@ import { type Overlay } from "~/utils";
 import { type Affix } from "../affixes";
 import { seasons } from "./data";
 
-type CutoffSource = { score: number; source: string | null };
+/** `score` is the 0.1% (title) cutoff, `score100` the top-1% one. `0` means
+ * "not confirmed yet" for either. */
+type CutoffSource = { score: number; score100: number; source: string | null };
 
 const UNKNOWN_SEASON_START_OR_ENDING = null;
 

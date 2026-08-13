@@ -43,11 +43,13 @@ export const dfSeasons: Season[] = [
     cutoffs: {
       EU: {
         score: 3677,
+        score100: 0,
         source:
           "https://eu.forums.blizzard.com/en/wow/t/m-draconic-hero-title-updated-23-july/523543",
       },
       US: {
         score: 3649,
+        score100: 0,
         source:
           "https://us.forums.blizzard.com/en/wow/t/m-draconic-hero-title-updated-july-23-final/1894760",
       },
@@ -76,11 +78,13 @@ export const dfSeasons: Season[] = [
     cutoffs: {
       EU: {
         score: 3719,
+        score100: 0,
         source:
           "https://eu.forums.blizzard.com/en/wow/t/m-dreaming-hero-title-updated-16-april/507523",
       },
       US: {
         score: 3684,
+        score100: 0,
         source:
           "https://us.forums.blizzard.com/en/wow/t/m-dreaming-hero-title-updated-april-16/1831618",
       },
@@ -124,11 +128,13 @@ export const dfSeasons: Season[] = [
     cutoffs: {
       EU: {
         score: 3632,
+        score100: 0,
         source:
           "https://eu.forums.blizzard.com/en/wow/t/m-smoldering-hero-title-updated-november-2/474193",
       },
       US: {
         score: 3561,
+        score100: 0,
         source:
           "https://us.forums.blizzard.com/en/wow/t/m-smoldering-hero-title-updated-november-2/1697884",
       },
@@ -173,11 +179,13 @@ export const dfSeasons: Season[] = [
     cutoffs: {
       EU: {
         score: 3345,
+        score100: 0,
         source:
           "https://eu.forums.blizzard.com/en/wow/t/m-thundering-hero-title-updated-27-april/444828",
       },
       US: {
         score: 3298,
+        score100: 0,
         source:
           "https://us.forums.blizzard.com/en/wow/t/m-thundering-hero-title-updated-april-27/1576546/1",
       },

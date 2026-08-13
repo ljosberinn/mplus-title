@@ -28,11 +28,13 @@ export const slSeasons: Season[] = [
     cutoffs: {
       EU: {
         score: 3120,
+        score100: 0,
         source:
           "https://eu.forums.blizzard.com/en/wow/t/m-shrouded-hero-title-november-16-update/395176/19",
       },
       US: {
         score: 3087,
+        score100: 0,
         source:
           "https://www.bluetracker.gg/wow/topic/us-en/1374207-m-shrouded-hero-title-updated-november-16/",
       },
@@ -77,6 +79,7 @@ export const slSeasons: Season[] = [
     cutoffs: {
       EU: {
         score: 3725,
+        score100: 0,
         source:
           "https://eu.forums.blizzard.com/en/wow/t/m-cryptic-hero-title-score-updated-daily/371434",
       },

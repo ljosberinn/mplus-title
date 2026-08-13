@@ -219,7 +219,7 @@ export const NO_DATES: Record<Regions, null> = mapRegions(() => null);
 type RegionalDates = Record<Regions, number | null>;
 
 type AuthoredCutoff =
-  | { score: number; source: string | null }
+  | { score: number; score100: number; source: string | null }
   | ({ source: string | null } & Record<Factions, number>);
 
 /**
@@ -315,7 +315,7 @@ function expandEvent(event: AuthoredEvent, startDates: RegionalDates) {
 function defaultCutoff(crossFactionSupport: Season["crossFactionSupport"]) {
   return crossFactionSupport === "none"
     ? { source: null, horde: 0, alliance: 0 }
-    : { score: 0, source: null };
+    : { score: 0, score100: 0, source: null };
 }
 
 /**

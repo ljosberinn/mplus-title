@@ -469,19 +469,30 @@ export function calculateYAxisPlotLines(
     ];
   }
 
-  if (cutoffs.score === 0) {
-    return [];
-  }
+  const lines: PlotLine[] = [];
 
-  return [
-    {
+  // 0 means "not confirmed yet" — each cutoff line appears on its own.
+  if (cutoffs.score !== 0) {
+    lines.push({
       label: {
         text: `Confirmed cutoff at ${cutoffs.score}`,
         color: colors.xFaction,
       },
       value: cutoffs.score,
-    },
-  ];
+    });
+  }
+
+  if (cutoffs.score100 !== 0) {
+    lines.push({
+      label: {
+        text: `Confirmed cutoff at ${cutoffs.score100}`,
+        color: colors.top1,
+      },
+      value: cutoffs.score100,
+    });
+  }
+
+  return lines;
 }
 
 export function calculateXAxisPlotLines(
