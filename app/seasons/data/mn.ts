@@ -21,8 +21,7 @@ export const mnSeasons: Season[] = [
       { slug: "the-blinding-vale", name: "The Blinding Vale" },
       { slug: "voidscar-arena", name: "Voidscar Arena" },
     ],
-    seasonIcon:
-      "https://assets.rpglogs.com/img/warcraft/abilities/inv_misc_questionmark.jpg",
+    seasonIcon: "https://assets.rpglogs.com/img/warcraft/zones/zone-55.png",
     startingPeriod: 0,
     wcl: {
       zoneId: 55,
@@ -68,7 +67,7 @@ export const mnSeasons: Season[] = [
           "https://eu.forums.blizzard.com/en/wow/t/m-umbral-champion-and-umbral-hero-scores-updated-4-august/625085/1",
       },
       US: {
-        score: 0,
+        score: 4211,
         source:
           "https://us.forums.blizzard.com/en/wow/t/m-umbral-champion-and-umbral-hero-scores-updated-august-4/2333001/1",
       },
