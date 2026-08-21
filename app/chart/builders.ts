@@ -682,6 +682,11 @@ export function calculateZoom(
   const seasonEnding = season.endDates[region];
   const seasonEnded = seasonEnding !== null && seasonEnding <= now;
 
+  // early in a season there is no data point far enough back to satisfy the
+  // offsets below - fall back to the season start rather than unix 0, which
+  // would zoom out to 1970.
+  const zoomStartFallback = season.startDates[region] ?? data[0].ts;
+
   const daysUntilSeasonEnding =
     seasonEnding !== null && !seasonEnded
       ? (seasonEnding - now) / 1000 / 60 / 60 / 24
@@ -722,7 +727,7 @@ export function calculateZoom(
           dataset.ts < zoomEnd - lateSeasonOffsetInWeeks * oneWeekInMs,
       );
 
-    return [backThen ? backThen.ts : 0, zoomEnd];
+    return [backThen ? backThen.ts : zoomStartFallback, zoomEnd];
   }
 
   // offset by +2 weeks since extrapolation is at least two into the future
@@ -732,7 +737,7 @@ export function calculateZoom(
     .reverse()
     .find((dataset) => dataset.ts < zoomEnd - offset);
 
-  return [backThen ? backThen.ts : 0, zoomEnd];
+  return [backThen ? backThen.ts : zoomStartFallback, zoomEnd];
 }
 
 function calculateFactionDiffForWeek(
