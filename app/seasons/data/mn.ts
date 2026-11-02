@@ -3,6 +3,30 @@ import { type Season } from "../runtime";
 
 export const mnSeasons: Season[] = [
   defineSeason({
+    name: "MN S3",
+    slug: "mn-season-3",
+    expansion: "mn",
+    rioKey: "season-mn-3",
+    crossFactionSupport: "complete",
+    startDates: NO_DATES,
+    endDates: NO_DATES,
+    affixes: [],
+    dungeons: [
+      { slug: "iron-docks", name: "Iron Docks" },
+      { slug: "magisters-terrace", name: "Magister's Terrace" },
+      { slug: "maisara-caverns", name: "Maisara Caverns" },
+      { slug: "sanguine-depths", name: "Sanguine Depths" },
+      { slug: "the-stonecore", name: "The Stonecore" },
+      { slug: "the-underrot", name: "The Underrot" },
+      { slug: "uldaman-legacy-of-tyr", name: "Uldaman: Legacy of Tyr" },
+    ],
+    seasonIcon:
+      "https://assets.rpglogs.com/img/warcraft/abilities/inv_misc_questionmark.jpg",
+    startingPeriod: 0,
+    supportsExtrapolationHistory: true,
+    annotations: [],
+  }),
+  defineSeason({
     name: "MN S2",
     slug: "mn-season-2",
     expansion: "mn",

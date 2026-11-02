@@ -136,4 +136,48 @@ export const dungeonSlugMetaMap: Record<
     icon: "inv_achievement_dungeon_windrunnerspire",
     name: "Windrunner Spire",
   },
+  "altar-of-fangs": {
+    icon: "inv_achievement_dungeon_altaroffangs",
+    name: "Altar of Fangs",
+  },
+  "den-of-nalorakk": {
+    icon: "inv_achievement_dungeon_proveyourworth",
+    name: "Den of Nalorakk",
+  },
+  "kings-rest": {
+    icon: "achievement_dungeon_kingsrest",
+    name: "Kings' Rest",
+  },
+  "murder-row": {
+    icon: "inv_achievement_dungeon_murderrow",
+    name: "Murder Row",
+  },
+  "temple-of-sethraliss": {
+    icon: "achievement_dungeon_templeofsethraliss",
+    name: "Temple of Sethraliss",
+  },
+  "the-blinding-vale": {
+    icon: "inv_achievement_dungeon_lightbloom",
+    name: "The Blinding Vale",
+  },
+  "voidscar-arena": {
+    icon: "inv_achievement_dungeon_voidscararena",
+    name: "Voidscar Arena",
+  },
+  "iron-docks": {
+    icon: "achievement_dungeon_blackrockdocks",
+    name: "Iron Docks",
+  },
+  "sanguine-depths": {
+    icon: "achievement_dungeon_sanguinedepths",
+    name: "Sanguine Depths",
+  },
+  "the-stonecore": {
+    icon: "achievement_dungeon_deepholm",
+    name: "The Stonecore",
+  },
+  "the-underrot": {
+    icon: "achievement_dungeon_underrot",
+    name: "The Underrot",
+  },
 };
