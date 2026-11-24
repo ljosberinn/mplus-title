@@ -52,7 +52,10 @@ export const mnSeasons: Season[] = [
       weekIndexToAffixSetId: [],
     },
     supportsExtrapolationHistory: true,
-    annotations: [{ kind: "patch", label: "12.1.5", week: 8 }],
+    annotations: [
+      { kind: "patch", label: "12.1.5", week: 8 },
+      { kind: "patch", label: "12.1.7", week: 15 },
+    ],
   }),
   defineSeason({
     name: "MN S1",
